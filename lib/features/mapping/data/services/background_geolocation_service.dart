@@ -224,15 +224,23 @@ class BackgroundGeolocationService implements LocationService {
     return completer.future;
   }
 
+  static const skipped = ['499', '408'];
+
   Future<void> _onConfigured(Completer<LocationOptions> completer, bool wasSharing) async {
     // Set current state
     _state = await bg.BackgroundGeolocation.state;
 
     if (!isReady) {
       _state = await bg.BackgroundGeolocation.start();
-      _current = _toPosition(
-        await bg.BackgroundGeolocation.setOdometer(_odometer),
-      );
+      try {
+        _current = _toPosition(
+          await bg.BackgroundGeolocation.setOdometer(_odometer),
+        );
+      } on PlatformException catch (e) {
+        if (!skipped.contains(e.code)) {
+          rethrow;
+        }
+      }
     }
 
     if (isReady) {

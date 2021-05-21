@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -287,8 +289,8 @@ class AppController {
     final orgService = OrganisationService();
     final divService = DivisionService();
     final depService = DepartmentService();
-    final personService = PersonService();
-    final affiliationService = AffiliationService();
+    final personService = PersonService(channel);
+    final affiliationService = AffiliationService(channel);
 
     // ignore: close_sinks
     final affiliationBloc = AffiliationBloc(
@@ -700,6 +702,14 @@ class AppController {
           ),
           SubscriptionTypeModel(
             name: '${typeOf<Device>()}',
+            changedState: true,
+          ),
+          SubscriptionTypeModel(
+            name: '${typeOf<Person>()}',
+            changedState: true,
+          ),
+          SubscriptionTypeModel(
+            name: '${typeOf<Affiliation>()}',
             changedState: true,
           ),
           SubscriptionTypeModel(

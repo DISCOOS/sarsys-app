@@ -1,10 +1,16 @@
 import 'dart:async';
+
+import 'package:chopper/chopper.dart';
+
+import 'package:SarSys/core/data/models/message_model.dart';
+import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
-import 'package:chopper/chopper.dart';
 
 part 'person_service.chopper.dart';
 
@@ -13,8 +19,53 @@ part 'person_service.chopper.dart';
 /// Delegates to a ChopperService implementation
 class PersonService extends StatefulServiceDelegate<Person, PersonModel>
     with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetFromId {
-  PersonService() : delegate = PersonServiceImpl.newInstance();
+  PersonService(
+    this.channel,
+  ) : delegate = PersonServiceImpl.newInstance() {
+    // Listen for Person messages
+    PersonMessageType.values.forEach(
+      (type) => channel.subscribe(enumName(type), _onMessage),
+    );
+  }
+
+  final MessageChannel channel;
   final PersonServiceImpl delegate;
+
+  /// Get stream of device messages
+  Stream<PersonMessage> get messages => _controller.stream;
+  final StreamController<PersonMessage> _controller = StreamController.broadcast();
+
+  void publish(PersonMessage message) {
+    _controller.add(message);
+  }
+
+  void _onMessage(Map<String, dynamic> data) {
+    publish(
+      PersonMessage(data),
+    );
+  }
+
+  void dispose() {
+    _controller.close();
+    PersonMessageType.values.forEach(
+      (type) => channel.unsubscribe(enumName(type), _onMessage),
+    );
+  }
+}
+
+enum PersonMessageType {
+  PersonCreated,
+  PersonInformationUpdated,
+  PersonDeleted,
+}
+
+class PersonMessage extends MessageModel {
+  PersonMessage(Map<String, dynamic> data) : super(data);
+
+  PersonMessageType get type {
+    final type = data.elementAt('type');
+    return PersonMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+  }
 }
 
 @ChopperApi(baseUrl: '/persons')

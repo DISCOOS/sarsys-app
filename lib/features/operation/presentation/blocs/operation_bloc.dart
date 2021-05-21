@@ -267,7 +267,7 @@ class OperationBloc
       yield await _unselect(command);
     } else if (command is _NotifyRepositoryStateChanged) {
       yield await _notify(command);
-    } else if (command is _NotifyBlocStateChange) {
+    } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -328,7 +328,7 @@ class OperationBloc
         isRemote: true,
         incidents: incidents.keys,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -382,7 +382,7 @@ class OperationBloc
         operation,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -438,7 +438,7 @@ class OperationBloc
         previous,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -475,7 +475,7 @@ class OperationBloc
         operation,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -742,8 +742,8 @@ class _NotifyRepositoryStateChanged<T> extends OperationCommand<StorageTransitio
   String toString() => '$runtimeType {previous: $data, next: $data}';
 }
 
-class _NotifyBlocStateChange extends OperationCommand<OperationState, Operation> {
-  _NotifyBlocStateChange(
+class _NotifyBlocStateChanged extends OperationCommand<OperationState, Operation> {
+  _NotifyBlocStateChanged(
     OperationState state,
   ) : super(state);
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/extensions.dart';
@@ -82,6 +83,16 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       // Load and unload repos as needed
       _processUserState,
     ));
+
+    // Notify when Incident state has changed
+    forward<Person>(
+      (t) => _NotifyRepositoryStateChanged<Person>(t),
+    );
+
+    // Notify when Operation state has changed
+    forward<Affiliation>(
+      (t) => _NotifyRepositoryStateChanged<Affiliation>(t),
+    );
   }
 
   /// All repositories
@@ -636,7 +647,9 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       yield* _update(command);
     } else if (command is UnloadAffiliations) {
       yield* _unload(command);
-    } else if (command is _StateChange) {
+    } else if (command is _NotifyRepositoryStateChanged) {
+      yield await _notify(command);
+    } else if (command is _BlocStateChanged) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -692,7 +705,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         affiliations: repo.keys,
         persons: repo.persons.keys,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _BlocStateChanged(state),
       toError: (Object error, StackTrace stackTrace) {
         if (!onFetchPersonsError(error)) {
           // Do not call sink.addError
@@ -737,7 +750,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           persons: results.whereType<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList(),
         );
       },
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _BlocStateChanged(state),
       toError: (Object error, StackTrace stackTrace) {
         if (!onFetchPersonsError(error)) {
           // Do not call sink.addError
@@ -819,7 +832,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         userId: command.data,
         affiliation: affiliation,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _BlocStateChanged(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -864,7 +877,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         affiliation,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _BlocStateChanged(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -889,12 +902,69 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         affiliation,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _BlocStateChanged(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
         stackTrace: stackTrace,
       ),
+    );
+  }
+
+  AffiliationState _notify(_NotifyRepositoryStateChanged command) {
+    final state = command.state;
+
+    switch (command.type) {
+      case Affiliation:
+        return _notifyAffiliationChanged(command, state);
+    }
+
+    final person = command.state as Person;
+
+    return toOK(
+      command,
+      AffiliationPersonUpdated(
+        person,
+        command.previous as Person,
+        findAffiliates(person).firstOrNull,
+        isRemote: command.isRemote,
+      ),
+      result: state,
+    );
+  }
+
+  AffiliationState _notifyAffiliationChanged(_NotifyRepositoryStateChanged command, state) {
+    if (command.isCreated) {
+      return toOK(
+        command,
+        AffiliationCreated(
+          state,
+          isRemote: command.isRemote,
+        ),
+        result: state,
+      );
+    }
+
+    if (command.isUpdated) {
+      return toOK(
+        command,
+        AffiliationUpdated(
+          state,
+          isRemote: command.isRemote,
+        ),
+        result: state,
+      );
+    }
+
+    assert(command.isDeleted);
+
+    return toOK(
+      command,
+      AffiliationDeleted(
+        state,
+        isRemote: command.isRemote,
+      ),
+      result: state,
     );
   }
 
@@ -1026,8 +1096,28 @@ class UnloadAffiliations extends AffiliationCommand<void, List<Affiliation>> {
   String toString() => '$runtimeType {}';
 }
 
-class _StateChange extends AffiliationCommand<AffiliationState, Affiliation> {
-  _StateChange(
+class _NotifyRepositoryStateChanged<T> extends AffiliationCommand<StorageTransition<T>, T> {
+  _NotifyRepositoryStateChanged(
+    StorageTransition<T> transition,
+  ) : super(transition);
+
+  Type get type => typeOf<T>();
+
+  T get state => data.to.value;
+  T get previous => data.from?.value;
+
+  bool get isCreated => data.isCreated;
+  bool get isUpdated => data.isChanged;
+  bool get isDeleted => data.isDeleted;
+
+  bool get isRemote => data.to?.isRemote == true;
+
+  @override
+  String toString() => '$runtimeType {previous: $data, next: $data}';
+}
+
+class _BlocStateChanged extends AffiliationCommand<AffiliationState, Affiliation> {
+  _BlocStateChanged(
     AffiliationState state,
   ) : super(state);
 
@@ -1153,6 +1243,38 @@ class AffiliationUpdated extends AffiliationState<Affiliation> {
 
   @override
   String toString() => '$runtimeType {affiliation: $data, isRemote: $isRemote}';
+}
+
+class AffiliationDeleted extends AffiliationState<Affiliation> {
+  AffiliationDeleted(
+    Affiliation affiliation, {
+    bool isRemote = false,
+  }) : super(affiliation, isRemote: isRemote);
+
+  @override
+  String toString() => '$runtimeType {affiliation: $data, isRemote: $isRemote}';
+}
+
+class AffiliationPersonUpdated extends AffiliationState<Person> {
+  final Person previous;
+  final Affiliation affiliation;
+  AffiliationPersonUpdated(
+    Person next,
+    this.previous,
+    this.affiliation, {
+    bool isRemote = false,
+  }) : super(next, isRemote: isRemote, props: [
+          affiliation,
+          previous,
+        ]);
+
+  @override
+  String toString() => '$runtimeType {'
+      'affiliation: $affiliation, '
+      'incident: $data, '
+      'isRemote: $isRemote'
+      'previous: $previous'
+      '}';
 }
 
 class AffiliationsUnloaded extends AffiliationState<Iterable<String>> {

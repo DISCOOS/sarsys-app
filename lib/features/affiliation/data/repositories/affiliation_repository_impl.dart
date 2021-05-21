@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:flutter/foundation.dart';
@@ -23,6 +24,7 @@ import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 
 class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, AffiliationService>
+    with StatefulCatchup<Affiliation, AffiliationService>
     implements AffiliationRepository {
   AffiliationRepositoryImpl(
     AffiliationService service, {
@@ -79,7 +81,11 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
               }
             }
           },
-        );
+        ) {
+    // Handle messages
+    // pushed from backend.
+    catchupTo(service.messages);
+  }
 
   /// [Organisation] repository
   @override

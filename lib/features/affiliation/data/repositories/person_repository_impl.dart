@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
@@ -13,14 +14,20 @@ import 'package:flutter/foundation.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 
-class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonService> implements PersonRepository {
+class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonService>
+    with StatefulCatchup<Person, PersonService>
+    implements PersonRepository {
   PersonRepositoryImpl(
     PersonService service, {
     @required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
-        );
+        ) {
+    // Handle messages
+    // pushed from backend.
+    catchupTo(service.messages);
+  }
 
   /// Get [Operation.uuid] from [value]
   @override

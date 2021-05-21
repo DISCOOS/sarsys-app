@@ -183,7 +183,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   Widget _buildPersonnel(Personnel personnel) {
     final unit = _toUnit(personnel);
-    final tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid];
+    final tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking?.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && isCommander

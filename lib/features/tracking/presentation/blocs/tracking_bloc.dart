@@ -488,7 +488,7 @@ class TrackingBloc
   }) {
     final Map<String, Set<Tracking>> map = {};
     repo.values.where((tracking) => !exclude.contains(tracking.status)).forEach((tracking) {
-      devices(tracking.uuid).forEach((device) {
+      devices(tracking?.uuid).forEach((device) {
         map.update(device.uuid, (set) => set..add(tracking), ifAbsent: () => {tracking});
       });
     });
@@ -738,9 +738,9 @@ class TrackingBloc
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(tracking.uuid)],
+      [repo.onRemote(tracking?.uuid)],
       toState: (_) => TrackingUpdated(
-        repo[tracking.uuid],
+        repo[tracking?.uuid],
         tracking,
         isRemote: true,
       ),
@@ -1112,7 +1112,7 @@ class TrackableQuery<T extends Trackable> {
   }) : this._data = UnmodifiableMapView(_toTracked(data, bloc.repo));
 
   static Map<String, T> _toTracked<String, T extends Trackable>(Map<String, T> data, TrackingRepository repo) {
-    return Map.from(data)..removeWhere((_, trackable) => !repo.containsKey(trackable.tracking.uuid));
+    return Map.from(data)..removeWhere((_, trackable) => !repo.containsKey(trackable.tracking?.uuid));
   }
 
   /// Get map of [Tracking.uuid] to aggregate of type [T]
@@ -1132,7 +1132,7 @@ class TrackableQuery<T extends Trackable> {
   bool contains(T trackable) => _data.containsKey(trackable.uuid);
 
   /// Get [Tracking] from given [Trackable] of type [T]
-  Tracking elementAt(T trackable) => bloc.repo[trackable.tracking.uuid];
+  Tracking elementAt(T trackable) => bloc.repo[trackable.tracking?.uuid];
 
   /// Get aggregate of type [T] tracked by given [Tracking.uuid]
   ///
@@ -1140,7 +1140,7 @@ class TrackableQuery<T extends Trackable> {
   /// rule guarantees a one-to-one mapping if found.
   ///
   T trackedBy(String tuuid) => _data.values.firstWhere(
-        (trackable) => trackable.tracking.uuid == tuuid,
+        (trackable) => trackable.tracking?.uuid == tuuid,
         orElse: () => null,
       );
 
@@ -1155,7 +1155,7 @@ class TrackableQuery<T extends Trackable> {
   }) {
     var found;
     // Use direct lookup if trackable
-    final tuuid = tracked is Trackable ? tracked.tracking.uuid : null;
+    final tuuid = tracked is Trackable ? tracked.tracking?.uuid : null;
     if (tuuid != null) {
       found = trackedBy(tuuid);
     }
@@ -1201,7 +1201,7 @@ class TrackableQuery<T extends Trackable> {
   }) {
     final Map<String, T> map = {};
     trackables.forEach((trackable) {
-      bloc.devices(trackable.tracking.uuid).forEach((device) {
+      bloc.devices(trackable.tracking?.uuid).forEach((device) {
         map.update(device.uuid, (set) => trackable, ifAbsent: () => trackable);
       });
     });

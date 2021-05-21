@@ -541,7 +541,6 @@ class PersonnelBloc
   }
 
   Future<PersonnelState> _notify(_NotifyPersonnelStateChanged command) async {
-    _assertData(command.personnel);
     final personnel = command.personnel;
 
     if (command.isCreated) {
