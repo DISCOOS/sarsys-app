@@ -567,7 +567,7 @@ class StreamRequestTimeoutException implements Exception {
 }
 
 /// Wait for given rule result from stream of results
-Future<T> waitThoughtStates<S extends BlocEvent, T>(
+Future<T> waitThoughtStates<S extends BlocState, T>(
   BlocEventBus bus, {
   @required List<Type> expected,
   bool fail = false,
@@ -603,7 +603,7 @@ Future<T> waitThoughtStates<S extends BlocEvent, T>(
 }
 
 /// Wait for given rule result from stream of results
-FutureOr<T> waitThroughStateWithData<S extends BlocEvent, T>(
+FutureOr<T> waitThroughStateWithData<S extends BlocState, T>(
   BlocEventBus bus, {
   @required T Function(S state) map,
   bool fail = false,

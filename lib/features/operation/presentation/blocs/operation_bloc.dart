@@ -610,7 +610,7 @@ class OperationBloc
           state,
           selected: selected != null,
           isRemote: command.isRemote,
-          incident: incidents[selected.incident.uuid],
+          incident: selected != null ? incidents[selected.incident?.uuid] : null,
         ),
         result: state,
       );
@@ -624,7 +624,7 @@ class OperationBloc
           command.previous,
           selected: selected != null,
           isRemote: command.isRemote,
-          incident: incidents[selected.incident.uuid],
+          incident: selected != null ? incidents[selected.incident?.uuid] : null,
         ),
         result: state,
       );

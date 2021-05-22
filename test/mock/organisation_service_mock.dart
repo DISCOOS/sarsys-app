@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -80,6 +81,7 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
   static OrganisationService build({List<String> uuids = const [], int divs = 1}) {
     final OrganisationServiceMock mock = OrganisationServiceMock();
     final orgRepo = mock.orgRepo;
+    final StreamController<OrganisationMessage> controller = StreamController.broadcast();
 
     int i = 0;
     uuids.forEach((uuid) {
@@ -103,6 +105,10 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
         body: orgRepo.values.toList(),
       );
     });
+
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.create(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Organisation>;
       if (!state.version.isFirst) {
@@ -119,6 +125,7 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
         body: orgRepo[uuid],
       );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Organisation>;
       final uuid = next.value.uuid;
@@ -143,6 +150,7 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
         message: "Organisation not found: $uuid",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Organisation>;
       final uuid = state.value.uuid;

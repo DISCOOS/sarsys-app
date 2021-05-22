@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -131,6 +132,7 @@ class PersonServiceMock extends Mock implements PersonService {
     );
     final PersonServiceMock mock = PersonServiceMock(box);
     final personRepo = mock.personRepo;
+    final StreamController<PersonMessage> controller = StreamController.broadcast();
 
     when(mock.getFromId(any)).thenAnswer((_) async {
       final uuid = _.positionalArguments[0];
@@ -144,6 +146,10 @@ class PersonServiceMock extends Mock implements PersonService {
         message: "Person not found: $uuid",
       );
     });
+
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.create(any)).thenAnswer((_) async {
       await _doThrottle();
       final state = _.positionalArguments[0] as StorageState<Person>;
@@ -175,6 +181,7 @@ class PersonServiceMock extends Mock implements PersonService {
               body: personRepo[uuid],
             );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       await _doThrottle();
       final next = _.positionalArguments[0] as StorageState<Person>;
@@ -200,6 +207,7 @@ class PersonServiceMock extends Mock implements PersonService {
         message: "Person not found: $uuid",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       await _doThrottle();
       final state = _.positionalArguments[0] as StorageState<Person>;

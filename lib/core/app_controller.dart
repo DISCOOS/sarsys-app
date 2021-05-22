@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
@@ -286,9 +289,9 @@ class AppController {
     final UserBloc userBloc = UserBloc(userRepo, configBloc, controller.bus);
 
     // Configure affiliation services
-    final orgService = OrganisationService();
-    final divService = DivisionService();
-    final depService = DepartmentService();
+    final orgService = OrganisationService(channel);
+    final divService = DivisionService(channel);
+    final depService = DepartmentService(channel);
     final personService = PersonService(channel);
     final affiliationService = AffiliationService(channel);
 
@@ -693,6 +696,22 @@ class AppController {
       config: SubscriptionModel(
         types: [
           SubscriptionTypeModel(
+            name: '${typeOf<Organisation>()}',
+            changedState: true,
+          ),
+          SubscriptionTypeModel(
+            name: '${typeOf<Division>()}',
+            changedState: true,
+          ),
+          SubscriptionTypeModel(
+            name: '${typeOf<Department>()}',
+            changedState: true,
+          ),
+          SubscriptionTypeModel(
+            name: '${typeOf<Affiliation>()}',
+            changedState: true,
+          ),
+          SubscriptionTypeModel(
             name: '${typeOf<Incident>()}',
             changedState: true,
           ),
@@ -706,10 +725,6 @@ class AppController {
           ),
           SubscriptionTypeModel(
             name: '${typeOf<Person>()}',
-            changedState: true,
-          ),
-          SubscriptionTypeModel(
-            name: '${typeOf<Affiliation>()}',
             changedState: true,
           ),
           SubscriptionTypeModel(

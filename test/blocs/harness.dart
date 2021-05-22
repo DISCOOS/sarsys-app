@@ -835,13 +835,13 @@ void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
   }
 }
 
-Future<void> expectThroughLater(Stream<BlocEvent> bloc, expected) async {
+Future<void> expectThroughLater(Stream<BlocState> bloc, expected) async {
   assert(bloc != null);
   assert(expected != null);
   await expectLater(bloc, emitsThrough(expected));
 }
 
-Future<void> expectThroughLaterIf<State extends BlocEvent>(
+Future<void> expectThroughLaterIf<State extends BlocState>(
   Bloc bloc,
   expected, {
   bool close = false,
@@ -856,7 +856,7 @@ Future<void> expectThroughLaterIf<State extends BlocEvent>(
   }
 }
 
-Future<void> expectThroughLaterIfNot<State extends BlocEvent>(
+Future<void> expectThroughLaterIfNot<State extends BlocState>(
   Bloc bloc,
   expected, {
   bool close = false,

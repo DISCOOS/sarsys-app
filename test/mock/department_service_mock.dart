@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -79,6 +80,7 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
   static DepartmentService build({List<String> orguuids = const [], int divs = 1, int deps = 1}) {
     final DepartmentServiceMock mock = DepartmentServiceMock();
     final depRepo = mock.depRepo;
+    final StreamController<DepartmentMessage> controller = StreamController.broadcast();
 
     orguuids.forEach((orguuid) {
       if (orguuid.startsWith('a:')) {
@@ -106,6 +108,10 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
         body: depRepo.values.toList(),
       );
     });
+
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.create(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Department>;
       if (!state.version.isFirst) {
@@ -122,6 +128,7 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
         body: depRepo[uuid],
       );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Department>;
       final uuid = next.value.uuid;
@@ -146,6 +153,7 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
         message: "Department not found: $uuid",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Department>;
       final uuid = state.value.uuid;

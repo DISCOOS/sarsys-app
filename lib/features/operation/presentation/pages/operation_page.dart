@@ -55,7 +55,7 @@ class _OperationPageState extends State<OperationPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _group?.close();
-    _group = StreamGroup<BlocEvent>.broadcast()
+    _group = StreamGroup<BlocState>.broadcast()
       ..add(context.bloc<UnitBloc>())
       ..add(context.bloc<OperationBloc>())
       ..add(context.bloc<PersonnelBloc>());
@@ -78,7 +78,7 @@ class _OperationPageState extends State<OperationPage> {
       onRefresh: () async {
         context.bloc<OperationBloc>().load();
       },
-      child: StreamBuilder<BlocEvent>(
+      child: StreamBuilder<BlocState>(
         stream: _group.stream,
         builder: (context, snapshot) {
           final operation = context.bloc<OperationBloc>().selected;

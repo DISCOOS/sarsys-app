@@ -17,7 +17,7 @@ import 'package:SarSys/core/utils/data.dart';
 
 import 'mixins.dart';
 
-abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extends S> extends Bloc<C, S> {
+abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extends S> extends Bloc<C, S> {
   BaseBloc({@required this.bus}) : super() {
     assert(bus != null, "bus can not be null");
     _subscriptions.add(listen(
@@ -52,7 +52,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// Unhandled exceptions in handles are
   /// forwarded to [BlocDelegate.onError].
   ///
-  BlocHandlerCallback<T> subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
+  BlocHandlerCallback<T> subscribe<T extends BlocState>(BlocHandlerCallback<T> handler) {
     _handlers.update(
       typeOf<T>(),
       (handlers) => handlers
@@ -95,7 +95,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     });
   }
 
-  BlocHandlerCallback<T> _subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) =>
+  BlocHandlerCallback<T> _subscribe<T extends BlocState>(BlocHandlerCallback<T> handler) =>
       bus.subscribe<T>((Bloc bloc, T event) {
         if (_dispatchQueue.isEmpty) {
           try {
@@ -118,7 +118,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         }
       });
 
-  /// List of queues of [BlocEvent]s processed in FIFO manner.
+  /// List of queues of [BlocState]s processed in FIFO manner.
   ///
   /// Decisions made in event handlers
   /// must be based on stable states to prevent
@@ -129,9 +129,9 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// are processed before any events are
   /// processed.
   ///
-  final _eventQueue = ListQueue<Pair<Bloc, BlocEvent>>();
+  final _eventQueue = ListQueue<Pair<Bloc, BlocState>>();
 
-  /// Process [BlocEvent] in FIFO-manner
+  /// Process [BlocState] in FIFO-manner
   /// until [_eventQueue] is empty. Any error
   /// will stop events processing.
   void _processEventQueue() {
@@ -154,7 +154,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   }
 
   /// Get all handlers for given event
-  Iterable<Function> _toHandlers(BlocEvent event) => _handlers[event.runtimeType] ?? [];
+  Iterable<Function> _toHandlers(BlocState event) => _handlers[event.runtimeType] ?? [];
 
   /// Queue of [BlocCommand]s processed in FIFO manner.
   ///
@@ -336,7 +336,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   }
 }
 
-abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error extends E, K, V extends JsonObject,
+abstract class StatefulBloc<C extends BlocCommand, E extends BlocState, Error extends E, K, V extends JsonObject,
         S extends StatefulServiceDelegate<V, V>> extends BaseBloc<C, E, Error>
     with ReadyAwareBloc<K, V>, ConnectionAwareBloc<K, V, S> {
   StatefulBloc({@required BlocEventBus bus}) : super(bus: bus);
@@ -403,25 +403,25 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error ex
   }
 }
 
-typedef BlocHandlerCallback<T extends BlocEvent> = void Function(BaseBloc bloc, T event);
+typedef BlocHandlerCallback<T extends BlocState> = void Function(BaseBloc bloc, T event);
 
-/// [BlocEvent] bus implementation
+/// [BlocState] bus implementation
 class BlocEventBus {
   BlocEventBus({
     BlocDelegate delegate,
   }) : delegate = delegate ?? BlocSupervisor.delegate;
 
   final BlocDelegate delegate;
-  StreamController<BlocEvent> _controller = StreamController.broadcast();
+  StreamController<BlocState> _controller = StreamController.broadcast();
 
   /// Get events as stream
-  Stream<BlocEvent> get events => _controller.stream;
+  Stream<BlocState> get events => _controller.stream;
 
   /// Registered event routes from Type to to handlers
   final Map<Type, Set<Function>> _routes = {};
 
   /// Subscribe to event with given handler
-  BlocHandlerCallback<T> subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
+  BlocHandlerCallback<T> subscribe<T extends BlocState>(BlocHandlerCallback<T> handler) {
     _routes.update(
       typeOf<T>(),
       (handlers) => handlers..add(handler),
@@ -443,7 +443,7 @@ class BlocEventBus {
   }
 
   /// Unsubscribe given event handler
-  void unsubscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
+  void unsubscribe<T extends BlocState>(BlocHandlerCallback<T> handler) {
     final handlers = _routes[typeOf<T>()] ?? {};
     handlers.remove(handler);
     if (handlers.isEmpty) {
@@ -458,7 +458,7 @@ class BlocEventBus {
     _controller = StreamController.broadcast();
   }
 
-  void publish(Bloc bloc, BlocEvent event) {
+  void publish(Bloc bloc, BlocState event) {
     _controller.add(event);
     toHandlers(event).forEach((handler) {
       try {
@@ -474,8 +474,12 @@ class BlocEventBus {
   }
 
   /// Get all handlers for given event
-  Iterable<Function> toHandlers(BlocEvent event) => _routes[event.runtimeType] ?? [];
+  Iterable<Function> toHandlers(BlocState event) => _routes[event.runtimeType] ?? [];
 }
+
+/// -------------
+/// Bloc commands
+/// -------------
 
 class BlocCommand<D, R> extends Equatable {
   BlocCommand(
@@ -495,8 +499,50 @@ class BlocCommand<D, R> extends Equatable {
   final StackTrace stackTrace = StackTrace.current;
 }
 
-abstract class BlocEvent<T> extends Equatable {
-  BlocEvent(
+/// --------------------
+/// Bloc command mixins
+/// -------------------
+
+mixin NotifyBlocStateChangedMixin<S extends BlocState<T>, T> on BlocCommand<S, T> {
+  @override
+  String toString() => '$runtimeType {state: $data}';
+
+  /// Get [BlocState.data]
+  T get state => data.data;
+
+  /// Get [BlocState] type
+  Type get stateType => typeOf<S>();
+
+  /// Get [BlocState.data] type
+  Type get dataType => typeOf<T>();
+}
+
+mixin NotifyRepositoryStateChangedMixin<T> on BlocCommand<StorageTransition<T>, T> {
+  Type get type => typeOf<T>();
+
+  T get state => data.to.value;
+  T get previous => data.from?.value;
+
+  bool get isCreated => data.isCreated;
+  bool get isUpdated => data.isChanged;
+  bool get isDeleted => data.isDeleted;
+
+  StorageStatus get status => data?.status;
+  StateVersion get version => data?.version;
+
+  bool get isRemote => data.to?.isRemote == true;
+
+  @override
+  String toString() => '$runtimeType {previous: $data, next: $data}';
+}
+
+/// ------------------------
+/// Bloc state change events
+/// ------------------------
+///
+
+abstract class BlocState<T> extends Equatable {
+  BlocState(
     this.data, {
     this.stackTrace,
     props = const [],
@@ -509,18 +555,19 @@ abstract class BlocEvent<T> extends Equatable {
           DateTime.now(),
         ];
 
-  final List<Object> _props;
+  final T data;
+
+  final StackTrace stackTrace;
+
+  /// [DateTime] when state was created or mutated
+  DateTime get when => props.last;
 
   @override
   List<Object> get props => _props;
-
-  final T data;
-  final StackTrace stackTrace;
-
-  DateTime get created => props.last;
+  final List<Object> _props;
 }
 
-abstract class PushableBlocEvent<T> extends BlocEvent<T> {
+abstract class PushableBlocEvent<T> extends BlocState<T> {
   PushableBlocEvent(
     T data, {
     StackTrace stackTrace,
@@ -585,7 +632,7 @@ class AppBlocDelegate implements BlocDelegate {
 class BlocClosedException implements Exception {
   BlocClosedException(this.bloc, this.state, {this.command, this.stackTrace});
   final BaseBloc bloc;
-  final BlocEvent state;
+  final BlocState state;
   final BlocCommand command;
   final StackTrace stackTrace;
 

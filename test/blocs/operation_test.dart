@@ -137,7 +137,7 @@ void main() async {
       // Assert
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.operationsBloc.selected.uuid, equals(operations.last.uuid), reason: "SHOULD select last");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationsLoaded>(), isA<OperationSelected>()]);
+      expectThroughInOrder(harness.operationsBloc, [isA<OperationSelected>()]);
     });
 
     test('SHOULD create operation and push to backend', () async {

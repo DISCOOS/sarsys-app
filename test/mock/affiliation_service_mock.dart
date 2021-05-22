@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
@@ -141,6 +142,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     );
     final AffiliationServiceMock mock = AffiliationServiceMock(box, persons);
     final affiliationRepo = mock.affiliationRepo;
+    final StreamController<AffiliationMessage> controller = StreamController.broadcast();
 
     when(mock.getListFromIds(any)).thenAnswer((_) async {
       await _doThrottle();
@@ -153,6 +155,10 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
         body: affiliations,
       );
     });
+
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.create(any)).thenAnswer((_) async {
       await _doThrottle();
       final state = _.positionalArguments[0] as StorageState<Affiliation>;
@@ -212,6 +218,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
         body: affiliationRepo[affiliation.uuid],
       );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       await _doThrottle();
       final next = _.positionalArguments[0] as StorageState<Affiliation>;
@@ -238,6 +245,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
         message: "Affiliation not found: ${affiliation.uuid}",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       await _doThrottle();
       final state = _.positionalArguments[0] as StorageState<Affiliation>;

@@ -590,7 +590,7 @@ class _NotifyAuthTokenRefreshed extends UserCommand<AuthToken, AuthToken> {
 /// ---------------------
 /// Normal states
 /// ---------------------
-abstract class UserState<T> extends BlocEvent<T> {
+abstract class UserState<T> extends BlocState<T> {
   UserState(
     T data, {
     StackTrace stackTrace,

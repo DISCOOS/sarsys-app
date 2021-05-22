@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/models/message_model.dart';
+import 'package:SarSys/core/data/services/message_channel.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
@@ -16,8 +20,53 @@ part 'department_service.chopper.dart';
 /// Delegates to a ChopperService implementation
 class DepartmentService extends StatefulServiceDelegate<Department, DepartmentModel>
     with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetList, StatefulGetFromId {
-  DepartmentService() : delegate = DepartmentServiceImpl.newInstance();
+  DepartmentService(
+    this.channel,
+  ) : delegate = DepartmentServiceImpl.newInstance() {
+    // Listen for Department messages
+    DepartmentMessageType.values.forEach(
+      (type) => channel.subscribe(enumName(type), _onMessage),
+    );
+  }
+
+  final MessageChannel channel;
   final DepartmentServiceImpl delegate;
+
+  /// Get stream of device messages
+  Stream<DepartmentMessage> get messages => _controller.stream;
+  final StreamController<DepartmentMessage> _controller = StreamController.broadcast();
+
+  void publish(DepartmentMessage message) {
+    _controller.add(message);
+  }
+
+  void _onMessage(Map<String, dynamic> data) {
+    publish(
+      DepartmentMessage(data),
+    );
+  }
+
+  void dispose() {
+    _controller.close();
+    DepartmentMessageType.values.forEach(
+      (type) => channel.unsubscribe(enumName(type), _onMessage),
+    );
+  }
+}
+
+enum DepartmentMessageType {
+  DepartmentCreated,
+  DepartmentInformationUpdated,
+  DepartmentDeleted,
+}
+
+class DepartmentMessage extends MessageModel {
+  DepartmentMessage(Map<String, dynamic> data) : super(data);
+
+  DepartmentMessageType get type {
+    final type = data.elementAt('type');
+    return DepartmentMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+  }
 }
 
 @ChopperApi()

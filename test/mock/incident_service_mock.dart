@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -107,6 +108,8 @@ class IncidentServiceMock extends Mock implements IncidentService {
   }) {
     _incidentRepo.clear();
     final IncidentServiceMock mock = IncidentServiceMock();
+    final StreamController<IncidentMessage> controller = StreamController.broadcast();
+
     when(mock.getList()).thenAnswer((_) async {
       final user = await users.load();
       if (user == null) {
@@ -120,6 +123,10 @@ class IncidentServiceMock extends Mock implements IncidentService {
       }
       return ServiceResponse.ok(body: _incidentRepo.values.toList(growable: false));
     });
+
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.create(any)).thenAnswer((_) async {
       final user = await users.load();
       if (user == null) {
@@ -140,6 +147,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
         body: _incidentRepo[uuid],
       );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Incident>;
       final uuid = next.value.uuid;
@@ -164,6 +172,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
         message: "Incident not found: $uuid",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Incident>;
       final uuid = state.value.uuid;

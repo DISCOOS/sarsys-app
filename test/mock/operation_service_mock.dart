@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -156,6 +157,7 @@ class OperationServiceMock extends Mock implements OperationService {
     final user = users.user;
     final OperationServiceMock mock = OperationServiceMock();
     final unauthorized = UserServiceMock.createToken("unauthorized", role).toUser();
+    final StreamController<OperationMessage> controller = StreamController.broadcast();
 
     // Only generate operations for automatically generated incidents
     iuuids.forEach((iuuid) {
@@ -183,6 +185,10 @@ class OperationServiceMock extends Mock implements OperationService {
         body: _operationRepo.values.toList(growable: false),
       );
     });
+
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.create(any)).thenAnswer((_) async {
       final user = await users.load();
       if (user == null) {
@@ -223,6 +229,7 @@ class OperationServiceMock extends Mock implements OperationService {
         body: _operationRepo[uuid],
       );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Operation>;
       final uuid = next.value.uuid;
@@ -247,6 +254,7 @@ class OperationServiceMock extends Mock implements OperationService {
         message: "Operation not found: $uuid",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Operation>;
       final uuid = state.value.uuid;

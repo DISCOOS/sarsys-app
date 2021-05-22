@@ -1,7 +1,11 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
+
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/extensions.dart';
@@ -26,12 +30,15 @@ import 'package:SarSys/features/affiliation/domain/repositories/organisation_rep
 import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/domain/models/AggregateRef.dart';
-import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:bloc/bloc.dart';
-import 'package:flutter/foundation.dart';
-import 'package:uuid/uuid.dart';
+
+import 'affiliation_commands.dart';
+import 'affiliation_query.dart';
+import 'affiliation_states.dart';
+
+export 'affiliation_commands.dart';
+export 'affiliation_query.dart';
+export 'affiliation_states.dart';
 
 /// Business Logic Component for Affiliation
 ///
@@ -84,14 +91,21 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       _processUserState,
     ));
 
-    // Notify when Incident state has changed
+    // Notify when repository states change
     forward<Person>(
       (t) => _NotifyRepositoryStateChanged<Person>(t),
     );
-
-    // Notify when Operation state has changed
     forward<Affiliation>(
       (t) => _NotifyRepositoryStateChanged<Affiliation>(t),
+    );
+    forward<Organisation>(
+      (t) => _NotifyRepositoryStateChanged<Organisation>(t),
+    );
+    forward<Division>(
+      (t) => _NotifyRepositoryStateChanged<Division>(t),
+    );
+    forward<Department>(
+      (t) => _NotifyRepositoryStateChanged<Department>(t),
     );
   }
 
@@ -649,7 +663,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       yield* _unload(command);
     } else if (command is _NotifyRepositoryStateChanged) {
       yield await _notify(command);
-    } else if (command is _BlocStateChanged) {
+    } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -705,7 +719,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         affiliations: repo.keys,
         persons: repo.persons.keys,
       ),
-      toCommand: (state) => _BlocStateChanged(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Iterable<String>>(state),
       toError: (Object error, StackTrace stackTrace) {
         if (!onFetchPersonsError(error)) {
           // Do not call sink.addError
@@ -750,7 +764,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           persons: results.whereType<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList(),
         );
       },
-      toCommand: (state) => _BlocStateChanged(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Iterable<String>>(state),
       toError: (Object error, StackTrace stackTrace) {
         if (!onFetchPersonsError(error)) {
           // Do not call sink.addError
@@ -832,7 +846,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         userId: command.data,
         affiliation: affiliation,
       ),
-      toCommand: (state) => _BlocStateChanged(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Affiliation>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -877,7 +891,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         affiliation,
         isRemote: true,
       ),
-      toCommand: (state) => _BlocStateChanged(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Affiliation>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -902,7 +916,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         affiliation,
         isRemote: true,
       ),
-      toCommand: (state) => _BlocStateChanged(state),
+      toCommand: (state) => _NotifyBlocStateChanged(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -917,54 +931,173 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     switch (command.type) {
       case Affiliation:
         return _notifyAffiliationChanged(command, state);
+      case Organisation:
+        return _notifyOrganisationChanged(command, state);
+      case Division:
+        return _notifyDivisionChanged(command, state);
+      case Department:
+        return _notifyDepartmentChanged(command, state);
+      case Person:
+        final person = command.state as Person;
+        return toOK(
+          command,
+          AffiliationPersonUpdated(
+            person,
+            command.previous as Person,
+            findAffiliates(person).toList(),
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
     }
-
-    final person = command.state as Person;
-
-    return toOK(
-      command,
-      AffiliationPersonUpdated(
-        person,
-        command.previous as Person,
-        findAffiliates(person).firstOrNull,
-        isRemote: command.isRemote,
-      ),
-      result: state,
+    return AffiliationBlocError(
+      'Unknown state type ${command.type}',
+      stackTrace: StackTrace.current,
     );
   }
 
   AffiliationState _notifyAffiliationChanged(_NotifyRepositoryStateChanged command, state) {
-    if (command.isCreated) {
-      return toOK(
-        command,
-        AffiliationCreated(
-          state,
-          isRemote: command.isRemote,
-        ),
-        result: state,
-      );
+    switch (command.status) {
+      case StorageStatus.created:
+        return toOK(
+          command,
+          AffiliationCreated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+        break;
+      case StorageStatus.updated:
+        return toOK(
+          command,
+          AffiliationUpdated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.deleted:
+        return toOK(
+          command,
+          AffiliationDeleted(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
     }
+    return AffiliationBlocError(
+      'Unknown state status ${command.status}',
+      stackTrace: StackTrace.current,
+    );
+  }
 
-    if (command.isUpdated) {
-      return toOK(
-        command,
-        AffiliationUpdated(
-          state,
-          isRemote: command.isRemote,
-        ),
-        result: state,
-      );
+  AffiliationState _notifyOrganisationChanged(_NotifyRepositoryStateChanged command, state) {
+    switch (command.status) {
+      case StorageStatus.created:
+        return toOK(
+          command,
+          OrganisationCreated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.updated:
+        return toOK(
+          command,
+          OrganisationUpdated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.deleted:
+        return toOK(
+          command,
+          OrganisationDeleted(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
     }
+    return AffiliationBlocError(
+      'Unknown state status ${command.status}',
+      stackTrace: StackTrace.current,
+    );
+  }
 
-    assert(command.isDeleted);
+  AffiliationState _notifyDivisionChanged(_NotifyRepositoryStateChanged command, state) {
+    switch (command.status) {
+      case StorageStatus.created:
+        return toOK(
+          command,
+          DivisionCreated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.updated:
+        return toOK(
+          command,
+          DivisionUpdated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.deleted:
+        return toOK(
+          command,
+          DivisionDeleted(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+    }
+    return AffiliationBlocError(
+      'Unknown state status ${command.status}',
+      stackTrace: StackTrace.current,
+    );
+  }
 
-    return toOK(
-      command,
-      AffiliationDeleted(
-        state,
-        isRemote: command.isRemote,
-      ),
-      result: state,
+  AffiliationState _notifyDepartmentChanged(_NotifyRepositoryStateChanged command, state) {
+    switch (command.status) {
+      case StorageStatus.created:
+        return toOK(
+          command,
+          DepartmentCreated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.updated:
+        return toOK(
+          command,
+          DepartmentUpdated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.deleted:
+        return toOK(
+          command,
+          DepartmentDeleted(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+    }
+    return AffiliationBlocError(
+      'Unknown state status ${command.status}',
+      stackTrace: StackTrace.current,
     );
   }
 
@@ -1024,610 +1157,16 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 }
 
-/// ---------------------
-/// Commands
-/// ---------------------
-abstract class AffiliationCommand<S, T> extends BlocCommand<S, T> {
-  AffiliationCommand(
-    S data, {
-    props = const [],
-  }) : super(data, props);
+/// --------------------------
+/// Internal commands
+/// --------------------------
+
+class _NotifyRepositoryStateChanged<T> extends AffiliationCommand<StorageTransition<T>, T>
+    with NotifyRepositoryStateChangedMixin {
+  _NotifyRepositoryStateChanged(StorageTransition<T> transition) : super(transition);
 }
 
-class LoadAffiliations extends AffiliationCommand<void, List<Affiliation>> {
-  LoadAffiliations() : super(null);
-
-  @override
-  String toString() => '$runtimeType {}';
-}
-
-class FetchAffiliations extends AffiliationCommand<List<String>, List<Affiliation>> {
-  FetchAffiliations({List<String> uuids = const []}) : super(uuids);
-
-  @override
-  String toString() => '$runtimeType {uuids: $data}';
-}
-
-class SearchAffiliations extends AffiliationCommand<String, List<Affiliation>> {
-  SearchAffiliations(
-    String filter, {
-    this.offset = 0,
-    this.limit = 20,
-  }) : super(filter);
-
-  final int limit;
-  final int offset;
-
-  @override
-  String toString() => '$runtimeType {filter: $data, limit: $limit, offset: $offset}';
-}
-
-class OnboardUser extends AffiliationCommand<String, Affiliation> {
-  OnboardUser(String userId, this.affiliation) : super(userId, props: [affiliation]);
-  final Affiliation affiliation;
-
-  @override
-  String toString() => '$runtimeType {userId: $data, affiliation: $affiliation}';
-}
-
-class CreateAffiliation extends AffiliationCommand<Affiliation, Affiliation> {
-  CreateAffiliation(Affiliation affiliation)
-      : super(
-          affiliation,
-        );
-
-  Person get person => data.person;
-
-  @override
-  String toString() => '$runtimeType {affiliation: $data}';
-}
-
-class UpdateAffiliation extends AffiliationCommand<Affiliation, Affiliation> {
-  UpdateAffiliation(Affiliation affiliation) : super(affiliation);
-
-  @override
-  String toString() => '$runtimeType {affiliation: $data}';
-}
-
-class UnloadAffiliations extends AffiliationCommand<void, List<Affiliation>> {
-  UnloadAffiliations() : super(null);
-
-  @override
-  String toString() => '$runtimeType {}';
-}
-
-class _NotifyRepositoryStateChanged<T> extends AffiliationCommand<StorageTransition<T>, T> {
-  _NotifyRepositoryStateChanged(
-    StorageTransition<T> transition,
-  ) : super(transition);
-
-  Type get type => typeOf<T>();
-
-  T get state => data.to.value;
-  T get previous => data.from?.value;
-
-  bool get isCreated => data.isCreated;
-  bool get isUpdated => data.isChanged;
-  bool get isDeleted => data.isDeleted;
-
-  bool get isRemote => data.to?.isRemote == true;
-
-  @override
-  String toString() => '$runtimeType {previous: $data, next: $data}';
-}
-
-class _BlocStateChanged extends AffiliationCommand<AffiliationState, Affiliation> {
-  _BlocStateChanged(
-    AffiliationState state,
-  ) : super(state);
-
-  @override
-  String toString() => '$runtimeType {state: $data}';
-}
-
-/// ---------------------
-/// Normal States
-/// ---------------------
-abstract class AffiliationState<T> extends PushableBlocEvent<T> {
-  AffiliationState(
-    T data, {
-    props = const [],
-    StackTrace stackTrace,
-    bool isRemote = false,
-  }) : super(
-          data,
-          isRemote: isRemote,
-          stackTrace: stackTrace,
-        );
-
-  bool isEmpty() => this is AffiliationsEmpty;
-  bool isLoaded() => this is AffiliationsLoaded;
-  bool isFetched() => this is AffiliationsFetched;
-  bool isOnboarded() => this is UserOnboarded;
-  bool isAffiliated() => this is AffiliationCreated;
-  bool isUnloaded() => this is AffiliationsUnloaded;
-  bool isError() => this is AffiliationBlocError;
-}
-
-class AffiliationsEmpty extends AffiliationState<void> {
-  AffiliationsEmpty() : super(null);
-
-  @override
-  String toString() => '$runtimeType';
-}
-
-class AffiliationsLoaded extends AffiliationState<Iterable<String>> {
-  AffiliationsLoaded({
-    this.orgs,
-    this.deps,
-    this.divs,
-    this.persons,
-    bool isRemote = false,
-    Iterable<String> affiliations,
-  }) : super(affiliations, isRemote: isRemote);
-
-  final Iterable<String> orgs;
-  final Iterable<String> deps;
-  final Iterable<String> divs;
-  final Iterable<String> persons;
-
-  @override
-  String toString() => '$runtimeType {'
-      'orgs: $orgs, '
-      'divs: $divs, '
-      'deps: $deps, '
-      'persons: $persons, '
-      'isRemote: $isRemote, '
-      'affiliations: $data'
-      '}';
-}
-
-class AffiliationsFetched extends AffiliationState<Iterable<String>> {
-  AffiliationsFetched({
-    this.persons,
-    bool isRemote = false,
-    Iterable<String> affiliations,
-  }) : super(affiliations, isRemote: isRemote);
-
-  final Iterable<String> persons;
-
-  @override
-  String toString() => '$runtimeType {'
-      'persons: $persons, '
-      'isRemote: $isRemote, '
-      'affiliations: $data'
-      '}';
-}
-
-class UserOnboarded extends AffiliationState<Affiliation> {
-  UserOnboarded({
-    this.userId,
-    this.person,
-    bool isRemote = false,
-    Affiliation affiliation,
-  }) : super(affiliation, isRemote: isRemote);
-
-  final String userId;
-  final Person person;
-
-  @override
-  String toString() => '$runtimeType {'
-      'userId: $userId, '
-      'person: $person, '
-      'affiliation: $data,'
-      'isRemote: $isRemote '
-      '}';
-}
-
-class AffiliationCreated extends AffiliationState<Affiliation> {
-  AffiliationCreated(
-    Affiliation affiliation, {
-    bool isRemote = false,
-  }) : super(affiliation, isRemote: isRemote);
-
-  Person get person => data.person;
-
-  @override
-  String toString() => '$runtimeType {'
-      'person: $person, '
-      'isRemote: $isRemote, '
-      'affiliation: $data'
-      '}';
-}
-
-class AffiliationUpdated extends AffiliationState<Affiliation> {
-  AffiliationUpdated(
-    Affiliation affiliation, {
-    bool isRemote = false,
-  }) : super(affiliation, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {affiliation: $data, isRemote: $isRemote}';
-}
-
-class AffiliationDeleted extends AffiliationState<Affiliation> {
-  AffiliationDeleted(
-    Affiliation affiliation, {
-    bool isRemote = false,
-  }) : super(affiliation, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {affiliation: $data, isRemote: $isRemote}';
-}
-
-class AffiliationPersonUpdated extends AffiliationState<Person> {
-  final Person previous;
-  final Affiliation affiliation;
-  AffiliationPersonUpdated(
-    Person next,
-    this.previous,
-    this.affiliation, {
-    bool isRemote = false,
-  }) : super(next, isRemote: isRemote, props: [
-          affiliation,
-          previous,
-        ]);
-
-  @override
-  String toString() => '$runtimeType {'
-      'affiliation: $affiliation, '
-      'incident: $data, '
-      'isRemote: $isRemote'
-      'previous: $previous'
-      '}';
-}
-
-class AffiliationsUnloaded extends AffiliationState<Iterable<String>> {
-  AffiliationsUnloaded({
-    this.orgs,
-    this.deps,
-    this.divs,
-    this.persons,
-    Iterable<String> affiliations,
-  }) : super(affiliations);
-
-  final Iterable<String> orgs;
-  final Iterable<String> deps;
-  final Iterable<String> divs;
-  final Iterable<String> persons;
-
-  @override
-  String toString() => '$runtimeType {'
-      'orgs: $orgs, '
-      'divs: $divs, '
-      'deps: $deps, '
-      'persons: $persons, '
-      'affiliations: $data'
-      '}';
-}
-
-/// ---------------------
-/// Error States
-/// ---------------------
-class AffiliationBlocError extends AffiliationState<Object> {
-  AffiliationBlocError(
-    Object error, {
-    StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
-
-  @override
-  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
-}
-
-/// ---------------------
-/// Exceptions
-/// ---------------------
-
-class AffiliationBlocException implements Exception {
-  AffiliationBlocException(this.error, this.state, {this.command, this.stackTrace});
-  final Object error;
-  final AffiliationState state;
-  final StackTrace stackTrace;
-  final AffiliationCommand command;
-
-  @override
-  String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
-}
-
-/// --------------------------------------------
-/// Helper class for querying for [Affiliation]s
-/// --------------------------------------------
-///
-class AffiliationQuery {
-  final AffiliationBloc bloc;
-  final Map<String, Aggregate> _aggregates;
-
-  AffiliationQuery(
-    /// [AffiliationBloc] managing affiliations
-    this.bloc, {
-
-    /// Aggregates included in query
-    Map<String, Aggregate> aggregates,
-  }) : _aggregates = aggregates ?? toAggregates(bloc);
-
-  static Map<String, Aggregate> toAggregates<String, Aggregate>(
-    AffiliationBloc bloc, {
-    bool Function(Aggregate aggregate) where,
-  }) =>
-      Map<String, Aggregate>.from(bloc.orgs.map)
-        ..addAll(bloc.divs.map.cast())
-        ..addAll(bloc.deps.map.cast())
-        ..addAll(bloc.repo.map.cast())
-        ..addAll(bloc.persons.map.cast())
-        ..removeWhere((_, aggregate) => !(where == null || where(aggregate)));
-
-  /// Get all divisions regardless of organisation
-  Iterable<Organisation> get organisations => _aggregates.values.whereType<OrganisationModel>();
-
-  /// Get all divisions regardless of organisation
-  Iterable<Division> get divisions => _aggregates.values.whereType<DivisionModel>();
-
-  /// Get all departments regardless of organisation
-  Iterable<Department> get departments => _aggregates.values.whereType<DepartmentModel>();
-
-  /// Get all organisational entities
-  Iterable<Affiliation> get entities => find(types: [OrganisationModel, DivisionModel, DepartmentModel]);
-
-  /// Get all affiliated persons as [Affiliations]s
-  Iterable<Affiliation> get affiliates => _aggregates.values.whereType<AffiliationModel>().where(
-        (test) => test.isAffiliate,
-      );
-
-  /// Get all [person]s with an affiliation
-  Iterable<Person> get persons => affiliates.where((a) => _aggregates.containsKey(a.person?.uuid)).map(
-        (a) => _aggregates[a.person.uuid],
-      );
-
-  /// Test if given [uuid] is contained in any [Affiliation] in this [AffiliationQuery]
-  bool contains(String uuid) => _aggregates.containsKey(uuid);
-
-  /// Get [Affiliation] with child [Aggregate.uuid] as leaf
-  ///
-  /// It is guaranteed that only one affiliation contains
-  /// any given child as leaf.
-  ///
-  Affiliation elementAt(String uuid) {
-    if (!contains(uuid)) {
-      return null;
-    }
-    final child = _aggregates[uuid];
-    switch (child.runtimeType) {
-      case OrganisationModel:
-        return AffiliationModel(
-          org: AggregateRef.fromType<OrganisationModel>(uuid),
-        );
-      case DivisionModel:
-        return AffiliationModel(
-          org: AggregateRef.fromType<OrganisationModel>((child as Division).organisation.uuid),
-          div: AggregateRef.fromType<DivisionModel>(uuid),
-        );
-      case DepartmentModel:
-        return AffiliationModel(
-          org: AggregateRef.fromType<OrganisationModel>(
-            (_aggregates[(child as Department).division.uuid] as Division).organisation.uuid,
-          ),
-          div: AggregateRef.fromType<DivisionModel>((child as Department).division.uuid),
-          dep: AggregateRef.fromType<DepartmentModel>(uuid),
-        );
-      case PersonModel:
-        return _aggregates.values.whereType<Affiliation>().firstWhere(
-              (element) => element.person.uuid == child.uuid,
-              orElse: () => null,
-            );
-      case AffiliationModel:
-        return child;
-    }
-    throw UnimplementedError(
-      "Unexpected affiliation type: ${child.runtimeType}",
-    );
-  }
-
-  /// Find all [Affiliation] of type [T]
-  /// at any position in the affiliation tree
-  ///
-  Iterable<Affiliation> find<T extends Aggregate>({
-    String uuid,
-    List<Type> types,
-    bool Function(Aggregate aggregate) where,
-  }) {
-    switch (_toModelType(T)) {
-      // Search for parent types
-      case OrganisationModel:
-        if (uuid == null) {
-          return _findTyped<OrganisationModel>(where);
-        }
-        // Get affiliations for all divisions
-        // and departments in organisation
-        if (_accept<T>(uuid, where)) {
-          final child = (_aggregates[uuid] as Organisation);
-          final divisions = _findChildren<Division>(child.divisions, where);
-          return [
-            elementAt(uuid),
-            ...divisions.map((div) => elementAt(div.uuid)),
-            ...divisions.fold(
-                <Affiliation>[],
-                (found, div) => _findLeafs<Department>(
-                      div.departments,
-                      where,
-                    ))
-          ];
-        }
-        return [];
-      case DivisionModel:
-        if (uuid == null) {
-          return _findTyped<DivisionModel>(where);
-        }
-        // Get affiliations for all
-        // departments in division
-        if (_accept<T>(uuid, where)) {
-          final child = (_aggregates[uuid] as Division);
-          final departments = _findLeafs<Department>(child.departments, where);
-          return [
-            elementAt(uuid),
-            ...departments,
-          ];
-        }
-        return [];
-      // Search for leaf types
-      case DepartmentModel:
-        return uuid == null
-            ? // Match against all instances of given type
-            _findTyped<DepartmentModel>(where)
-            : // Match against given uuid
-            _accept<DepartmentModel>(uuid, where)
-                ? [elementAt(uuid)]
-                : [];
-      case AffiliationModel:
-        return uuid == null
-            ? // Match against all instances of given type
-            _findTyped<AffiliationModel>(where)
-            : // Match against given uuid
-            _accept<AffiliationModel>(uuid, where)
-                ? [elementAt(uuid)]
-                : [];
-      case PersonModel:
-        return uuid == null
-            ? // Match against all instances of given type
-            _findTyped<PersonModel>(where)
-            : // Match against given uuid
-            _accept<PersonModel>(uuid, where)
-                ? [elementAt(uuid)]
-                : [];
-      default:
-        return uuid == null
-            ? // Match against all instances of given type(s)
-            types?.isNotEmpty == true
-                ? _findTypes(_toModelTypes(types), where)
-                : _findAny(where)
-            : // Match against given uuid
-            _accept<T>(uuid, where, types: _toModelTypes(types))
-                ? [elementAt(uuid)]
-                : [];
-    }
-  }
-
-  Iterable<T> _findChildren<T extends Aggregate>(List<String> uuids, bool where(Aggregate aggregate)) => uuids
-      .map((uuid) => _aggregates[uuid] as T)
-      .where((aggregate) => aggregate != null && (where == null || where(aggregate)));
-
-  Iterable<Affiliation> _findLeafs<T extends Aggregate>(
-    List<String> uuids,
-    bool where(Aggregate aggregate), {
-    List<Type> types = const [],
-  }) =>
-      uuids
-          .where((uuid) => _aggregates.containsKey(uuid))
-          .map((uuid) => _aggregates[uuid])
-          .where((aggregate) => aggregate is T || isType(aggregate, types))
-          .where((aggregate) => where == null || where(aggregate))
-          .map((aggregate) => elementAt(aggregate.uuid));
-
-  List<Type> _toModelTypes(List<Type> types) => (types ?? []).map(_toModelType).toList();
-
-  Type _toModelType(Type type) {
-    switch (type) {
-      case Organisation:
-      case OrganisationModel:
-        return OrganisationModel;
-      case Division:
-      case DivisionModel:
-        return DivisionModel;
-      case Department:
-      case DepartmentModel:
-        return DepartmentModel;
-      case Affiliation:
-      case AffiliationModel:
-        return AffiliationModel;
-      case Person:
-      case PersonModel:
-        return PersonModel;
-      case Aggregate:
-        return type;
-      default:
-        throw ArgumentError('Type $type is not supported');
-    }
-  }
-
-  bool isType(Aggregate aggregate, List<Type> types) => types.contains(aggregate.runtimeType);
-
-  Iterable<Affiliation> _findAny(
-    bool where(Aggregate aggregate),
-  ) =>
-      _aggregates.values.where((aggregate) => where == null || where(aggregate)).fold(
-        <Affiliation>[],
-        (found, next) {
-          switch (next.runtimeType) {
-            case OrganisationModel:
-            case DivisionModel:
-            case DepartmentModel:
-            case AffiliationModel:
-            case PersonModel:
-              return List.from(found)
-                ..add(elementAt(
-                  next.uuid,
-                ));
-            default:
-              throw UnimplementedError(
-                "Unexpected affiliation type ${next.runtimeType}",
-              );
-          }
-        },
-      );
-
-  Iterable<Affiliation> _findTyped<T extends Aggregate>(
-    bool where(Aggregate aggregate),
-  ) =>
-      _aggregates.values.whereType<T>().fold(
-        <Affiliation>[],
-        (found, next) => List.from(found)
-          ..addAll(find<T>(
-            uuid: next.uuid,
-            where: where,
-          )),
-      );
-
-  Iterable<Affiliation> _findTypes(
-    List<Type> types,
-    bool where(Aggregate aggregate),
-  ) =>
-      _aggregates.values.where((aggregate) => isType(aggregate, types)).fold(
-        <Affiliation>[],
-        (found, next) => List.from(found)
-          ..addAll(find(
-            uuid: next.uuid,
-            where: where,
-            types: types,
-          )),
-      );
-
-  bool _accept<T>(
-    String uuid,
-    bool where(Aggregate aggregate), {
-    List<Type> types = const [],
-  }) {
-    final aggregate = _aggregates[uuid];
-    if (aggregate != null) {
-      final type = aggregate.runtimeType;
-      return (typeOf<T>() == type || types.contains(type)) && (where == null || where(_aggregates[uuid]));
-    }
-    return false;
-  }
-
-  /// Get filtered map of [Affiliation.uuid] to [Device] or
-  /// [Affiliation] tracked by aggregate of type [V]
-  ///
-  /// The 'only one active tracking for each source'
-  /// rule guarantees a one-to-one mapping.
-  ///
-  AffiliationQuery where({
-    String uuid,
-    bool Function(Aggregate aggregate) where,
-  }) =>
-      AffiliationQuery(
-        bloc,
-        aggregates: Map.from(_aggregates)
-          ..removeWhere(
-            (_, aggregate) => !(where == null || where(aggregate)),
-          ),
-      );
+class _NotifyBlocStateChanged<T> extends AffiliationCommand<AffiliationState<T>, T>
+    with NotifyBlocStateChangedMixin<AffiliationState<T>, T> {
+  _NotifyBlocStateChanged(AffiliationState state) : super(state);
 }

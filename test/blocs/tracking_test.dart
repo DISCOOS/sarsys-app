@@ -2389,7 +2389,7 @@ Future<void> expectLocalIsEmpty<T extends TrackingState>(BlocTestHarness harness
   );
 }
 
-Future<void> waitForEventMatching<T extends BlocEvent>(BaseBloc bloc, bool Function(T event) matches) {
+Future<void> waitForEventMatching<T extends BlocState>(BaseBloc bloc, bool Function(T event) matches) {
   return expectThroughLater(
       bloc,
       emits(

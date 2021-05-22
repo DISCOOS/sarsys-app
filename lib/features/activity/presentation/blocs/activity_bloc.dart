@@ -80,7 +80,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     }
   }
 
-  void _processConfig<T extends BlocEvent>(Bloc bloc, T event) async {
+  void _processConfig<T extends BlocState>(Bloc bloc, T event) async {
     if (event.data is AppConfig) {
       _config = event.data;
       final next = _toOptions(
@@ -329,7 +329,7 @@ class ConfigureLocationService extends ActivityCommand<LocationOptions, Location
 /// Normal States
 /// ---------------------
 
-abstract class ActivityState<T> extends BlocEvent<T> {
+abstract class ActivityState<T> extends BlocState<T> {
   ActivityState(
     T data, {
     StackTrace stackTrace,

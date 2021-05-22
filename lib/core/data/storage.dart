@@ -488,6 +488,9 @@ class StorageTransition<T> {
   final StorageState<T> from;
   final StorageState<T> to;
 
+  StorageStatus get status => to?.status;
+  StateVersion get version => to?.version;
+
   bool get isError => to?.isError ?? false;
   bool get isLocal => to?.isLocal ?? false;
   bool get isRemote => to?.isRemote ?? false;

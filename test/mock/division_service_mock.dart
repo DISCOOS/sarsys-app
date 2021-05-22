@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -85,6 +86,7 @@ class DivisionServiceMock extends Mock implements DivisionService {
   static DivisionService build({List<String> orguuids = const [], int divs = 1, int deps = 1}) {
     final DivisionServiceMock mock = DivisionServiceMock();
     final divRepo = mock.divRepo;
+    final StreamController<DivisionMessage> controller = StreamController.broadcast();
 
     orguuids.forEach((orguuid) {
       if (orguuid.startsWith('a:')) {
@@ -111,6 +113,10 @@ class DivisionServiceMock extends Mock implements DivisionService {
         body: divRepo.values.toList(),
       );
     });
+
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.create(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Division>;
       if (!state.version.isFirst) {
@@ -127,6 +133,7 @@ class DivisionServiceMock extends Mock implements DivisionService {
         body: divRepo[uuid],
       );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Division>;
       final uuid = next.value.uuid;
@@ -151,6 +158,7 @@ class DivisionServiceMock extends Mock implements DivisionService {
         message: "Division not found: $uuid",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Division>;
       final uuid = state.value.uuid;

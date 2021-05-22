@@ -142,7 +142,7 @@ class _OperationsPageState extends State<OperationsPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _group?.close();
-    _group = StreamGroup<BlocEvent>.broadcast()
+    _group = StreamGroup<BlocState>.broadcast()
       ..add(context.bloc<UserBloc>())
       ..add(context.bloc<UnitBloc>())
       ..add(context.bloc<OperationBloc>())

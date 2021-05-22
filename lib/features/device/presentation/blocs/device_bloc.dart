@@ -72,7 +72,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   StreamSubscription _locationChanged;
 
-  void _processActivityChange<T extends BlocEvent>(Bloc bloc, T event) {
+  void _processActivityChange<T extends BlocState>(Bloc bloc, T event) {
     if (event is ActivityProfileChanged) {
       final device = app;
       if (device != null && device.trackable != event.data.isTrackable) {
