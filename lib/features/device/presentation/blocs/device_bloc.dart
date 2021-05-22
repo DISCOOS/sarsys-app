@@ -18,6 +18,12 @@ import 'package:SarSys/features/activity/presentation/blocs/activity_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 
+import 'device_bloc_commands.dart';
+import 'device_bloc_states.dart';
+
+export 'device_bloc_commands.dart';
+export 'device_bloc_states.dart';
+
 typedef void DeviceCallback(VoidCallback fn);
 
 class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocError, String, Device, DeviceService>
@@ -42,7 +48,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
     // Notify when device state has changed
     forward(
-      (t) => _NotifyDeviceStateChanged(t),
+      (t) => _NotifyRepositoryStateChanged(t),
     );
 
     // Toggle device trackability
@@ -256,9 +262,9 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       yield* _delete(command);
     } else if (command is UnloadDevices) {
       yield await _unload(command);
-    } else if (command is _NotifyDeviceStateChanged) {
-      yield await _notify(command);
-    } else if (command is _NotifyBlocStateChange) {
+    } else if (command is _NotifyRepositoryStateChanged) {
+      yield _notify(command);
+    } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -301,7 +307,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         repo.keys,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<List<String>>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -338,7 +344,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         device,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Device>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -365,7 +371,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         previous,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Device>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -390,7 +396,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         device,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Device>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -399,42 +405,42 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     );
   }
 
-  Future<DeviceState> _notify(_NotifyDeviceStateChanged command) async {
-    _assertData(command.device);
-    final device = command.device;
-
-    if (command.isCreated) {
-      return toOK(
-        command,
-        DeviceCreated(
-          device,
-          isRemote: command.isRemote,
-        ),
-        result: device,
-      );
+  DeviceState _notify(_NotifyRepositoryStateChanged command) {
+    final state = command.state;
+    switch (command.status) {
+      case StorageStatus.created:
+        return toOK(
+          command,
+          DeviceCreated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.updated:
+        return toOK(
+          command,
+          DeviceUpdated(
+            state,
+            command.previous,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.deleted:
+        return toOK(
+          command,
+          DeviceDeleted(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
     }
-
-    if (command.isUpdated) {
-      return toOK(
-        command,
-        DeviceUpdated(
-          device,
-          command.previous,
-          isRemote: command.isRemote,
-        ),
-        result: device,
-      );
-    }
-
-    assert(command.isDeleted);
-
-    return toOK(
+    return toError(
       command,
-      DeviceDeleted(
-        device,
-        isRemote: command.isRemote,
-      ),
-      result: device,
+      'Unknown state status ${command.status}',
+      stackTrace: StackTrace.current,
     );
   }
 
@@ -455,194 +461,15 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 }
 
 /// ---------------------
-/// Commands
-/// ---------------------
-abstract class DeviceCommand<S, T> extends BlocCommand<S, T> {
-  DeviceCommand(S data, [props = const []]) : super(data, props);
-}
-
-class LoadDevices extends DeviceCommand<void, Iterable<Device>> {
-  LoadDevices() : super(null);
-
-  @override
-  String toString() => '$runtimeType {}';
-}
-
-class CreateDevice extends DeviceCommand<Device, Device> {
-  CreateDevice(Device data) : super(data);
-
-  @override
-  String toString() => '$runtimeType {device: $data}';
-}
-
-class UpdateDevice extends DeviceCommand<Device, Device> {
-  UpdateDevice(Device data) : super(data);
-
-  @override
-  String toString() => '$runtimeType {device: $data}';
-}
-
-class DeleteDevice extends DeviceCommand<Device, Device> {
-  DeleteDevice(Device data) : super(data);
-
-  @override
-  String toString() => '$runtimeType {device: $data}';
-}
-
-class UnloadDevices extends DeviceCommand<void, Iterable<Device>> {
-  UnloadDevices() : super(null);
-
-  @override
-  String toString() => '$runtimeType {}';
-}
-
-class _NotifyDeviceStateChanged extends DeviceCommand<StorageTransition<Device>, Device> {
-  _NotifyDeviceStateChanged(
-    StorageTransition<Device> transition,
-  ) : super(transition);
-
-  Device get device => data.to.value;
-  Device get previous => data.from?.value;
-
-  bool get isCreated => data.isCreated;
-  bool get isUpdated => data.isChanged;
-  bool get isDeleted => data.isDeleted;
-
-  bool get isRemote => data.to?.isRemote == true;
-
-  @override
-  String toString() => '$runtimeType {previous: $data, next: $data}';
-}
-
-class _NotifyBlocStateChange extends DeviceCommand<DeviceState, Device> {
-  _NotifyBlocStateChange(
-    DeviceState state,
-  ) : super(state);
-
-  @override
-  String toString() => '$runtimeType {state: $data}';
-}
-
-/// ---------------------
-/// Normal States
-/// ---------------------
-abstract class DeviceState<T> extends PushableBlocEvent<T> {
-  DeviceState(
-    T data, {
-    StackTrace stackTrace,
-    props = const [],
-    bool isRemote = false,
-  }) : super(
-          data,
-          props: [...props, isRemote],
-          stackTrace: stackTrace,
-          isRemote: isRemote,
-        );
-
-  bool isError() => this is DeviceBlocError;
-  bool isEmpty() => this is DevicesEmpty;
-  bool isLoaded() => this is DevicesLoaded;
-  bool isCreated() => this is DeviceCreated;
-  bool isUpdated() => this is DeviceUpdated;
-  bool isDeleted() => this is DeviceDeleted;
-  bool isUnloaded() => this is DevicesUnloaded;
-
-  bool isAvailable() => (data is Device) ? (data as Device).status == DeviceStatus.available : false;
-  bool isUnavailable() => (data is Device) ? (data as Device).status == DeviceStatus.unavailable : false;
-
-  bool isStatusChanged() => false;
-  bool isLocationChanged() => false;
-}
-
-class DevicesEmpty extends DeviceState<Null> {
-  DevicesEmpty() : super(null);
-
-  @override
-  String toString() => '$runtimeType';
-}
-
-class DevicesLoaded extends DeviceState<List<String>> {
-  DevicesLoaded(
-    List<String> data, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {devices: $data, isRemote: $isRemote}';
-}
-
-class DeviceCreated extends DeviceState<Device> {
-  DeviceCreated(
-    Device device, {
-    bool isRemote = false,
-  }) : super(device, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {device: $data, isRemote: $isRemote}';
-}
-
-class DeviceUpdated extends DeviceState<Device> {
-  DeviceUpdated(
-    Device device,
-    this.previous, {
-    bool isRemote = false,
-  }) : super(
-          device,
-          props: [previous],
-          isRemote: isRemote,
-        );
-  final Device previous;
-
-  bool isChanged() => data != previous;
-  bool isStatusChanged() => data.status != previous?.status;
-  bool isLocationChanged() => data.position != previous?.position;
-
-  @override
-  String toString() => '$runtimeType {device: $data, previous: $previous, isRemote: $isRemote}';
-}
-
-class DeviceDeleted extends DeviceState<Device> {
-  DeviceDeleted(
-    Device device, {
-    bool isRemote = false,
-  }) : super(device, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {device: $data, isRemote: $isRemote}';
-}
-
-class DevicesUnloaded extends DeviceState<Iterable<Device>> {
-  DevicesUnloaded(Iterable<Device> devices) : super(devices);
-
-  @override
-  String toString() => '$runtimeType {devices: $data}';
-}
-
-/// ---------------------
-/// Error states
+/// Internal commands
 /// ---------------------
 
-class DeviceBlocError extends DeviceState<Object> {
-  DeviceBlocError(
-    Object error, {
-    StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
-
-  @override
-  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
+class _NotifyRepositoryStateChanged extends DeviceCommand<StorageTransition<Device>, Device>
+    with NotifyRepositoryStateChangedMixin {
+  _NotifyRepositoryStateChanged(StorageTransition<Device> transition) : super(transition);
 }
 
-/// ---------------------
-/// Exceptions
-/// ---------------------
-
-class DeviceBlocException implements Exception {
-  DeviceBlocException(this.error, this.state, {this.command, this.stackTrace});
-  final Object error;
-  final Object command;
-  final DeviceState state;
-  final StackTrace stackTrace;
-
-  @override
-  String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';
+class _NotifyBlocStateChanged<T> extends DeviceCommand<DeviceState<T>, T>
+    with NotifyBlocStateChangedMixin<DeviceState<T>, T> {
+  _NotifyBlocStateChanged(DeviceState state) : super(state);
 }

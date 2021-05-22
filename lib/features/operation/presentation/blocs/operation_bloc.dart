@@ -15,6 +15,12 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
+import 'operation_commands.dart';
+import 'operation_states.dart';
+
+export 'operation_commands.dart';
+export 'operation_states.dart';
+
 class OperationBloc
     extends StatefulBloc<OperationCommand, OperationState, OperationBlocError, String, Operation, OperationService>
     with
@@ -266,7 +272,7 @@ class OperationBloc
     } else if (command is UnselectOperation) {
       yield await _unselect(command);
     } else if (command is _NotifyRepositoryStateChanged) {
-      yield await _notify(command);
+      yield _notify(command);
     } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
@@ -603,42 +609,44 @@ class OperationBloc
   }
 
   OperationState _notifyOperationChanged(_NotifyRepositoryStateChanged command, state) {
-    if (command.isCreated) {
-      return toOK(
-        command,
-        OperationCreated(
-          state,
-          selected: selected != null,
-          isRemote: command.isRemote,
-          incident: selected != null ? incidents[selected.incident?.uuid] : null,
-        ),
-        result: state,
-      );
+    switch (command.status) {
+      case StorageStatus.created:
+        return toOK(
+          command,
+          OperationCreated(
+            state,
+            selected: selected != null,
+            isRemote: command.isRemote,
+            incident: selected != null ? incidents[selected.incident?.uuid] : null,
+          ),
+          result: state,
+        );
+      case StorageStatus.updated:
+        return toOK(
+          command,
+          OperationUpdated(
+            state,
+            command.previous,
+            selected: selected != null,
+            isRemote: command.isRemote,
+            incident: selected != null ? incidents[selected.incident?.uuid] : null,
+          ),
+          result: state,
+        );
+      case StorageStatus.deleted:
+        return toOK(
+          command,
+          OperationDeleted(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
     }
-
-    if (command.isUpdated) {
-      return toOK(
-        command,
-        OperationUpdated(
-          state,
-          command.previous,
-          selected: selected != null,
-          isRemote: command.isRemote,
-          incident: selected != null ? incidents[selected.incident?.uuid] : null,
-        ),
-        result: state,
-      );
-    }
-
-    assert(command.isDeleted);
-
-    return toOK(
+    return toError(
       command,
-      OperationDeleted(
-        state,
-        isRemote: command.isRemote,
-      ),
-      result: state,
+      'Unknown state status ${command.status}',
+      stackTrace: StackTrace.current,
     );
   }
 
@@ -650,319 +658,15 @@ class OperationBloc
 }
 
 /// ---------------------
-/// Commands
+/// Internal commands
 /// ---------------------
-abstract class OperationCommand<S, T> extends BlocCommand<S, T> {
-  OperationCommand(
-    S data, {
-    props = const [],
-  }) : super(data, props);
+
+class _NotifyRepositoryStateChanged<T> extends OperationCommand<StorageTransition<T>, T>
+    with NotifyRepositoryStateChangedMixin {
+  _NotifyRepositoryStateChanged(StorageTransition<T> transition) : super(transition);
 }
 
-class LoadOperations extends OperationCommand<void, List<Operation>> {
-  LoadOperations() : super(null);
-
-  @override
-  String toString() => '$runtimeType {}';
-}
-
-class CreateOperation extends OperationCommand<Operation, Operation> {
-  final bool selected;
-  final List<String> units;
-  final Incident incident;
-  CreateOperation(
-    Operation operation, {
-    this.selected = true,
-    this.units,
-    this.incident,
-  }) : super(operation, props: [selected, incident, units]);
-
-  @override
-  String toString() => '$runtimeType {data: $data, selected: $selected, incident: $incident, units: $units}';
-}
-
-class UpdateOperation extends OperationCommand<Operation, Operation> {
-  final bool selected;
-  final Incident incident;
-  UpdateOperation(
-    Operation operation, {
-    this.selected = true,
-    this.incident,
-  }) : super(operation, props: [selected, incident]);
-
-  @override
-  String toString() => '$runtimeType {data: $data, selected: $selected, incident: $incident}';
-}
-
-class SelectOperation extends OperationCommand<String, Operation> {
-  SelectOperation(String uuid) : super(uuid);
-
-  @override
-  String toString() => '$runtimeType {data: $data}';
-}
-
-class UnselectOperation extends OperationCommand<void, Operation> {
-  UnselectOperation() : super(null);
-
-  @override
-  String toString() => '$runtimeType';
-}
-
-class DeleteOperation extends OperationCommand<String, Operation> {
-  DeleteOperation(String uuid) : super(uuid);
-
-  @override
-  String toString() => '$runtimeType {data: $data}';
-}
-
-class UnloadOperations extends OperationCommand<void, List<Operation>> {
-  UnloadOperations() : super(null);
-
-  @override
-  String toString() => '$runtimeType {}';
-}
-
-class _NotifyRepositoryStateChanged<T> extends OperationCommand<StorageTransition<T>, T> {
-  _NotifyRepositoryStateChanged(
-    StorageTransition<T> transition,
-  ) : super(transition);
-
-  Type get type => typeOf<T>();
-
-  T get state => data.to.value;
-  T get previous => data.from?.value;
-
-  bool get isCreated => data.isCreated;
-  bool get isUpdated => data.isChanged;
-  bool get isDeleted => data.isDeleted;
-
-  bool get isRemote => data.to?.isRemote == true;
-
-  @override
-  String toString() => '$runtimeType {previous: $data, next: $data}';
-}
-
-class _NotifyBlocStateChanged extends OperationCommand<OperationState, Operation> {
-  _NotifyBlocStateChanged(
-    OperationState state,
-  ) : super(state);
-
-  @override
-  String toString() => '$runtimeType {state: $data}';
-}
-
-/// ---------------------
-/// Normal States
-/// ---------------------
-abstract class OperationState<T> extends PushableBlocEvent<T> {
-  OperationState(
-    T data, {
-    props = const [],
-    StackTrace stackTrace,
-    bool isRemote = false,
-  }) : super(
-          data,
-          isRemote: isRemote,
-          stackTrace: stackTrace,
-        );
-
-  bool isEmpty() => this is OperationsEmpty;
-  bool isLoaded() => this is OperationsLoaded;
-  bool isCreated() => this is OperationCreated;
-  bool isUpdated() => this is OperationUpdated;
-  bool isDeleted() => this is OperationDeleted;
-  bool isError() => this is OperationBlocError;
-  bool isUnselected() => this is OperationUnselected;
-  bool isSelected() => this is OperationSelected;
-
-  /// Check if data referencing [Operation.uuid] should be loaded
-  /// This method will return true if
-  /// 1. Operation was selected
-  /// 2. Operation was a status that should load data
-  /// 3. [Operation.uuid] in [OperationState.data] is equal to [ouuid] given
-  bool shouldLoad(String ouuid,
-          {List<OperationStatus> include: const [
-            OperationStatus.completed,
-          ]}) =>
-      isSelected() &&
-      (data as Operation).uuid != ouuid &&
-      !include.contains(
-        (data as Operation).status,
-      );
-
-  /// Check if data referencing [Operation.uuid] should be unloaded
-  /// This method will return true if
-  /// 1. Operation was unselected
-  /// 2. Operation was changed to a status that should unload data
-  /// 3. [Operation.uuid] in [OperationState.data] is equal to [ouuid] given
-  bool shouldUnload(String ouuid,
-          {List<OperationStatus> include: const [
-            OperationStatus.completed,
-          ]}) =>
-      isEmpty() ||
-      isUnselected() ||
-      (isUpdated() && (data as Operation).uuid == ouuid) &&
-          include.contains(
-            (data as Operation).status,
-          );
-}
-
-class OperationsEmpty extends OperationState<void> {
-  OperationsEmpty() : super(null);
-
-  @override
-  String toString() => '$runtimeType';
-}
-
-class OperationUnselected extends OperationState<Operation> {
-  OperationUnselected([Operation operation]) : super(operation);
-
-  @override
-  String toString() => '$runtimeType {operation: $data}';
-}
-
-class OperationsLoaded extends OperationState<Iterable<String>> {
-  OperationsLoaded(
-    Iterable<String> data, {
-    this.incidents,
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote, props: [incidents]);
-
-  final List<String> incidents;
-
-  @override
-  String toString() => '$runtimeType {'
-      'operations: $data, '
-      'isRemote: $isRemote, '
-      'incidents: $incidents, '
-      '}';
-}
-
-class OperationCreated extends OperationState<Operation> {
-  final bool selected;
-  final Incident incident;
-  final List<String> units;
-  OperationCreated(
-    Operation data, {
-    this.units,
-    this.incident,
-    this.selected = true,
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote, props: [selected, incident, units]);
-
-  @override
-  String toString() => '$runtimeType '
-      '{operation: $data, '
-      'selected: $selected, '
-      'units: $units, '
-      'isRemote: $isRemote'
-      '}';
-}
-
-class OperationIncidentUpdated extends OperationState<Incident> {
-  final Incident previous;
-  final Operation operation;
-  OperationIncidentUpdated(
-    Incident next,
-    this.previous,
-    this.operation, {
-    bool isRemote = false,
-  }) : super(next, isRemote: isRemote, props: [
-          operation,
-          previous,
-        ]);
-
-  @override
-  String toString() => '$runtimeType {'
-      'operation: $operation, '
-      'incident: $data, '
-      'isRemote: $isRemote'
-      'previous: $previous'
-      '}';
-}
-
-class OperationUpdated extends OperationState<Operation> {
-  final bool selected;
-  final Incident incident;
-  final Operation previous;
-  OperationUpdated(
-    Operation next,
-    this.previous, {
-    this.incident,
-    this.selected = true,
-    bool isRemote = false,
-  }) : super(next, isRemote: isRemote, props: [
-          incident,
-          selected,
-          previous,
-        ]);
-
-  @override
-  String toString() => '$runtimeType {'
-      'operation: $data, '
-      'selected: $selected, '
-      'incident: $incident, '
-      'isRemote: $isRemote'
-      'previous: $previous'
-      '}';
-}
-
-class OperationSelected extends OperationState<Operation> {
-  OperationSelected(Operation data) : super(data);
-
-  @override
-  String toString() => '$runtimeType {operation: $data}';
-}
-
-class OperationDeleted extends OperationState<Operation> {
-  OperationDeleted(
-    Operation data, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {operation: $data, isRemote: $isRemote}';
-}
-
-class OperationsUnloaded extends OperationState<Iterable<Operation>> {
-  OperationsUnloaded(Iterable<Operation> operations) : super(operations);
-
-  @override
-  String toString() => '$runtimeType {operations: $data}';
-}
-
-/// ---------------------
-/// Error States
-/// ---------------------
-class OperationBlocError extends OperationState<Object> {
-  OperationBlocError(
-    Object error, {
-    StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
-
-  @override
-  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
-}
-
-/// ---------------------
-/// Exceptions
-/// ---------------------
-class OperationBlocException implements Exception {
-  OperationBlocException(this.error, this.state, {this.command, this.stackTrace});
-  final Object error;
-  final OperationState state;
-  final StackTrace stackTrace;
-  final OperationCommand command;
-
-  @override
-  String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
-}
-
-class OperationNotFoundBlocException extends OperationBlocException {
-  OperationNotFoundBlocException(
-    String ouuid,
-    OperationState state, {
-    OperationCommand command,
-    StackTrace stackTrace,
-  }) : super('Operation $ouuid not found locally', state, command: command, stackTrace: stackTrace);
+class _NotifyBlocStateChanged<T> extends OperationCommand<OperationState<T>, T>
+    with NotifyBlocStateChangedMixin<OperationState<T>, T> {
+  _NotifyBlocStateChanged(OperationState state) : super(state);
 }

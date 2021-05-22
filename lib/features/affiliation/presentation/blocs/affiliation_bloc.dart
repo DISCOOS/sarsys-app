@@ -662,7 +662,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     } else if (command is UnloadAffiliations) {
       yield* _unload(command);
     } else if (command is _NotifyRepositoryStateChanged) {
-      yield await _notify(command);
+      yield _notify(command);
     } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
@@ -926,17 +926,15 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   AffiliationState _notify(_NotifyRepositoryStateChanged command) {
-    final state = command.state;
-
     switch (command.type) {
       case Affiliation:
-        return _notifyAffiliationChanged(command, state);
+        return _notifyAffiliationChanged(command);
       case Organisation:
-        return _notifyOrganisationChanged(command, state);
+        return _notifyOrganisationChanged(command);
       case Division:
-        return _notifyDivisionChanged(command, state);
+        return _notifyDivisionChanged(command);
       case Department:
-        return _notifyDepartmentChanged(command, state);
+        return _notifyDepartmentChanged(command);
       case Person:
         final person = command.state as Person;
         return toOK(
@@ -947,16 +945,18 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
             findAffiliates(person).toList(),
             isRemote: command.isRemote,
           ),
-          result: state,
+          result: person,
         );
     }
-    return AffiliationBlocError(
-      'Unknown state type ${command.type}',
+    return toError(
+      command,
+      'Unknown state status ${command.status}',
       stackTrace: StackTrace.current,
     );
   }
 
-  AffiliationState _notifyAffiliationChanged(_NotifyRepositoryStateChanged command, state) {
+  AffiliationState _notifyAffiliationChanged(_NotifyRepositoryStateChanged command) {
+    final state = command.state as Affiliation;
     switch (command.status) {
       case StorageStatus.created:
         return toOK(
@@ -987,13 +987,15 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           result: state,
         );
     }
-    return AffiliationBlocError(
+    return toError(
+      command,
       'Unknown state status ${command.status}',
       stackTrace: StackTrace.current,
     );
   }
 
-  AffiliationState _notifyOrganisationChanged(_NotifyRepositoryStateChanged command, state) {
+  AffiliationState _notifyOrganisationChanged(_NotifyRepositoryStateChanged command) {
+    final state = command.state as Organisation;
     switch (command.status) {
       case StorageStatus.created:
         return toOK(
@@ -1023,13 +1025,16 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           result: state,
         );
     }
-    return AffiliationBlocError(
+    return toError(
+      command,
       'Unknown state status ${command.status}',
       stackTrace: StackTrace.current,
     );
   }
 
-  AffiliationState _notifyDivisionChanged(_NotifyRepositoryStateChanged command, state) {
+  AffiliationState _notifyDivisionChanged(_NotifyRepositoryStateChanged command) {
+    final state = command.state as Division;
+
     switch (command.status) {
       case StorageStatus.created:
         return toOK(
@@ -1059,13 +1064,15 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           result: state,
         );
     }
-    return AffiliationBlocError(
+    return toError(
+      command,
       'Unknown state status ${command.status}',
       stackTrace: StackTrace.current,
     );
   }
 
-  AffiliationState _notifyDepartmentChanged(_NotifyRepositoryStateChanged command, state) {
+  AffiliationState _notifyDepartmentChanged(_NotifyRepositoryStateChanged command) {
+    final state = command.state as Department;
     switch (command.status) {
       case StorageStatus.created:
         return toOK(
@@ -1095,7 +1102,8 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           result: state,
         );
     }
-    return AffiliationBlocError(
+    return toError(
+      command,
       'Unknown state status ${command.status}',
       stackTrace: StackTrace.current,
     );

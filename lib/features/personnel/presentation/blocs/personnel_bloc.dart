@@ -19,7 +19,12 @@ import 'package:SarSys/features/personnel/domain/repositories/personnel_reposito
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
-import 'package:SarSys/features/user/domain/entities/User.dart';
+
+import 'personnel_bloc_commands.dart';
+import 'personnel_bloc_states.dart';
+
+export 'personnel_bloc_commands.dart';
+export 'personnel_bloc_states.dart';
 
 typedef void PersonnelCallback(VoidCallback fn);
 
@@ -53,7 +58,7 @@ class PersonnelBloc
 
     // Notify when personnel state has changed
     forward(
-      (t) => _NotifyPersonnelStateChanged(t),
+      (t) => _NotifyRepositoryStateChanged(t),
     );
   }
 
@@ -304,9 +309,9 @@ class PersonnelBloc
       yield* _delete(command);
     } else if (command is UnloadPersonnels) {
       yield await _unload(command);
-    } else if (command is _NotifyPersonnelStateChanged) {
-      yield await _notify(command);
-    } else if (command is _NotifyBlocStateChange) {
+    } else if (command is _NotifyRepositoryStateChanged) {
+      yield _notify(command);
+    } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -345,7 +350,7 @@ class PersonnelBloc
           isRemote: true,
         );
       },
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<List<String>>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -449,7 +454,7 @@ class PersonnelBloc
           state.isRemote,
         );
       },
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Personnel>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -493,7 +498,7 @@ class PersonnelBloc
         previous,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Personnel>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -522,7 +527,7 @@ class PersonnelBloc
         personnel,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Personnel>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -540,41 +545,43 @@ class PersonnelBloc
     );
   }
 
-  Future<PersonnelState> _notify(_NotifyPersonnelStateChanged command) async {
-    final personnel = command.personnel;
+  PersonnelState _notify(_NotifyRepositoryStateChanged command) {
+    final state = command.state;
 
-    if (command.isCreated) {
-      return toOK(
-        command,
-        PersonnelCreated(
-          personnel,
-          isRemote: command.isRemote,
-        ),
-        result: personnel,
-      );
+    switch (command.status) {
+      case StorageStatus.created:
+        return toOK(
+          command,
+          PersonnelCreated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.updated:
+        return toOK(
+          command,
+          PersonnelUpdated(
+            state,
+            command.previous,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.deleted:
+        return toOK(
+          command,
+          PersonnelDeleted(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
     }
-
-    if (command.isUpdated) {
-      return toOK(
-        command,
-        PersonnelUpdated(
-          personnel,
-          command.previous,
-          isRemote: command.isRemote,
-        ),
-        result: personnel,
-      );
-    }
-
-    assert(command.isDeleted);
-
-    return toOK(
+    return toError(
       command,
-      PersonnelDeleted(
-        personnel,
-        isRemote: command.isRemote,
-      ),
-      result: personnel,
+      'Unknown state status ${command.status}',
+      stackTrace: StackTrace.current,
     );
   }
 
@@ -591,232 +598,15 @@ class PersonnelBloc
 }
 
 /// ---------------------
-/// Commands
-/// ---------------------
-abstract class PersonnelCommand<S, T> extends BlocCommand<S, T> {
-  PersonnelCommand(
-    S data, {
-    props = const [],
-    Completer<T> callback,
-  }) : super(data, props, callback);
-}
-
-class LoadPersonnels extends PersonnelCommand<String, List<Personnel>> {
-  LoadPersonnels(String ouuid) : super(ouuid);
-
-  @override
-  String toString() => '$runtimeType {ouuid: $data}';
-}
-
-class MobilizeUser extends PersonnelCommand<String, Personnel> {
-  MobilizeUser(String ouuid, this.user) : super(ouuid);
-  final User user;
-
-  @override
-  String toString() => '$runtimeType {ouuid: $data, user: $user}';
-}
-
-class CreatePersonnel extends PersonnelCommand<Personnel, Personnel> {
-  CreatePersonnel(
-    this.ouuid,
-    Personnel data, {
-    Completer<Personnel> callback,
-  }) : super(data, callback: callback);
-
-  final String ouuid;
-
-  @override
-  String toString() => '$runtimeType {ouuid: $ouuid, personnel: $data}';
-}
-
-class UpdatePersonnel extends PersonnelCommand<Personnel, Personnel> {
-  UpdatePersonnel(
-    Personnel data, {
-    Completer<Personnel> callback,
-  }) : super(data, callback: callback);
-
-  @override
-  String toString() => '$runtimeType {personnel: $data}';
-}
-
-class DeletePersonnel extends PersonnelCommand<Personnel, Personnel> {
-  DeletePersonnel(Personnel data) : super(data);
-
-  @override
-  String toString() => '$runtimeType {personnel: $data}';
-}
-
-class _NotifyPersonnelStateChanged extends PersonnelCommand<StorageTransition<Personnel>, Personnel> {
-  _NotifyPersonnelStateChanged(
-    StorageTransition<Personnel> transition,
-  ) : super(transition);
-
-  Personnel get personnel => data.to.value;
-  Personnel get previous => data.from?.value;
-
-  bool get isCreated => data.isCreated;
-  bool get isUpdated => data.isChanged;
-  bool get isDeleted => data.isDeleted;
-
-  bool get isRemote => data.to?.isRemote == true;
-
-  @override
-  String toString() => '$runtimeType {previous: $data, next: $data}';
-}
-
-class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
-  UnloadPersonnels(String ouuid) : super(ouuid);
-
-  @override
-  String toString() => '$runtimeType {ouuid: $data}';
-}
-
-class _NotifyBlocStateChange extends PersonnelCommand<PersonnelState, Personnel> {
-  _NotifyBlocStateChange(
-    PersonnelState state,
-  ) : super(state);
-
-  @override
-  String toString() => '$runtimeType {state: $data}';
-}
-
-/// ---------------------
-/// Normal States
+/// Internal commands
 /// ---------------------
 
-abstract class PersonnelState<T> extends PushableBlocEvent<T> {
-  PersonnelState(
-    T data, {
-    StackTrace stackTrace,
-    props = const [],
-    bool isRemote = false,
-  }) : super(
-          data,
-          isRemote: isRemote,
-          stackTrace: stackTrace,
-        );
-
-  bool isError() => this is PersonnelBlocError;
-  bool isEmpty() => this is PersonnelsEmpty;
-  bool isLoaded() => this is PersonnelsLoaded;
-  bool isCreated() => this is PersonnelCreated;
-  bool isUpdated() => this is PersonnelUpdated;
-  bool isDeleted() => this is PersonnelDeleted;
-  bool isUserMobilized() => this is UserMobilized;
-  bool isUnloaded() => this is PersonnelsUnloaded;
-
-  bool isStatusChanged() => false;
-  bool isMobilized() => (data is Personnel) ? (data as Personnel).isMobilized : false;
-  bool isTracked() => (data is Personnel) ? (data as Personnel).tracking?.uuid != null : false;
-  bool isRetired() => (data is Personnel) ? (data as Personnel).status == PersonnelStatus.retired : false;
+class _NotifyRepositoryStateChanged extends PersonnelCommand<StorageTransition<Personnel>, Personnel>
+    with NotifyRepositoryStateChangedMixin {
+  _NotifyRepositoryStateChanged(StorageTransition<Personnel> transition) : super(transition);
 }
 
-class PersonnelsEmpty extends PersonnelState<Null> {
-  PersonnelsEmpty() : super(null);
-
-  @override
-  String toString() => '$runtimeType';
-}
-
-class PersonnelsLoaded extends PersonnelState<List<String>> {
-  PersonnelsLoaded(
-    List<String> data, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {personnels: $data, isRemote: $isRemote}';
-}
-
-class PersonnelCreated extends PersonnelState<Personnel> {
-  PersonnelCreated(
-    Personnel data, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote);
-
-  @override
-  bool isTracked() => data.tracking?.uuid != null;
-
-  @override
-  String toString() => '$runtimeType {personnel: $data, isRemote: $isRemote}';
-}
-
-class UserMobilized extends PersonnelCreated {
-  UserMobilized(
-    this.user,
-    Personnel data, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote);
-
-  final User user;
-
-  @override
-  bool isTracked() => data.tracking?.uuid != null;
-
-  @override
-  String toString() => '$runtimeType {personnel: $data, user: $user, isRemote: $isRemote}';
-}
-
-class PersonnelUpdated extends PersonnelState<Personnel> {
-  final Personnel previous;
-  PersonnelUpdated(
-    Personnel data,
-    this.previous, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote, props: [previous]);
-
-  @override
-  bool isTracked() => data.tracking?.uuid != null;
-
-  @override
-  bool isStatusChanged() => data.status != previous.status;
-
-  @override
-  String toString() => '$runtimeType {data: $data, previous: $previous, isRemote: $isRemote}';
-}
-
-class PersonnelDeleted extends PersonnelState<Personnel> {
-  PersonnelDeleted(
-    Personnel data, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
-}
-
-class PersonnelsUnloaded extends PersonnelState<List<Personnel>> {
-  PersonnelsUnloaded(List<Personnel> personnel) : super(personnel);
-
-  @override
-  String toString() => '$runtimeType {data: $data}';
-}
-
-/// ---------------------
-/// Error States
-/// ---------------------
-
-class PersonnelBlocError extends PersonnelState<Object> {
-  PersonnelBlocError(
-    Object error, {
-    StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
-
-  @override
-  String toString() => '$runtimeType {data: $data, stackTrace: $stackTrace}';
-}
-
-/// ---------------------
-/// Exceptions
-/// ---------------------
-
-class PersonnelBlocException implements Exception {
-  PersonnelBlocException(this.error, this.state, {this.command, this.stackTrace});
-  final Object error;
-  final PersonnelState state;
-  final StackTrace stackTrace;
-  final Object command;
-
-  @override
-  String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';
+class _NotifyBlocStateChanged<T> extends PersonnelCommand<PersonnelState<T>, T>
+    with NotifyBlocStateChangedMixin<PersonnelState<T>, T> {
+  _NotifyBlocStateChanged(PersonnelState state) : super(state);
 }

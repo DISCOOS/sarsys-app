@@ -16,13 +16,19 @@ import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
-import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
+import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart' as action;
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:bloc/bloc.dart';
 
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';
+
+import 'unit_bloc_commands.dart';
+import 'unit_bloc_states.dart';
+
+export 'unit_bloc_commands.dart';
+export 'unit_bloc_states.dart';
 
 typedef void UnitCallback(VoidCallback fn);
 
@@ -56,7 +62,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
 
     // Notify when device state has changed
     forward(
-      (t) => _NotifyUnitStateChanged(t),
+      (t) => _NotifyRepositoryStateChanged(t),
     );
   }
 
@@ -77,7 +83,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
         ));
         // Could change during load
         if ((bloc as OperationBloc).isSelected && (state is OperationCreated && state.units.isNotEmpty)) {
-          createUnits(
+          action.createUnits(
             bloc: this,
             templates: state.units,
           );
@@ -106,7 +112,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     }
   }
 
-  /// Create [_NotifyUnitStateChanged] for processing [UnitMessageType.UnitInformationUpdated]
+  /// Create [_NotifyRepositoryStateChanged] for processing [UnitMessageType.UnitInformationUpdated]
   _HandleMessage _toAprioriChange(Unit unit) => _HandleMessage(
         UnitMessage.updated(unit),
       );
@@ -299,9 +305,9 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
       yield await _unload(command);
     } else if (command is _HandleMessage) {
       yield await _process(command);
-    } else if (command is _NotifyUnitStateChanged) {
-      yield await _notify(command);
-    } else if (command is _NotifyBlockStateChange) {
+    } else if (command is _NotifyRepositoryStateChanged) {
+      yield _notify(command);
+    } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -329,7 +335,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
         repo.keys,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlockStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<List<String>>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -358,7 +364,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
         units[unit.uuid],
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlockStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -386,7 +392,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
         previous,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlockStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -415,7 +421,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
         unit,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlockStateChange(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -464,42 +470,44 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     return state;
   }
 
-  Future<UnitState> _notify(_NotifyUnitStateChanged command) async {
-    _assertData(command.unit);
-    final device = command.unit;
+  UnitState _notify(_NotifyRepositoryStateChanged command) {
+    final state = command.state;
 
-    if (command.isCreated) {
-      return toOK(
-        command,
-        UnitCreated(
-          device,
-          isRemote: command.isRemote,
-        ),
-        result: device,
-      );
+    switch (command.status) {
+      case StorageStatus.created:
+        return toOK(
+          command,
+          UnitCreated(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+
+      case StorageStatus.updated:
+        return toOK(
+          command,
+          UnitUpdated(
+            state,
+            command.previous,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
+      case StorageStatus.deleted:
+        return toOK(
+          command,
+          UnitDeleted(
+            state,
+            isRemote: command.isRemote,
+          ),
+          result: state,
+        );
     }
-
-    if (command.isUpdated) {
-      return toOK(
-        command,
-        UnitUpdated(
-          device,
-          command.previous,
-          isRemote: command.isRemote,
-        ),
-        result: device,
-      );
-    }
-
-    assert(command.isDeleted);
-
-    return toOK(
+    return toError(
       command,
-      UnitDeleted(
-        device,
-        isRemote: command.isRemote,
-      ),
-      result: device,
+      'Unknown state status ${command.status}',
+      stackTrace: StackTrace.current,
     );
   }
 
@@ -511,56 +519,8 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
 }
 
 /// ---------------------
-/// Commands
+/// Internal commands
 /// ---------------------
-abstract class UnitCommand<S, T> extends BlocCommand<S, T> {
-  UnitCommand(S data, [props = const []]) : super(data, props);
-}
-
-class LoadUnits extends UnitCommand<String, List<Unit>> {
-  LoadUnits(String ouuid) : super(ouuid);
-
-  @override
-  String toString() => '$runtimeType {ouuid: $data}';
-}
-
-class CreateUnit extends UnitCommand<Unit, Unit> {
-  CreateUnit(
-    Unit data, {
-    this.position,
-    this.devices,
-  }) : super(data, [position, devices]);
-
-  final Position position;
-  final List<Device> devices;
-
-  @override
-  String toString() => '$runtimeType {'
-      'unit: $data, '
-      'position: $position, '
-      'devices: $devices}';
-}
-
-class UpdateUnit extends UnitCommand<Unit, Unit> {
-  UpdateUnit(Unit data) : super(data);
-
-  @override
-  String toString() => '$runtimeType {unit: $data}';
-}
-
-class DeleteUnit extends UnitCommand<Unit, Unit> {
-  DeleteUnit(Unit data) : super(data);
-
-  @override
-  String toString() => '$runtimeType {unit: $data}';
-}
-
-class UnloadUnits extends UnitCommand<String, List<Unit>> {
-  UnloadUnits(String ouuid) : super(ouuid);
-
-  @override
-  String toString() => '$runtimeType {ouuid: $data}';
-}
 
 class _HandleMessage extends UnitCommand<UnitMessage, void> {
   _HandleMessage(UnitMessage data) : super(data);
@@ -569,162 +529,12 @@ class _HandleMessage extends UnitCommand<UnitMessage, void> {
   String toString() => '$runtimeType {unit: $data}';
 }
 
-class _NotifyUnitStateChanged extends UnitCommand<StorageTransition<Unit>, Unit> {
-  _NotifyUnitStateChanged(
-    StorageTransition<Unit> transition,
-  ) : super(transition);
-
-  Unit get unit => data.to.value;
-  Unit get previous => data.from?.value;
-
-  bool get isCreated => data.isCreated;
-  bool get isUpdated => data.isChanged;
-  bool get isDeleted => data.isDeleted;
-
-  bool get isRemote => data.to?.isRemote == true;
-
-  @override
-  String toString() => '$runtimeType {previous: $data, next: $data}';
+class _NotifyRepositoryStateChanged extends UnitCommand<StorageTransition<Unit>, Unit>
+    with NotifyRepositoryStateChangedMixin {
+  _NotifyRepositoryStateChanged(StorageTransition<Unit> transition) : super(transition);
 }
 
-class _NotifyBlockStateChange extends UnitCommand<UnitState, Unit> {
-  _NotifyBlockStateChange(
-    UnitState state,
-  ) : super(state);
-
-  @override
-  String toString() => '$runtimeType {state: $data}';
-}
-
-/// ---------------------
-/// Normal States
-/// ---------------------
-
-abstract class UnitState<T> extends PushableBlocEvent<T> {
-  UnitState(
-    Object data, {
-    StackTrace stackTrace,
-    props = const [],
-    bool isRemote = false,
-  }) : super(
-          data,
-          isRemote: isRemote,
-          stackTrace: stackTrace,
-        );
-
-  bool isError() => this is UnitBlocError;
-  bool isEmpty() => this is UnitsEmpty;
-  bool isLoaded() => this is UnitsLoaded;
-  bool isCreated() => this is UnitCreated;
-  bool isUpdated() => this is UnitUpdated;
-  bool isDeleted() => this is UnitDeleted;
-  bool isUnloaded() => this is UnitsUnloaded;
-
-  bool isStatusChanged() => false;
-  bool isTracked() => (data is Unit) ? (data as Unit).tracking?.uuid != null : false;
-  bool isRetired() => (data is Unit) ? (data as Unit).status == UnitStatus.retired : false;
-}
-
-class UnitsEmpty extends UnitState<Null> {
-  UnitsEmpty() : super(null);
-
-  @override
-  String toString() => '$runtimeType';
-}
-
-class UnitsLoaded extends UnitState<List<String>> {
-  UnitsLoaded(
-    List<String> data, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
-}
-
-class UnitCreated extends UnitState<Unit> {
-  final Position position;
-  final List<Device> devices;
-  UnitCreated(
-    Unit data, {
-    this.position,
-    this.devices,
-    bool isRemote = false,
-  }) : super(
-          data,
-          isRemote: isRemote,
-          props: [position, devices],
-        );
-
-  @override
-  String toString() => '$runtimeType {'
-      'unit: $data, '
-      'position: $position, '
-      'devices: $devices,'
-      'isRemote: $isRemote'
-      '}';
-}
-
-class UnitUpdated extends UnitState<Unit> {
-  final Unit previous;
-  UnitUpdated(
-    Unit data,
-    this.previous, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote, props: [previous]);
-
-  @override
-  bool isStatusChanged() => data.status != previous.status;
-
-  @override
-  String toString() => '$runtimeType {unit: $data, previous: $previous, isRemote: $isRemote}';
-}
-
-class UnitDeleted extends UnitState<Unit> {
-  UnitDeleted(
-    Unit data, {
-    bool isRemote = false,
-  }) : super(data, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
-}
-
-class UnitsUnloaded extends UnitState<List<Unit>> {
-  UnitsUnloaded(
-    List<Unit> units, {
-    bool isRemote = false,
-  }) : super(units, isRemote: isRemote);
-
-  @override
-  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
-}
-
-/// ---------------------
-/// Error States
-/// ---------------------
-
-class UnitBlocError extends UnitState<Object> {
-  UnitBlocError(
-    Object error, {
-    StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
-
-  @override
-  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
-}
-
-/// ---------------------
-/// Exceptions
-/// ---------------------
-
-class UnitBlocException implements Exception {
-  UnitBlocException(this.error, this.state, {this.command, this.stackTrace});
-  final Object error;
-  final UnitState state;
-  final StackTrace stackTrace;
-  final Object command;
-
-  @override
-  String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';
+class _NotifyBlocStateChanged<T> extends UnitCommand<UnitState<T>, T>
+    with NotifyBlocStateChangedMixin<UnitState<T>, T> {
+  _NotifyBlocStateChanged(UnitState state) : super(state);
 }
