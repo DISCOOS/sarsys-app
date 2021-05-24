@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:connectivity/connectivity.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
-import 'package:internet_speed_test/internet_speed_test.dart';
 
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -47,7 +46,6 @@ class ConnectivityService extends Service {
   static ConnectivityService _singleton;
   static const defaultTimeout = const Duration(seconds: 1);
 
-  final internetSpeedTest = InternetSpeedTest();
   final StreamController<ConnectivityStatus> _controller = StreamController<ConnectivityStatus>.broadcast();
 
   Timer _speedTimer;
