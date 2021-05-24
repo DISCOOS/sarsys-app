@@ -26,7 +26,7 @@ class DeviceLayerOptions extends LayerOptions {
     this.showTail = false,
     this.showLabels = true,
     this.onMessage,
-  }) : super(rebuild: bloc.deviceBloc.where((state) => state.isLocationChanged()).map((_) => null));
+  }) : super(rebuild: bloc.deviceBloc.stream.where((state) => state.isLocationChanged()).map((_) => null));
 
   final TrackingBloc bloc;
   final ActionCallback onMessage;

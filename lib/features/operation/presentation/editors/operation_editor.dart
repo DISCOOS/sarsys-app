@@ -89,7 +89,7 @@ class _OperationEditorState extends State<OperationEditor> {
     _updateDescriptions();
     _isExercise = widget.incident?.exercise ?? false;
 
-    final org = context.bloc<AffiliationBloc>().findUserOrganisation();
+    final org = context.read<AffiliationBloc>().findUserOrganisation();
     final catalogs = (org?.fleetMap?.catalogs?.map((e) => e.name) ?? []).toList()..sort();
     _tgCatalog.value = catalogs;
   }
@@ -661,7 +661,7 @@ class _OperationEditorState extends State<OperationEditor> {
       );
 
   Widget _buildTGField() {
-    final config = context.bloc<AppConfigBloc>().config;
+    final config = context.read<AppConfigBloc>().config;
     final catalogs = widget?.operation?.talkgroups ??
         FleetMapTalkGroupConverter.toList(
           config.talkGroups,
@@ -705,7 +705,7 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   FleetMap getFleetMap() {
-    return context.bloc<AffiliationBloc>().findUserOrganisation()?.fleetMap;
+    return context.read<AffiliationBloc>().findUserOrganisation()?.fleetMap;
   }
 
   List<TalkGroup> getTgGroups(String catalog) {
@@ -749,7 +749,7 @@ class _OperationEditorState extends State<OperationEditor> {
       child: FormBuilderChipsInput(
         name: 'units',
         maxChips: 15,
-        initialValue: context.bloc<AppConfigBloc>().config.units,
+        initialValue: context.read<AppConfigBloc>().config.units,
         decoration: InputDecoration(
           labelText: "Opprett enheter",
           hintText: "Søk etter enheter",
@@ -996,7 +996,7 @@ class _OperationEditorState extends State<OperationEditor> {
         final talkGroups = List<String>.from(
           list.map((tg) => tg.name),
         );
-        await context.bloc<AppConfigBloc>().updateWith(
+        await context.read<AppConfigBloc>().updateWith(
               talkGroups: talkGroups,
             );
       }
@@ -1015,7 +1015,7 @@ class _OperationEditorState extends State<OperationEditor> {
   Future _submitNew(BuildContext context) async {
     final units = List<String>.from(_formKey.currentState.value['units']);
     if (_rememberUnits) {
-      await context.bloc<AppConfigBloc>().updateWith(units: units);
+      await context.read<AppConfigBloc>().updateWith(units: units);
     }
     final incident = _createIncident();
     Navigator.pop(
@@ -1101,7 +1101,7 @@ class _OperationEditorState extends State<OperationEditor> {
         uuid: Uuid().v4(),
       )))
           .withAuthor(
-            context.bloc<UserBloc>().userId,
+            context.read<UserBloc>().userId,
           )
           .copyWith(
             incident: AggregateRef.fromType<Incident>(iuuid),

@@ -15,8 +15,7 @@ void main() async {
   test('AppConfig SHOULD be EMPTY initially', () async {
     // Assert
     expect(harness.configBloc.repo.config, isNull, reason: "AppConfigRepository SHOULD not contain AppConfig");
-    expect(harness.configBloc.initialState, isA<AppConfigEmpty>(), reason: "AppConfigBloc SHOULD be in EMPTY state");
-    expectThroughInOrder(harness.configBloc, [isA<AppConfigEmpty>()]);
+    expect(harness.configBloc.state, isA<AppConfigEmpty>());
   });
 
   group('WHEN AppConfigBloc is ONLINE', () {
@@ -103,7 +102,7 @@ void main() async {
 
         // Assert
         await expectThroughLater(
-          harness.configBloc,
+          harness.configBloc.stream,
           emits(isA<AppConfigInitialized>().having(
             (event) {
               return event.isRemote;
@@ -236,7 +235,7 @@ Future _testAppConfigShouldDeleteValues(BlocTestHarness harness, bool offline) a
   expect(oldConfig, isNotNull, reason: "SHOULD contain AppConfig");
   expect(newConfig, equals(newConfig), reason: "SHOULD equals old AppConfig");
   expect(harness.configBloc.isReady, isFalse, reason: "SHOULD NOT be ready");
-  expectThroughInOrder(harness.configBloc, [isA<AppConfigLoaded>(), isA<AppConfigDeleted>()]);
+  expectThrough(harness.configBloc, emits(isA<AppConfigDeleted>()));
 }
 
 Future _testAppConfigShouldUpdateValues(BlocTestHarness harness, bool offline) async {
@@ -250,7 +249,7 @@ Future _testAppConfigShouldUpdateValues(BlocTestHarness harness, bool offline) a
 
   // Assert
   expect(gotConfig, equals(newConfig), reason: "SHOULD have changed AppConfig");
-  expectThroughInOrder(harness.configBloc, [isA<AppConfigLoaded>(), isA<AppConfigUpdated>()]);
+  expectThrough(harness.configBloc, emits(isA<AppConfigUpdated>()));
   if (!offline) {
     await expectLater(
       harness.configBloc.repo.onChanged,
@@ -311,7 +310,7 @@ Future _testAppConfigShouldInitializeWithDefaultValues(
   await harness.configBloc.init(local: local);
   final isRemote = !(offline || local);
   await expectThroughLater(
-    harness.configBloc,
+    harness.configBloc.stream,
     emits(isA<AppConfigInitialized>().having(
       (event) {
         return event.isRemote;

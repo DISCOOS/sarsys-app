@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -73,7 +72,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     @required this.users,
     @required this.repo,
     @required BlocEventBus bus,
-  }) : super(bus: bus) {
+  }) : super(AffiliationsEmpty(), bus: bus) {
     assert(this.orgs != null, "organisations repository can not be null");
     assert(this.divs != null, "divisions repository can not be null");
     assert(this.deps != null, "departments repository can not be null");
@@ -86,7 +85,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     assert(this.persons.service != null, "departments service can not be null");
     assert(this.repo.service != null, "departments service can not be null");
 
-    registerStreamSubscription(users.listen(
+    registerStreamSubscription(users.stream.listen(
       // Load and unload repos as needed
       _processUserState,
     ));
@@ -154,8 +153,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         }
       }
     } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
+      addError(
         error,
         stackTrace,
       );
@@ -170,9 +168,6 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   /// Stream of isReady changes
   @override
   Stream<bool> get onReadyChanged => repo.onReadyChanged;
-
-  @override
-  AffiliationsEmpty get initialState => AffiliationsEmpty();
 
   /// Get searchable string from [Affiliation.uuid]
   String toSearchable(String uuid) {

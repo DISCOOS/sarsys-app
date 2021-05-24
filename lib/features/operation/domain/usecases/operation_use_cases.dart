@@ -312,7 +312,7 @@ Future<dartz.Either<bool, Personnel>> _join(
 }
 
 Future _onLoadedAsync<B extends BaseBloc<dynamic, dynamic, dynamic>>(OperationParams params) {
-  final bloc = params.context.bloc<B>();
+  final bloc = params.context.read<B>();
   if (bloc is ConnectionAwareBloc) {
     return (bloc as ConnectionAwareBloc).onLoadedAsync();
   }
@@ -320,7 +320,7 @@ Future _onLoadedAsync<B extends BaseBloc<dynamic, dynamic, dynamic>>(OperationPa
 }
 
 Future<Personnel> _mobilize(OperationParams params) async {
-  final personnels = params.context.bloc<PersonnelBloc>();
+  final personnels = params.context.read<PersonnelBloc>();
   var personnel = personnels.findMobilizedUserOrReuse();
   personnel ??= await personnels.mobilizeUser();
   assert(
@@ -332,7 +332,7 @@ Future<Personnel> _mobilize(OperationParams params) async {
 
 // TODO: Move to new use-case RetireUser in PersonnelBloc
 Future<Personnel> _retire(OperationParams params) async {
-  final personnels = params.context.bloc<PersonnelBloc>();
+  final personnels = params.context.read<PersonnelBloc>();
   var personnel = personnels.findMobilizedUserOrReuse();
   if (personnel != null) {
     personnel = await personnels.update(

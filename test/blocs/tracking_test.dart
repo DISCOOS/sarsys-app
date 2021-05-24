@@ -45,7 +45,6 @@ void main() async {
   test('TrackingBloc should be EMPTY and UNSET', () async {
     expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD BE unset");
     expect(harness.trackingBloc.trackings.length, 0, reason: "SHOULD BE empty");
-    expect(harness.trackingBloc.initialState, isA<TrackingsEmpty>(), reason: "Unexpected tracking state");
     expect(harness.trackingBloc, emits(isA<TrackingsEmpty>()));
   }, skip: true);
 
@@ -539,7 +538,10 @@ void main() async {
           await harness.unitBloc.update(
             unit.copyWith(status: UnitStatus.retired),
           );
-          await expectThroughLater(harness.unitBloc, emits(isA<UnitUpdated>()));
+          await expectThroughLater(
+            harness.unitBloc.stream,
+            emits(isA<UnitUpdated>()),
+          );
         },
       );
     });
@@ -558,7 +560,10 @@ void main() async {
           await harness.personnelBloc.update(
             personnel.copyWith(status: PersonnelStatus.retired),
           );
-          await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelUpdated>()));
+          await expectThroughLater(
+            harness.personnelBloc.stream,
+            emits(isA<PersonnelUpdated>()),
+          );
         },
       );
     });
@@ -601,10 +606,12 @@ void main() async {
       final uuuid = Uuid().v4();
       final state = await _shouldCreateTrackingAutomatically<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create(uuid: uuuid, ouuid: ouuid, personnels: [
-          PersonnelBuilder.create(ouuid: ouuid).uuid,
-          PersonnelBuilder.create(ouuid: ouuid).uuid,
-        ])),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(uuid: uuuid, ouuid: ouuid, personnels: [
+            PersonnelBuilder.create(ouuid: ouuid).uuid,
+            PersonnelBuilder.create(ouuid: ouuid).uuid,
+          ]),
+        ),
       );
       final tuuid = state.value.uuid;
 
@@ -675,7 +682,7 @@ void main() async {
       harness.trackingService.add(operation.uuid);
       await harness.trackingBloc.load();
       await expectThroughLater(
-        harness.trackingBloc,
+        harness.trackingBloc.stream,
         emits(isA<TrackingsLoaded>()),
       );
       expectTrackingCount(harness, 1);
@@ -696,7 +703,7 @@ void main() async {
       final tracking = harness.trackingService.add(operation.uuid);
       await harness.trackingBloc.load();
       await expectThroughLater(
-        harness.trackingBloc,
+        harness.trackingBloc.stream,
         emits(isA<TrackingsLoaded>()),
       );
       expectTrackingCount(harness, 1);
@@ -704,12 +711,12 @@ void main() async {
       // Act
       await harness.trackingBloc.unload();
       await expectThroughLater(
-        harness.trackingBloc,
+        harness.trackingBloc.stream,
         emits(isA<TrackingsUnloaded>()),
       );
       await harness.trackingBloc.load();
       await expectThroughLater(
-        harness.trackingBloc,
+        harness.trackingBloc.stream,
         emits(isA<TrackingsLoaded>()),
       );
 
@@ -1130,7 +1137,10 @@ void main() async {
           await harness.unitBloc.update(
             unit.copyWith(status: UnitStatus.retired),
           );
-          await expectThroughLater(harness.unitBloc, emits(isA<UnitUpdated>()));
+          await expectThroughLater(
+            harness.unitBloc.stream,
+            emits(isA<UnitUpdated>()),
+          );
         },
       );
     });
@@ -1149,7 +1159,10 @@ void main() async {
           await harness.personnelBloc.update(
             personnel.copyWith(status: PersonnelStatus.retired),
           );
-          await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelUpdated>()));
+          await expectThroughLater(
+            harness.personnelBloc.stream,
+            emits(isA<PersonnelUpdated>()),
+          );
         },
       );
     });
@@ -1243,7 +1256,7 @@ void main() async {
 
       // Assert CREATED
       await expectThroughLater(
-        harness.trackingBloc,
+        harness.trackingBloc.stream,
         emits(isA<TrackingCreated>()),
       );
       expectTrackingCount(harness, 1);
@@ -1261,7 +1274,7 @@ void main() async {
 
       // Assert PUSHED
       await expectThroughLater(
-        harness.trackingBloc,
+        harness.trackingBloc.stream,
         emitsInAnyOrder([isA<TrackingCreated>()]),
       );
       expectTrackingCount(harness, 1);
@@ -1300,12 +1313,12 @@ void main() async {
       // Act
       await harness.trackingBloc.unload();
       await expectThroughLater(
-        harness.trackingBloc,
+        harness.trackingBloc.stream,
         emits(isA<TrackingsUnloaded>()),
       );
       await harness.trackingBloc.load();
       await expectThroughLater(
-        harness.trackingBloc,
+        harness.trackingBloc.stream,
         emits(isA<TrackingsLoaded>()),
       );
 
@@ -1526,7 +1539,7 @@ Future<Tracking> _shouldDetachFromTrackingWhenDeviceUnavailable<T extends Tracka
 
   // Assert
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingUpdated>()),
   );
   final t3 = harness.trackingBloc.repo[t2.uuid];
@@ -1601,7 +1614,7 @@ Future _shouldCreateTrackingForActiveUnitsOnly<T extends Trackable>(
 
   // Assert
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingCreated>()),
   );
   expectTrackingCount(harness, 1);
@@ -1634,7 +1647,10 @@ Future _shouldThrowWhenAttachingSourcesAlreadyTracked<T extends Trackable>(
     isNot(equals(trackables.last)),
     reason: "SHOULD contain two unique ${typeOf<T>()}s",
   );
-  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingCreated>()));
+  await expectThroughLater(
+    harness.trackingBloc.stream,
+    emits(isA<TrackingCreated>()),
+  );
   final first = harness.trackingBloc.repo[trackables.first.tracking.uuid];
   final d1 = await harness.deviceBloc.create(DeviceBuilder.create(position: p1, status: DeviceStatus.available));
   await harness.trackingBloc.attach(first.uuid, devices: [d1]);
@@ -1660,7 +1676,7 @@ Future _shouldDeleteTrackingAutomatically<T extends Trackable>(
 
   // Assert
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingDeleted>()),
   );
 
@@ -1917,7 +1933,7 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
         personnel.copyWith(status: PersonnelStatus.retired),
       );
       await expectThroughLater(
-        harness.personnelBloc,
+        harness.personnelBloc.stream,
         emits(isA<PersonnelUpdated>()),
       );
     },
@@ -1931,7 +1947,7 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
         personnel.copyWith(status: status),
       );
       await expectThroughLater(
-        harness.personnelBloc,
+        harness.personnelBloc.stream,
         emits(isA<PersonnelUpdated>()),
       );
       return next;
@@ -1954,7 +1970,7 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
         personnel.copyWith(status: UnitStatus.retired),
       );
       await expectThroughLater(
-        harness.unitBloc,
+        harness.unitBloc.stream,
         emits(isA<UnitUpdated>()),
       );
     },
@@ -1968,7 +1984,7 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
         unit.copyWith(status: status),
       );
       await expectThroughLater(
-        harness.unitBloc,
+        harness.unitBloc.stream,
         emits(isA<UnitUpdated>()),
       );
       return next;
@@ -1988,7 +2004,7 @@ Future<StorageState<Tracking>> _shouldCreateTrackingAutomatically<T extends Trac
   final trackable = await act(operation.uuid);
   final tuuid = trackable.tracking.uuid;
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingCreated>()),
   );
 
@@ -2027,7 +2043,7 @@ Future _shouldLoadTrackings(BlocTestHarness harness) async {
   // Act
   await harness.trackingBloc.load();
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingsLoaded>().having(
       (event) => harness.isOnline ? event.isRemote : event.isLocal,
       'Should be remote',
@@ -2108,7 +2124,7 @@ Future<StorageState<Tracking>> _assertTrackingState<T extends TrackingState>(
   int count = 1,
 }) async {
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emitsInAnyOrder([isA<T>()]),
   );
   int expected = _ensureTrackingCount(count, harness);
@@ -2157,7 +2173,7 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness) async {
 
   // Assert
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingsUnloaded>()),
   );
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
@@ -2173,7 +2189,7 @@ Future<Tracking> _ensurePersonnelWithTracking(BlocTestHarness harness, Operation
   harness.trackingService.put(operation.uuid, tracking);
   await harness.trackingBloc.load();
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingsLoaded>()),
   );
 
@@ -2184,7 +2200,7 @@ Future<Tracking> _ensurePersonnelWithTracking(BlocTestHarness harness, Operation
       PersonnelBuilder.create(ouuid: operation.uuid, tuuid: tracking.uuid),
     );
     await expectThroughLater(
-      harness.trackingBloc,
+      harness.trackingBloc.stream,
       emits(isA<TrackingCreated>()),
     );
     expectTrackingCount(harness, 1);
@@ -2205,13 +2221,13 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness) async {
     operation.copyWith(status: OperationStatus.completed),
   );
   await expectThroughLater(
-    harness.personnelBloc,
+    harness.personnelBloc.stream,
     emits(isA<PersonnelsUnloaded>()),
   );
 
   // Assert
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingsUnloaded>()),
   );
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
@@ -2236,13 +2252,13 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness) async 
     ),
   );
   await expectThroughLater(
-    harness.personnelBloc,
+    harness.personnelBloc.stream,
     emits(isA<PersonnelsUnloaded>()),
   );
 
   // Assert
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingsUnloaded>()),
   );
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
@@ -2264,7 +2280,7 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness) async {
 
   // Assert
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingsUnloaded>()),
   );
 
@@ -2283,7 +2299,7 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
   harness.trackingService.put(operation.uuid, t1);
   await harness.trackingBloc.load();
   await expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<TrackingsLoaded>()),
   );
   expectTrackingCount(harness, harness.isOnline ? 1 : 0);
@@ -2302,7 +2318,7 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
     [isA<TrackingsUnloaded>(), isA<TrackingsLoaded>()],
   );
   await expectThroughLater(
-    harness.personnelBloc,
+    harness.personnelBloc.stream,
     emits(isA<UserMobilized>().having(
       (event) {
         return harness.isOnline ? event.isRemote : event.isLocal;
@@ -2378,7 +2394,7 @@ void _print(BlocTestHarness harness, String message) {
 
 Future<void> expectLocalIsEmpty<T extends TrackingState>(BlocTestHarness harness) {
   return expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<T>().having(
       (event) {
         return event.isLocal && (event.data is Iterable ? (event.data as Iterable).isEmpty : event.data == null);
@@ -2391,7 +2407,7 @@ Future<void> expectLocalIsEmpty<T extends TrackingState>(BlocTestHarness harness
 
 Future<void> waitForEventMatching<T extends BlocState>(BaseBloc bloc, bool Function(T event) matches) {
   return expectThroughLater(
-      bloc,
+      bloc.stream,
       emits(
         isA<T>().having(
           matches,
@@ -2406,7 +2422,7 @@ Future<void> expectDataIsEmpty<T extends TrackingState>(
   @required bool isRemote,
 }) {
   return expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<T>().having(
       (event) {
         return event.isRemote == isRemote &&
@@ -2423,7 +2439,7 @@ Future<void> expectDataIsNotEmpty<T extends TrackingState>(
   @required bool isRemote,
 }) {
   return expectThroughLater(
-    harness.trackingBloc,
+    harness.trackingBloc.stream,
     emits(isA<T>().having(
       (event) {
         return event.isRemote == isRemote &&

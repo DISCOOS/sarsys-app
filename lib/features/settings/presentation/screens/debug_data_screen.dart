@@ -94,7 +94,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<AppConfig>(
       title: "Innstillinger",
       withResetAction: false,
-      repo: context.bloc<AppConfigBloc>().repo,
+      repo: context.read<AppConfigBloc>().repo,
       subject: (StorageState<AppConfig> state) => 'Unik app-id: ${state?.value?.udid}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -104,7 +104,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildIncidentsTile(BuildContext context) {
     return RepositoryTile<Incident>(
       title: "Hendelser",
-      repo: context.bloc<OperationBloc>().incidents,
+      repo: context.read<OperationBloc>().incidents,
       subject: (StorageState<Incident> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -114,7 +114,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildOperationsTile(BuildContext context) {
     return RepositoryTile<Operation>(
       title: "Aksjoner",
-      repo: context.bloc<OperationBloc>().repo,
+      repo: context.read<OperationBloc>().repo,
       subject: (StorageState<Operation> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -124,7 +124,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildUnitsTile(BuildContext context) {
     return RepositoryTile<Unit>(
       title: "Enheter",
-      repo: context.bloc<UnitBloc>().repo,
+      repo: context.read<UnitBloc>().repo,
       subject: (StorageState<Unit> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -134,7 +134,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildPersonsTile(BuildContext context) {
     return RepositoryTile<Person>(
       title: "Personer",
-      repo: context.bloc<AffiliationBloc>().persons,
+      repo: context.read<AffiliationBloc>().persons,
       subject: (StorageState<Person> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -144,8 +144,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildAffiliationsTile(BuildContext context) {
     return RepositoryTile<Affiliation>(
       title: "Tilhørigheter",
-      repo: context.bloc<AffiliationBloc>().repo,
-      subject: (StorageState<Affiliation> state) => '${context.bloc<AffiliationBloc>().toName(
+      repo: context.read<AffiliationBloc>().repo,
+      subject: (StorageState<Affiliation> state) => '${context.read<AffiliationBloc>().toName(
             state?.value,
             empty: translateAffiliationType(AffiliationType.volunteer),
           )}',
@@ -158,7 +158,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildPersonnelsTile(BuildContext context) {
     return RepositoryTile<Personnel>(
       title: "Mannskaper",
-      repo: context.bloc<PersonnelBloc>().repo,
+      repo: context.read<PersonnelBloc>().repo,
       subject: (StorageState<Personnel> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -168,7 +168,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildDevicesTile(BuildContext context) {
     return RepositoryTile<Device>(
       title: "Apparater",
-      repo: context.bloc<DeviceBloc>().repo,
+      repo: context.read<DeviceBloc>().repo,
       subject: (StorageState<Device> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -178,16 +178,16 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildTrackingsTile(BuildContext context) {
     return RepositoryTile<Tracking>(
       title: "Sporinger",
-      repo: context.bloc<TrackingBloc>().repo,
+      repo: context.read<TrackingBloc>().repo,
       subject: (StorageState<Tracking> state) {
-        final units = context.bloc<UnitBloc>().repo.find(
+        final units = context.read<UnitBloc>().repo.find(
               where: (u) => u.tracking?.uuid == state.value.uuid,
             );
         if (units.isNotEmpty) {
           return 'Unit: ${units.first.name} '
               '(${translateUnitStatus(units.first.status)})';
         }
-        final personnels = context.bloc<PersonnelBloc>().repo.find(
+        final personnels = context.read<PersonnelBloc>().repo.find(
               where: (p) => p.tracking?.uuid == state.value.uuid,
             );
         if (personnels.isNotEmpty) {
@@ -206,7 +206,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildOrgsTile(BuildContext context) {
     return RepositoryTile<Organisation>(
       title: "Organisasjoner",
-      repo: context.bloc<AffiliationBloc>().orgs,
+      repo: context.read<AffiliationBloc>().orgs,
       subject: (StorageState<Organisation> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -216,7 +216,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildDivsTile(BuildContext context) {
     return RepositoryTile<Division>(
       title: "Distrikter",
-      repo: context.bloc<AffiliationBloc>().divs,
+      repo: context.read<AffiliationBloc>().divs,
       subject: (StorageState<Division> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -226,7 +226,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   Widget _buildDepsTile(BuildContext context) {
     return RepositoryTile<Department>(
       title: "Avdelinger",
-      repo: context.bloc<AffiliationBloc>().deps,
+      repo: context.read<AffiliationBloc>().deps,
       subject: (StorageState<Department> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
@@ -236,18 +236,18 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   void _commitAll() {
     Future.wait(
       [
-        context.bloc<AppConfigBloc>().repo.commit(),
-        context.bloc<AffiliationBloc>().repo.commit(),
-        context.bloc<AffiliationBloc>().orgs.commit(),
-        context.bloc<AffiliationBloc>().divs.commit(),
-        context.bloc<AffiliationBloc>().deps.commit(),
-        context.bloc<AffiliationBloc>().persons.commit(),
-        context.bloc<OperationBloc>().incidents.commit(),
-        context.bloc<OperationBloc>().repo.commit(),
-        context.bloc<UnitBloc>().repo.commit(),
-        context.bloc<PersonnelBloc>().repo.commit(),
-        context.bloc<DeviceBloc>().repo.commit(),
-        context.bloc<TrackingBloc>().repo.commit(),
+        context.read<AppConfigBloc>().repo.commit(),
+        context.read<AffiliationBloc>().repo.commit(),
+        context.read<AffiliationBloc>().orgs.commit(),
+        context.read<AffiliationBloc>().divs.commit(),
+        context.read<AffiliationBloc>().deps.commit(),
+        context.read<AffiliationBloc>().persons.commit(),
+        context.read<OperationBloc>().incidents.commit(),
+        context.read<OperationBloc>().repo.commit(),
+        context.read<UnitBloc>().repo.commit(),
+        context.read<PersonnelBloc>().repo.commit(),
+        context.read<DeviceBloc>().repo.commit(),
+        context.read<TrackingBloc>().repo.commit(),
       ],
       cleanUp: (_) => setState(() {}),
     ).catchError(Catcher.reportCheckedError);
@@ -257,17 +257,17 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     // DO NOT RESET AppConfig here! Should only be done from AppDrawer
     Future.wait(
       [
-        context.bloc<OperationBloc>().incidents.reset(),
-        context.bloc<AffiliationBloc>().repo.reset(),
-        context.bloc<AffiliationBloc>().orgs.reset(),
-        context.bloc<AffiliationBloc>().divs.reset(),
-        context.bloc<AffiliationBloc>().deps.reset(),
-        context.bloc<AffiliationBloc>().persons.reset(),
-        context.bloc<OperationBloc>().repo.reset(),
-        context.bloc<UnitBloc>().repo.reset(),
-        context.bloc<PersonnelBloc>().repo.reset(),
-        context.bloc<DeviceBloc>().repo.reset(),
-        context.bloc<TrackingBloc>().repo.reset(),
+        context.read<OperationBloc>().incidents.reset(),
+        context.read<AffiliationBloc>().repo.reset(),
+        context.read<AffiliationBloc>().orgs.reset(),
+        context.read<AffiliationBloc>().divs.reset(),
+        context.read<AffiliationBloc>().deps.reset(),
+        context.read<AffiliationBloc>().persons.reset(),
+        context.read<OperationBloc>().repo.reset(),
+        context.read<UnitBloc>().repo.reset(),
+        context.read<PersonnelBloc>().repo.reset(),
+        context.read<DeviceBloc>().repo.reset(),
+        context.read<TrackingBloc>().repo.reset(),
       ],
       cleanUp: (_) => setState(() {}),
     ).catchError(Catcher.reportCheckedError);

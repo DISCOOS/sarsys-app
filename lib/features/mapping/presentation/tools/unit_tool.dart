@@ -93,7 +93,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           child: SingleChildScrollView(
             child: StreamBuilder<Unit>(
               initialData: unit,
-              stream: context.bloc<UnitBloc>().onChanged(unit.uuid),
+              stream: context.read<UnitBloc>().onChanged(unit.uuid),
               builder: (context, snapshot) {
                 if (snapshot.data is Unit) {
                   unit = snapshot.data;

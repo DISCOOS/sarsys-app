@@ -83,7 +83,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
 
   @override
   void didChangeDependencies() {
-    _bloc = context.bloc<UserBloc>();
+    _bloc = context.read<UserBloc>();
     _verifyPin = _bloc.isSecured;
     _newPin = !_verifyPin;
     super.didChangeDependencies();

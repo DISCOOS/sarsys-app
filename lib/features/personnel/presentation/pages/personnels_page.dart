@@ -80,9 +80,9 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     super.didChangeDependencies();
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<PersonnelBloc>())
-      ..add(context.bloc<TrackingBloc>())
-      ..add(context.bloc<UserBloc>());
+      ..add(context.read<PersonnelBloc>().stream)
+      ..add(context.read<TrackingBloc>().stream)
+      ..add(context.read<UserBloc>().stream);
   }
 
   @override
@@ -98,7 +98,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return RefreshIndicator(
           onRefresh: () async {
-            context.bloc<PersonnelBloc>().load();
+            context.read<PersonnelBloc>().load();
           },
           child: StreamBuilder(
             stream: _group.stream,
@@ -124,7 +124,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   List<Personnel> _filteredPersonnel() {
     final personnels = context
-        .bloc<PersonnelBloc>()
+        .read<PersonnelBloc>()
         .repo
         .values
         .where((personnel) => _filter.contains(personnel.status))
@@ -183,7 +183,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   Widget _buildPersonnel(Personnel personnel) {
     final unit = _toUnit(personnel);
-    final tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking?.uuid];
+    final tracking = context.read<TrackingBloc>().trackings[personnel.tracking?.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && isCommander
@@ -293,11 +293,11 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     );
   }
 
-  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
+  bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   Affiliation _toAffiliation(Personnel personnel) => affiliationBloc.repo[personnel?.affiliation?.uuid];
 
-  AffiliationBloc get affiliationBloc => context.bloc<AffiliationBloc>();
+  AffiliationBloc get affiliationBloc => context.read<AffiliationBloc>();
 
   bool isTemporary(Personnel personnel) => affiliationBloc.isTemporary(
         personnel.affiliation.uuid,
@@ -355,7 +355,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         ),
       );
 
-  Unit _toUnit(Personnel personnel) => context.bloc<UnitBloc>().findUnitsWithPersonnel(personnel.uuid).firstOrNull;
+  Unit _toUnit(Personnel personnel) => context.read<UnitBloc>().findUnitsWithPersonnel(personnel.uuid).firstOrNull;
 
   Widget _buildCreateUnitAction(Personnel personnel) => Tooltip(
         message: "Opprett enhet med mannskap",

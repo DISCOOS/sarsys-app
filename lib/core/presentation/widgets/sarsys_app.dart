@@ -126,6 +126,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   void _listenForOperationsLoaded() {
     final subscription = widget.controller
         .bloc<OperationBloc>()
+        .stream
         .firstWhere((state) => state.isLoaded())
         .asStream()
         // User is authenticated (not null)

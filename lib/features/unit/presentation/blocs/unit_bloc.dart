@@ -46,7 +46,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     this.repo,
     this.operationBloc,
     BlocEventBus bus,
-  ) : super(bus: bus) {
+  ) : super(UnitsEmpty(), bus: bus) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
@@ -146,14 +146,13 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   /// [Operation] that manages given [map]
   String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
 
-  @override
-  UnitState get initialState => UnitsEmpty();
-
   /// Stream of changes on given unit
-  Stream<Unit> onChanged(String uuid) => where(
+  Stream<Unit> onChanged(String uuid) => stream
+      .where(
         (state) =>
             (state is UnitUpdated && state.data.uuid == uuid) || (state is UnitsLoaded && state.data.contains(uuid)),
-      ).map((state) => state is UnitsLoaded ? repo[uuid] : state.data);
+      )
+      .map((state) => state is UnitsLoaded ? repo[uuid] : state.data);
 
   /// Get count
   int count({List<UnitStatus> exclude: const [UnitStatus.retired]}) => repo.count(exclude: exclude);
@@ -536,5 +535,5 @@ class _NotifyRepositoryStateChanged extends UnitCommand<StorageTransition<Unit>,
 
 class _NotifyBlocStateChanged<T> extends UnitCommand<UnitState<T>, T>
     with NotifyBlocStateChangedMixin<UnitState<T>, T> {
-  _NotifyBlocStateChanged(UnitState state) : super(state);
+  _NotifyBlocStateChanged(UnitState<T> state) : super(state);
 }

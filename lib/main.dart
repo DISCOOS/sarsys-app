@@ -11,7 +11,6 @@ import 'package:catcher/catcher.dart';
 import 'package:SarSys/core/app_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
 import 'package:sentry/sentry.dart';
@@ -32,7 +31,7 @@ void main() async {
   final bucket = await readPageStorageBucket(PageStorageBucket());
 
   // This will catch any fatal errors before the app is stated
-  BlocSupervisor.delegate = FatalErrorAppBlocDelegate();
+  Bloc.observer = FatalErrorAppBlocObserver();
 
   // Build and initialize bloc provider
   final controller = AppController.build(client);
@@ -79,7 +78,7 @@ void runAppWithCatcher(Widget app, AppController controller) {
   final sentryDns = controller.bloc<AppConfigBloc>().config.sentryDns;
 
   // Catch unhandled bloc and repository exceptions
-  BlocSupervisor.delegate = controller.delegate;
+  Bloc.observer = controller.observer;
   RepositorySupervisor.delegate = AppRepositoryDelegate();
 
   _catcher = Catcher(

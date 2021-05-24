@@ -60,10 +60,10 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     super.didChangeDependencies();
     _group?.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<UnitBloc>().onChanged(widget.unit?.uuid))
-      ..add(context.bloc<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid, skipPosition: true));
+      ..add(context.read<UnitBloc>().onChanged(widget.unit?.uuid))
+      ..add(context.read<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid, skipPosition: true));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<TrackingBloc>().onMoved(widget?.unit?.tracking?.uuid).listen(_onMove);
+    _onMoved = context.read<TrackingBloc>().onMoved(widget?.unit?.tracking?.uuid).listen(_onMove);
   }
 
   @override
@@ -76,7 +76,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     super.dispose();
   }
 
-  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
+  bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   @override
   List<Widget> buildAppBarActions() {
@@ -97,7 +97,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return RefreshIndicator(
       onRefresh: () async {
-        context.bloc<UnitBloc>().load();
+        context.read<UnitBloc>().load();
       },
       child: ListView(
         padding: const EdgeInsets.all(UnitScreen.SPACING),
@@ -111,7 +111,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
               if (snapshot.data is Unit) {
                 _unit = snapshot.data;
               }
-              final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
+              final tracking = context.read<TrackingBloc>().trackings[_unit.tracking.uuid];
               return _build(context, tracking);
             },
           ),
@@ -135,7 +135,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
         onDeleted: () => Navigator.pop(context),
         onChanged: (unit) => setState(() => _unit = unit),
         onGoto: (point) => jumpToPoint(context, center: point),
-        devices: context.bloc<TrackingBloc>().devices(tracking?.uuid),
+        devices: context.read<TrackingBloc>().devices(tracking?.uuid),
       );
 
   LatLng toCenter(Tracking event) {

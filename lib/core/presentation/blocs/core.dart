@@ -18,11 +18,14 @@ import 'package:SarSys/core/utils/data.dart';
 import 'mixins.dart';
 
 abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extends S> extends Bloc<C, S> {
-  BaseBloc({@required this.bus}) : super() {
+  BaseBloc(
+    S initialState, {
+    @required this.bus,
+  }) : super(initialState) {
     assert(bus != null, "bus can not be null");
-    _subscriptions.add(listen(
+    _subscriptions.add(stream.listen(
       (state) => bus.publish(this, state),
-      onError: (e, stackTrace) => BlocSupervisor.delegate.onError(this, e, stackTrace),
+      onError: (e, stackTrace) => addError(e, stackTrace),
     ));
   }
 
@@ -50,7 +53,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
   /// processed using an internal queue.
   ///
   /// Unhandled exceptions in handles are
-  /// forwarded to [BlocDelegate.onError].
+  /// forwarded to [BlocObserver.onError].
   ///
   BlocHandlerCallback<T> subscribe<T extends BlocState>(BlocHandlerCallback<T> handler) {
     _handlers.update(
@@ -78,7 +81,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
   /// processed using an internal queue.
   ///
   /// Unhandled exceptions in handles are
-  /// forwarded to [BlocDelegate.onError].
+  /// forwarded to [BlocObserver.onError].
   ///
   void subscribeAll(BlocHandlerCallback handler, List<Type> types) {
     types.forEach((type) {
@@ -101,11 +104,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
           try {
             handler(bloc, event);
           } catch (error, stackTrace) {
-            BlocSupervisor.delegate.onError(
-              this,
-              error,
-              stackTrace,
-            );
+            addError(error, stackTrace);
           }
         } else {
           // Multiple handlers can
@@ -144,11 +143,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
           });
         }
       } catch (error, stackTrace) {
-        BlocSupervisor.delegate.onError(
-          this,
-          error,
-          stackTrace,
-        );
+        addError(error, stackTrace);
       }
     }
   }
@@ -292,11 +287,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
         object.stackTrace ?? StackTrace.current,
       );
     }
-    BlocSupervisor.delegate.onError(
-      this,
-      error,
-      stackTrace,
-    );
     _pop(command);
     return object;
   }
@@ -339,7 +329,11 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
 abstract class StatefulBloc<C extends BlocCommand, E extends BlocState, Error extends E, K, V extends JsonObject,
         S extends StatefulServiceDelegate<V, V>> extends BaseBloc<C, E, Error>
     with ReadyAwareBloc<K, V>, ConnectionAwareBloc<K, V, S> {
-  StatefulBloc({@required BlocEventBus bus}) : super(bus: bus);
+  StatefulBloc(E initialState, {@required BlocEventBus bus})
+      : super(
+          initialState,
+          bus: bus,
+        );
 
   void forward<T extends JsonObject>(
     C Function(StorageTransition<T>) builder, {
@@ -381,12 +375,7 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocState, Error ex
         }
       }
     } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
+      addError(error, stackTrace);
     }
   }
 
@@ -407,15 +396,17 @@ typedef BlocHandlerCallback<T extends BlocState> = void Function(BaseBloc bloc, 
 
 /// [BlocState] bus implementation
 class BlocEventBus {
-  BlocEventBus({
-    BlocDelegate delegate,
-  }) : delegate = delegate ?? BlocSupervisor.delegate;
+  BlocEventBus(
+    void Function(Bloc, Object, StackTrace) onError,
+  ) : _onError = onError;
 
-  final BlocDelegate delegate;
   StreamController<BlocState> _controller = StreamController.broadcast();
 
   /// Get events as stream
   Stream<BlocState> get events => _controller.stream;
+
+  /// Forward all errors to this error handler
+  final void Function(Bloc, Object, StackTrace) _onError;
 
   /// Registered event routes from Type to to handlers
   final Map<Type, Set<Function>> _routes = {};
@@ -463,8 +454,8 @@ class BlocEventBus {
     toHandlers(event).forEach((handler) {
       try {
         handler(bloc, event);
-      } on Exception catch (error, stackTrace) {
-        delegate.onError(
+      } catch (error, stackTrace) {
+        _onError(
           bloc,
           error,
           stackTrace,
@@ -583,17 +574,26 @@ abstract class PushableBlocEvent<T> extends BlocState<T> {
   bool get isLocal => !isRemote;
 }
 
-class AppBlocDelegate implements BlocDelegate {
-  AppBlocDelegate(this.bus);
+class AppBlocObserver extends BlocObserver {
+  AppBlocObserver({
+    void Function(Bloc, Object, StackTrace) onError,
+  }) : bus = BlocEventBus(onError ?? _onError);
+
   final BlocEventBus bus;
 
   @override
-  void onError(Bloc bloc, Object error, StackTrace stackTrace) {
+  void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
+    _onError(bloc, error, stackTrace);
+    super.onError(bloc, error, stackTrace);
+  }
+
+  static void _onError(BlocBase bloc, Object error, StackTrace stackTrace) {
+    // TODO: Handle bloc errors correctly
     Catcher.reportCheckedError(error, stackTrace);
   }
 
   @override
-  void onEvent(Bloc bloc, Object command) {
+  void onEvent(BlocBase bloc, Object command) {
     if (kDebugMode && Defaults.debugPrintCommands) {
       debugPrint(
         '--- Command ---\n'
@@ -602,6 +602,7 @@ class AppBlocDelegate implements BlocDelegate {
         '******************',
       );
     }
+    super.onEvent(bloc, command);
   }
 
   @override
@@ -616,6 +617,7 @@ class AppBlocDelegate implements BlocDelegate {
         '******************',
       );
     }
+    super.onTransition(bloc, transition);
   }
 
   String _toStateString(Object state) {

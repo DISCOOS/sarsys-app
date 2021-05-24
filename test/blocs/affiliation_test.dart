@@ -39,7 +39,6 @@ void main() async {
         expect(harness.affiliationBloc.orgs.isEmpty, isTrue, reason: "SHOULD BE empty");
         expect(harness.affiliationBloc.divs.isEmpty, isTrue, reason: "SHOULD BE empty");
         expect(harness.affiliationBloc.deps.isEmpty, isTrue, reason: "SHOULD BE empty");
-        expect(harness.affiliationBloc.initialState, isA<AffiliationsEmpty>(), reason: "Unexpected organisation state");
       },
     );
 
@@ -103,7 +102,6 @@ void main() async {
         expect(harness.affiliationBloc.repo.values, isNotEmpty, reason: "SHOULD NOT BE empty");
         expect(harness.affiliationBloc.persons.values, isNotEmpty, reason: "SHOULD NOT BE empty");
         expect(harness.affiliationBloc.state, isA<UserOnboarded>(), reason: " SHOULD be in UserOnboarded state");
-        expect(harness.affiliationBloc, emits(isA<UserOnboarded>()));
 
         // Assert person
         final user = harness.user;
@@ -137,7 +135,10 @@ void main() async {
         await harness.userBloc.logout();
 
         // Assert
-        await expectThroughLater(harness.affiliationBloc, emits(isA<AffiliationsUnloaded>()));
+        await expectThroughLater(
+          harness.affiliationBloc.stream,
+          emits(isA<AffiliationsUnloaded>()),
+        );
       },
     );
 
@@ -148,7 +149,7 @@ void main() async {
         await _authenticate(harness);
         await harness.userBloc.logout();
         await expectThroughLater(
-          harness.affiliationBloc,
+          harness.affiliationBloc.stream,
           emits(isA<AffiliationsUnloaded>()),
         );
 
@@ -156,7 +157,10 @@ void main() async {
         await _authenticate(harness, exists: true);
 
         // Assert
-        await expectThroughLater(harness.affiliationBloc, emits(isA<AffiliationsLoaded>()));
+        await expectThroughLater(
+          harness.affiliationBloc.stream,
+          emits(isA<AffiliationsLoaded>()),
+        );
       },
     );
   });
@@ -171,7 +175,7 @@ void main() async {
       // Act
       await harness.affiliationBloc.load();
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationsLoaded>().having(
           (event) => event.isRemote,
           'Should be remote',
@@ -208,11 +212,6 @@ void main() async {
         6,
         reason: "SHOULD contain 6 entities",
       );
-
-      await expectThroughLater(
-        harness.affiliationBloc,
-        emits(isA<AffiliationsLoaded>()),
-      );
     });
 
     test('SHOULD update person on load', () async {
@@ -233,7 +232,7 @@ void main() async {
       );
       await harness.affiliationBloc.load();
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationsLoaded>().having(
           (event) => event.isRemote,
           'Should be remote',
@@ -255,7 +254,7 @@ void main() async {
       await _authenticate(harness);
       await harness.affiliationBloc.load();
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationsLoaded>().having(
           (event) => event.isRemote,
           'Should be remote',
@@ -274,7 +273,7 @@ void main() async {
       );
       await harness.affiliationBloc.create(affiliation);
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationCreated>().having(
           (event) => event.isRemote,
           'Should be remote',
@@ -305,7 +304,7 @@ void main() async {
       final existing = await _seed(harness, offline: false);
       await harness.affiliationBloc.load();
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationsLoaded>().having(
           (event) => event.isRemote,
           'Should be remote',
@@ -319,7 +318,7 @@ void main() async {
       final duplicate = existing.copyWith(uuid: Uuid().v4());
       await harness.affiliationBloc.create(duplicate);
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationCreated>().having(
           (event) => event.isRemote,
           'Should be remote',
@@ -349,7 +348,7 @@ void main() async {
       await _authenticate(harness);
       await harness.affiliationBloc.load();
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationsLoaded>().having(
           (event) => event.isRemote,
           'Should be remote',
@@ -394,7 +393,7 @@ void main() async {
       await harness.affiliationBloc.load();
       // Assert async loads
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationsLoaded>().having(
           (event) {
             return event.isLocal;
@@ -414,7 +413,7 @@ void main() async {
 
       // Assert async loads
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationsLoaded>().having(
           (event) {
             return event.isRemote;
@@ -441,7 +440,7 @@ void main() async {
       await harness.affiliationBloc.load();
 
       await expectThroughLater(
-        harness.affiliationBloc,
+        harness.affiliationBloc.stream,
         emits(isA<AffiliationsLoaded>().having(
           (event) => event.isRemote,
           'Should be remote',
@@ -529,7 +528,7 @@ Future _authenticate(
   if (!exists) {
     // Wait until user is onboarded remotely
     await expectThroughLater(
-      harness.affiliationBloc,
+      harness.affiliationBloc.stream,
       emits(isA<UserOnboarded>().having(
         (event) {
           return event.isRemote;

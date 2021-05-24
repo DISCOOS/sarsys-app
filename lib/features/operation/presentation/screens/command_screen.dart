@@ -73,10 +73,10 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: context.bloc<OperationBloc>().onChanged(),
-      initialData: context.bloc<OperationBloc>().selected,
+      stream: context.read<OperationBloc>().onChanged(),
+      initialData: context.read<OperationBloc>().selected,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
-        final operation = (snapshot.hasData ? context.bloc<OperationBloc>().selected : null);
+        final operation = (snapshot.hasData ? context.read<OperationBloc>().selected : null);
         final tabs = [
           UnitsPage(key: _unitsKey),
           PersonnelsPage(key: _personnelKey),
@@ -132,7 +132,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
     );
   }
 
-  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
+  bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   _toTitle(Operation operation, {ifEmpty: "Aksjon"}) {
     switch (routeData) {
@@ -140,22 +140,22 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         return "Oppdrag";
       case CommandScreen.TAB_UNITS:
         return StreamBuilder<UnitState>(
-            stream: context.bloc<UnitBloc>(),
+            stream: context.read<UnitBloc>().stream,
             builder: (context, snapshot) {
-              return Text("Enheter (" + "${snapshot.hasData ? context.bloc<UnitBloc>().count(exclude: []) : "-"})");
+              return Text("Enheter (" + "${snapshot.hasData ? context.read<UnitBloc>().count(exclude: []) : "-"})");
             });
       case CommandScreen.TAB_PERSONNEL:
         return StreamBuilder<PersonnelState>(
-            stream: context.bloc<PersonnelBloc>(),
+            stream: context.read<PersonnelBloc>().stream,
             builder: (context, snapshot) {
               return Text(
-                  "Mannskap (" + "${snapshot.hasData ? context.bloc<PersonnelBloc>().count(exclude: []) : "-"})");
+                  "Mannskap (" + "${snapshot.hasData ? context.read<PersonnelBloc>().count(exclude: []) : "-"})");
             });
       case CommandScreen.TAB_DEVICES:
         return StreamBuilder<DeviceState>(
-            stream: context.bloc<DeviceBloc>(),
+            stream: context.read<DeviceBloc>().stream,
             builder: (context, snapshot) {
-              return Text("Apparat (" + "${snapshot.hasData ? context.bloc<DeviceBloc>().count(exclude: []) : "-"})");
+              return Text("Apparat (" + "${snapshot.hasData ? context.read<DeviceBloc>().count(exclude: []) : "-"})");
             });
       default:
         return ifEmpty;

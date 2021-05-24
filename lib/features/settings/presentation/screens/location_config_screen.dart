@@ -21,7 +21,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
 
   bool _manual;
 
-  AppConfigBloc get bloc => context.bloc<AppConfigBloc>();
+  AppConfigBloc get bloc => context.read<AppConfigBloc>();
 
   @override
   void didChangeDependencies() {
@@ -31,18 +31,18 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
     _displacement.text = "$distanceFilter";
   }
 
-  LocationOptions get options => context.bloc<ActivityBloc>().options;
+  LocationOptions get options => context.read<ActivityBloc>().options;
   int get timeInterval => _manual ? bloc.config.locationFastestInterval : options.timeInterval;
 
   int get distanceFilter => _manual ? bloc.config.locationSmallestDisplacement : options.distanceFilter;
 
   bool get locationStoreLocally =>
-      _manual ? context.bloc<AppConfigBloc>().config.locationStoreLocally : options.locationStoreLocally;
+      _manual ? context.read<AppConfigBloc>().config.locationStoreLocally : options.locationStoreLocally;
 
   bool get locationAllowSharing =>
-      _manual ? context.bloc<AppConfigBloc>().config.locationAllowSharing : options.locationAllowSharing;
+      _manual ? context.read<AppConfigBloc>().config.locationAllowSharing : options.locationAllowSharing;
 
-  bool get _locationDebug => _manual ? context.bloc<AppConfigBloc>().config.locationDebug : options.debug;
+  bool get _locationDebug => _manual ? context.read<AppConfigBloc>().config.locationDebug : options.debug;
 
   @override
   void dispose() {
@@ -137,7 +137,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                       value: _manual,
                       onChanged: (value) async {
                         if (snapshot.hasData) {
-                          await context.bloc<ActivityBloc>().apply(
+                          await context.read<ActivityBloc>().apply(
                                 manual: value,
                                 config: bloc.config,
                               );
@@ -285,7 +285,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
       subtitle: Text('Posisjonen kan bli lagret i aksjonen'),
       onChanged: _manual
           ? (value) {
-              context.bloc<AppConfigBloc>().updateWith(
+              context.read<AppConfigBloc>().updateWith(
                     locationAllowSharing: value,
                   );
               setState(() {});
@@ -301,7 +301,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
       subtitle: Text('Lagres lokalt når du er uten nett'),
       onChanged: _manual
           ? (value) {
-              context.bloc<AppConfigBloc>().updateWith(
+              context.read<AppConfigBloc>().updateWith(
                     locationStoreLocally: value,
                   );
               setState(() {});
@@ -316,7 +316,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
         title: Text('Aktiver debugging'),
         subtitle: Text('En lyd høres når endringer skjer'),
         onChanged: (value) async {
-          await context.bloc<AppConfigBloc>().updateWith(
+          await context.read<AppConfigBloc>().updateWith(
                 locationDebug: value,
               );
           await LocationService().configure(

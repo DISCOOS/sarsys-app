@@ -53,7 +53,7 @@ class UnitEditor extends StatefulWidget {
     var phone = unit?.phone;
     if (unit != null && phone == null) {
       if (unit?.tracking != null) {
-        final devices = context.bloc<TrackingBloc>().devices(
+        final devices = context.read<TrackingBloc>().devices(
           unit?.tracking?.uuid,
           // Include closed tracks
           exclude: [],
@@ -62,7 +62,7 @@ class UnitEditor extends StatefulWidget {
         apps.addAll(devices.where((a) => a.number != null));
         if (apps.isEmpty) {
           // Search for personnel number
-          final bloc = context.bloc<PersonnelBloc>();
+          final bloc = context.read<PersonnelBloc>();
           for (var puuid in unit.personnels) {
             phone = PersonnelEditor.findPersonnelPhone(context, bloc.repo.get(puuid));
             if (phone != null) {
@@ -97,15 +97,15 @@ class _UnitEditorState extends State<UnitEditor> {
 
   bool get hasAvailablePersonnel =>
       context
-          .bloc<UnitBloc>()
+          .read<UnitBloc>()
           .findAvailablePersonnel(
-            context.bloc<PersonnelBloc>().repo,
+            context.read<PersonnelBloc>().repo,
           )
           .isNotEmpty ||
       _getActualPersonnels().isNotEmpty;
 
   bool get hasAvailableDevices =>
-      context.bloc<TrackingBloc>().findAvailablePersonnel().isNotEmpty || _getActualDevices().isNotEmpty;
+      context.read<TrackingBloc>().findAvailablePersonnel().isNotEmpty || _getActualDevices().isNotEmpty;
 
   @override
   void initState() {
@@ -274,7 +274,7 @@ class _UnitEditorState extends State<UnitEditor> {
   String _validateNumber(number) {
     final type = _actualType(widget.type);
     Unit unit = context
-        .bloc<UnitBloc>()
+        .read<UnitBloc>()
         .units
         .values
         .where(
@@ -326,7 +326,7 @@ class _UnitEditorState extends State<UnitEditor> {
 
   String _validateCallsign(callsign) {
     Unit unit = context
-        .bloc<UnitBloc>()
+        .read<UnitBloc>()
         .units
         .values
         .where(
@@ -387,7 +387,7 @@ class _UnitEditorState extends State<UnitEditor> {
 
   String _validatePhone(phone) {
     Unit unit = context
-        .bloc<UnitBloc>()
+        .read<UnitBloc>()
         .units
         .values
         .where(
@@ -495,7 +495,7 @@ class _UnitEditorState extends State<UnitEditor> {
   List<Device> _findDevices(String type, String query) {
     var actual = _getActualDevices().map((device) => device.uuid);
     return context
-        .bloc<DeviceBloc>()
+        .read<DeviceBloc>()
         .values
         .where((device) => _canAddDevice(actual, device))
         .where((device) => _deviceMatch(device, type, query))
@@ -513,7 +513,7 @@ class _UnitEditorState extends State<UnitEditor> {
     if (actual.contains(match.uuid)) {
       return true;
     }
-    final bloc = context.bloc<TrackingBloc>();
+    final bloc = context.read<TrackingBloc>();
     if (widget.unit?.tracking?.uuid != null) {
       // Was device tracked by this unit earlier?
       final trackings = bloc.find(match).map((t) => t.uuid);
@@ -565,7 +565,7 @@ class _UnitEditorState extends State<UnitEditor> {
   List<Personnel> _findPersonnels(String status, String query) {
     var actual = _getActualPersonnels().map((personnel) => personnel.uuid);
     return context
-        .bloc<PersonnelBloc>()
+        .read<PersonnelBloc>()
         .values
         .where((personnel) => _canAddPersonnel(actual, personnel))
         .where((personnel) => _personnelMatch(personnel, status, query))
@@ -585,7 +585,7 @@ class _UnitEditorState extends State<UnitEditor> {
     if (actual.contains(match.uuid)) {
       return true;
     }
-    final bloc = context.bloc<TrackingBloc>();
+    final bloc = context.read<TrackingBloc>();
     if (widget.unit?.tracking?.uuid != null) {
       // Was personnel tracked by this unit earlier?
       final trackings = bloc.find(match).map((t) => t.uuid);
@@ -618,7 +618,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Position _toPosition() {
-    final tracking = context.bloc<TrackingBloc>().trackings[tuuid];
+    final tracking = context.read<TrackingBloc>().trackings[tuuid];
     return tracking?.position ?? widget.position;
   }
 
@@ -632,7 +632,7 @@ class _UnitEditorState extends State<UnitEditor> {
             );
 
   List<Device> _getActualDevices() {
-    return (widget?.unit?.tracking != null ? context.bloc<TrackingBloc>().devices(tuuid,
+    return (widget?.unit?.tracking != null ? context.read<TrackingBloc>().devices(tuuid,
         // Include closed tracks
         exclude: []) : [])
       ..toList()
@@ -652,7 +652,7 @@ class _UnitEditorState extends State<UnitEditor> {
       puuids.addAll(widget.personnels?.map((p) => p.uuid) ?? <String>[]);
     }
     final personnels =
-        context.bloc<PersonnelBloc>().values.where((p) => p.isAvailable).where((p) => puuids.contains(p.uuid)).toList();
+        context.read<PersonnelBloc>().values.where((p) => p.isAvailable).where((p) => puuids.contains(p.uuid)).toList();
     return personnels;
   }
 
@@ -670,9 +670,9 @@ class _UnitEditorState extends State<UnitEditor> {
     return "${widget?.unit?.number ?? _nextNumber(_actualType(widget.type))}";
   }
 
-  int _nextNumber(UnitType type) => context.bloc<UnitBloc>().nextAvailableNumber(
+  int _nextNumber(UnitType type) => context.read<UnitBloc>().nextAvailableNumber(
         type,
-        reuse: context.bloc<AppConfigBloc>().config.callsignReuse,
+        reuse: context.read<AppConfigBloc>().config.callsignReuse,
       );
 
   String _actualNumber() {
@@ -696,7 +696,7 @@ class _UnitEditorState extends State<UnitEditor> {
   String _nextCallSign() {
     int number = _ensureCallSignSuffix();
     UnitType type = _actualType(widget.type);
-    Department dep = context.bloc<AffiliationBloc>().findUserDepartment();
+    Department dep = context.read<AffiliationBloc>().findUserDepartment();
     return toCallsign(type, dep?.name, number);
   }
 

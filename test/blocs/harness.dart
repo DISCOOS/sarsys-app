@@ -64,7 +64,7 @@ const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provide
 const MethodChannel permissionHandlerChannel = MethodChannel('flutter.baseflow.com/permissions/methods');
 const MethodChannel secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
 
-class BlocTestHarness implements BlocDelegate {
+class BlocTestHarness implements BlocObserver {
   static const TRUSTED = 'username@some.domain';
   static const UNTRUSTED = 'username';
   static const PASSWORD = 'password';
@@ -83,8 +83,11 @@ class BlocTestHarness implements BlocDelegate {
   bool get isOffline => connectivity.isOffline;
   bool get isCellular => connectivity.isCellular;
 
-  BlocEventBus get bus => _bus;
-  BlocEventBus _bus = BlocEventBus();
+  BlocEventBus get bus => _observer.bus;
+  AppBlocObserver _observer = AppBlocObserver(
+    // Override default handler
+    onError: (_, __, ___) {},
+  );
 
   User get user => _userService.token.toUser();
 
@@ -97,28 +100,28 @@ class BlocTestHarness implements BlocDelegate {
   String _password;
   String get password => _password;
 
-  String _division;
   String get division => _division;
+  String _division;
 
-  String _department;
   String get department => _department;
+  String _department;
 
-  bool _authenticated;
   bool get isAuthenticated => _authenticated;
+  bool _authenticated = false;
 
   UserServiceMock get userService => _userService;
   UserServiceMock _userService;
 
-  UserBloc _userBloc;
   UserBloc get userBloc => _userBloc;
+  UserBloc _userBloc;
   bool _withUserBloc = false;
 
-  AppConfigBloc _configBloc;
   AppConfigBloc get configBloc => _configBloc;
+  AppConfigBloc _configBloc;
   bool _withConfigBloc = false;
 
-  AffiliationBloc _affiliationBloc;
   AffiliationBloc get affiliationBloc => _affiliationBloc;
+  AffiliationBloc _affiliationBloc;
   bool _withAffiliationBloc = false;
 
   OrganisationServiceMock get organisationService => _organisationService;
@@ -142,8 +145,8 @@ class BlocTestHarness implements BlocDelegate {
   OperationServiceMock get operationService => _operationService;
   OperationServiceMock _operationService;
 
-  OperationBloc _operationsBloc;
   OperationBloc get operationsBloc => _operationsBloc;
+  OperationBloc _operationsBloc;
   bool _withOperationBloc = false;
 
   DeviceServiceMock get deviceService => _deviceService;
@@ -152,35 +155,34 @@ class BlocTestHarness implements BlocDelegate {
   DeviceRepository get deviceRepo => _deviceRepo;
   DeviceRepository _deviceRepo;
 
-  DeviceBloc _deviceBloc;
   DeviceBloc get deviceBloc => _deviceBloc;
+  DeviceBloc _deviceBloc;
   bool _withDeviceBloc = false;
 
   PersonnelServiceMock get personnelService => _personnelService;
   PersonnelServiceMock _personnelService;
 
-  PersonnelBloc _personnelBloc;
   PersonnelBloc get personnelBloc => _personnelBloc;
+  PersonnelBloc _personnelBloc;
   bool _withPersonnelBloc = false;
 
   UnitServiceMock get unitService => _unitService;
   UnitServiceMock _unitService;
 
-  UnitBloc _unitBloc;
   UnitBloc get unitBloc => _unitBloc;
+  UnitBloc _unitBloc;
   bool _withUnitBloc = false;
 
   TrackingServiceMock get trackingService => _trackingService;
   TrackingServiceMock _trackingService;
 
-  TrackingBloc _trackingBloc;
   TrackingBloc get trackingBloc => _trackingBloc;
+  TrackingBloc _trackingBloc;
   bool _withTrackingBloc = false;
 
-  bool _waitForOperationsLoaded = false;
-
   void install() {
-    BlocSupervisor.delegate = this;
+    Timer timer;
+    Bloc.observer = this;
     setUpAll(() async {
       // Required since provider need access to service bindings prior to calling 'test()'
       _withAssets();
@@ -197,12 +199,28 @@ class BlocTestHarness implements BlocDelegate {
 
       // Delete any previous data from failed tests
       return await Storage.destroy().catchError(
-        (e, stackTrace) => _printError('install > Storage.destroy failed', e, stackTrace),
+        (error, stackTrace) => debugPrintError(
+          'install > Storage.destroy failed',
+          error,
+          stackTrace,
+        ),
       );
     });
 
     setUp(() async {
-      _print('setUp...');
+      assert(timer == null, 'Do not run test in parallel');
+      timer = Timer(_timeout, () async {
+        debugPrint('------TIMEOUT------');
+        debugPrint('Listing events from ${_streamEvents.length} logs...');
+        _streamEvents.entries.forEach((entry) {
+          debugPrint('------LOG:${entry.key}------');
+          debugPrint('>> ${entry.value.join('\n>>  ')}');
+          debugPrint('>> log ended');
+          debugPrint('');
+        });
+        throw 'Test timeout';
+      });
+      debugPrint('setUp...');
       // Hive does not handle close
       // with pending writes in a
       // well-behaved manner. This
@@ -213,11 +231,15 @@ class BlocTestHarness implements BlocDelegate {
       // before next test is run.
       if (Storage.initialized) {
         await Storage.destroy().catchError(
-          (e, stackTrace) => _printError('setUp > Storage.destroy() failed', e, stackTrace),
+          (e, stackTrace) => debugPrintError(
+            'setUp > Storage.destroy() failed',
+            e,
+            stackTrace,
+          ),
         );
       }
       await Storage.init().catchError(
-        (e, stackTrace) => _printError('setUp > Storage.init() failed', e, stackTrace),
+        (e, stackTrace) => debugPrintError('setUp > Storage.init() failed', e, stackTrace),
       );
 
       _buildConnectivity();
@@ -227,17 +249,17 @@ class BlocTestHarness implements BlocDelegate {
       }
       if (_withUserBloc) {
         await _buildUserBloc().catchError(
-          (e, stackTrace) => _printError('setUp > _buildUserBloc() failed', e, stackTrace),
-        );
-      }
-      if (_withAffiliationBloc) {
-        await _buildAffiliationBloc().catchError(
-          (e, stackTrace) => _printError('setUp > _buildAffiliationBloc() failed', e, stackTrace),
+          (e, stackTrace) => debugPrintError('setUp > _buildUserBloc() failed', e, stackTrace),
         );
       }
       if (_withOperationBloc) {
         await _buildOperationBloc().catchError(
-          (e, stackTrace) => _printError('setUp > _buildOperationBloc() failed', e, stackTrace),
+          (e, stackTrace) => debugPrintError('setUp > _buildOperationBloc() failed', e, stackTrace),
+        );
+      }
+      if (_withAffiliationBloc) {
+        await _buildAffiliationBloc().catchError(
+          (e, stackTrace) => debugPrintError('setUp > _buildAffiliationBloc() failed', e, stackTrace),
         );
       }
       if (_withDeviceBloc) {
@@ -253,58 +275,81 @@ class BlocTestHarness implements BlocDelegate {
         _buildTrackingBloc();
       }
 
-      _print('setUp...ok');
+      if (_authenticated) {
+        assert(_userBloc != null);
+        await _userBloc.login(
+          username: _username,
+          password: _password,
+        );
+        await Future.wait<void>([
+          _configBloc.init(),
+          expectThroughLater(
+            _userBloc.stream,
+            isA<UserAuthenticated>(),
+          ),
+          expectThroughLater(
+            _operationsBloc.stream,
+            isA<OperationsLoaded>().having((event) => event.isRemote, 'Should be remote', isTrue),
+          ),
+          expectThroughLater(
+            _affiliationBloc.stream,
+            emitsThrough(isA<UserOnboarded>().having((event) => event.isRemote, 'Should be remote', isTrue)),
+          ),
+        ]);
+      }
+
+      debugPrint('setUp...ok');
 
       // Needed for await above to work
       return Future.value();
     });
 
     tearDown(() async {
-      _print('teardown...');
+      debugPrint('teardown...');
       if (_withConfigBloc) {
         await _configBloc?.close()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _configBloc.close() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _configBloc.close() failed', e, stackTrace),
             );
       }
       if (_withUserBloc) {
         await _userBloc?.close()?.timeout(Duration(seconds: 1))?.catchError(
-              (e, stackTrace) => _printError('tearDown > _userBloc.close() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _userBloc.close() failed', e, stackTrace),
             );
       }
       if (_withAffiliationBloc) {
         await _affiliationBloc?.close()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _affiliationBloc.close() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _affiliationBloc.close() failed', e, stackTrace),
             );
         await _personService?.dispose()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _personService.dispose() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _personService.dispose() failed', e, stackTrace),
             );
         await _affiliationService?.dispose()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _affiliationService.dispose() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _affiliationService.dispose() failed', e, stackTrace),
             );
       }
       if (_withOperationBloc) {
         await _operationsBloc?.close()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _operationsBloc.close() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _operationsBloc.close() failed', e, stackTrace),
             );
       }
       if (_withDeviceBloc) {
         await _deviceBloc?.close()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _deviceBloc.close() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _deviceBloc.close() failed', e, stackTrace),
             );
       }
       if (_withPersonnelBloc) {
         await _personnelBloc?.close()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _personnelBloc.close() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _personnelBloc.close() failed', e, stackTrace),
             );
       }
       if (_withUnitBloc) {
         await _unitBloc?.close()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _unitBloc.close() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _unitBloc.close() failed', e, stackTrace),
             );
       }
       if (_withTrackingBloc) {
         await _trackingBloc?.close()?.catchError(
-              (e, stackTrace) => _printError('tearDown > _trackingBloc.close() failed', e, stackTrace),
+              (e, stackTrace) => debugPrintError('tearDown > _trackingBloc.close() failed', e, stackTrace),
             );
         _trackingService?.reset();
       }
@@ -312,15 +357,17 @@ class BlocTestHarness implements BlocDelegate {
       errors.clear();
       bus.unsubscribeAll();
       _connectivity?.dispose();
+      timer?.cancel();
+      timer = null;
+      _streamEvents.clear();
 
       if (Storage.initialized) {
-        _print('teardown...destroy');
+        debugPrint('teardown...destroy');
         return Storage.destroy().catchError(
-          (e, stackTrace) => _printError('tearDown > Storage.destroy() failed', e, stackTrace),
+          (e, stackTrace) => debugPrintError('tearDown > Storage.destroy() failed', e, stackTrace),
         );
       }
-
-      _print('teardown...ok');
+      debugPrint('teardown...ok');
       return Future.value();
     });
 
@@ -332,6 +379,27 @@ class BlocTestHarness implements BlocDelegate {
       return Future.value();
     });
   }
+
+  void withDebug({
+    bool errors = true,
+    bool streams = true,
+    bool commands = true,
+    bool transitions = true,
+    Duration timeout = const Duration(seconds: 5),
+  }) {
+    _timeout = timeout;
+    _debugErrors = errors;
+    _debugStreams = streams;
+    _debugCommands = commands;
+    _debugTransitions = transitions;
+  }
+
+  bool get _debug => _debugCommands || _debugTransitions || _debugErrors;
+
+  bool _debugErrors = false;
+  bool _debugCommands = false;
+  bool _debugTransitions = false;
+  Duration _timeout = Duration(seconds: 5);
 
   void withConfigBloc() {
     _withConfigBloc = true;
@@ -389,32 +457,20 @@ class BlocTestHarness implements BlocDelegate {
     _withOperationBloc = true;
   }
 
-  void withDeviceBloc({
-    bool waitForOperationsLoaded = true,
-  }) {
+  void withDeviceBloc() {
     _withDeviceBloc = true;
-    _waitForOperationsLoaded = waitForOperationsLoaded;
   }
 
-  void withPersonnelBloc({
-    bool waitForOperationsLoaded = true,
-  }) {
+  void withPersonnelBloc() {
     _withPersonnelBloc = true;
-    _waitForOperationsLoaded = waitForOperationsLoaded;
   }
 
-  void withUnitBloc({
-    bool waitForOperationsLoaded = true,
-  }) {
+  void withUnitBloc() {
     _withUnitBloc = true;
-    _waitForOperationsLoaded = waitForOperationsLoaded;
   }
 
-  void withTrackingBloc({
-    bool waitForOperationsLoaded = true,
-  }) {
+  void withTrackingBloc() {
     _withTrackingBloc = true;
-    _waitForOperationsLoaded = waitForOperationsLoaded;
   }
 
   void _buildSecureStoragePlugin() {
@@ -525,18 +581,6 @@ class BlocTestHarness implements BlocDelegate {
       configBloc,
       bus,
     );
-
-    if (_authenticated) {
-      await _userBloc.login(
-        username: _username,
-        password: _password,
-      );
-      expectThroughInOrder(
-        _userBloc,
-        [isA<UserAuthenticated>()],
-        close: false,
-      );
-    }
   }
 
   Future _buildAffiliationBloc() async {
@@ -571,10 +615,6 @@ class BlocTestHarness implements BlocDelegate {
       bus: bus,
     );
 
-    if (_authenticated) {
-      await expectThroughLater(_affiliationBloc, emits(isA<UserOnboarded>()));
-    }
-
     return Future.value();
   }
 
@@ -606,17 +646,6 @@ class BlocTestHarness implements BlocDelegate {
       _userBloc,
       bus,
     );
-
-    await _configBloc.init();
-
-    if (_authenticated && _waitForOperationsLoaded) {
-      // Consume IncidentsLoaded fired by UserAuthenticated
-      await expectThroughInOrderLater(
-        _operationsBloc,
-        [isA<OperationsLoaded>()],
-        close: false,
-      );
-    }
   }
 
   void _buildDeviceBloc({
@@ -665,7 +694,7 @@ class BlocTestHarness implements BlocDelegate {
     );
 
     if (_authenticated) {
-      // Consume PersonnelsLoaded fired by IncidentsLoaded
+      // Consume PersonnelsLoaded fired by OperationsLoaded
       expectThroughInOrder(
         _personnelBloc,
         [isA<PersonnelsEmpty>()],
@@ -728,13 +757,13 @@ class BlocTestHarness implements BlocDelegate {
   final errors = <Bloc, List<Object>>{};
 
   @override
-  void onError(Bloc bloc, Object error, StackTrace stackTrace) {
+  void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
     errors.update(
       bloc,
       (errors) => errors..add(error),
       ifAbsent: () => [error],
     );
-    _printError('onError(${bloc.runtimeType})', error, stackTrace);
+    debugPrintError('onError(${bloc.runtimeType})', error, stackTrace);
   }
 
   final history = <Pair<Bloc, Object>>[];
@@ -742,26 +771,47 @@ class BlocTestHarness implements BlocDelegate {
   @override
   void onEvent(Bloc bloc, Object event) {
     history.add(Pair.of(bloc, event));
-    _print('------COMMAND-------');
-    _print('bloc: ${bloc.runtimeType}');
-    _print('command: ${event.runtimeType}');
+    if (_debugCommands) {
+      debugPrint('------COMMAND-------');
+      debugPrint('bloc: ${bloc.runtimeType}');
+      debugPrint('command: ${event.runtimeType}');
+    }
   }
 
   @override
   void onTransition(Bloc bloc, Transition transition) {
     history.add(Pair.of(bloc, transition.nextState));
-    _print('------TRANSITION-------');
-    _print('bloc: ${bloc.runtimeType}');
-    _print('transition.event: ${transition.event.runtimeType}');
-    _print('transition.nextState: ${transition.nextState.runtimeType}');
+    if (_debugTransitions) {
+      debugPrint('------TRANSITION-------');
+      debugPrint('bloc: ${bloc.runtimeType}');
+      debugPrint('transition.event: ${transition.event.runtimeType}');
+      debugPrint('transition.nextState: ${transition.nextState.runtimeType}');
+    }
   }
 
-  void _printError(String message, Object error, StackTrace stackTrace) {
-    print('------ERROR-------');
-    print('message: $message');
-    print('error: $error');
-    print('stackTrace: $stackTrace');
+  void debugPrintError(String message, Object error, StackTrace stackTrace) {
+    if (_debugErrors) {
+      debugPrint('------ERROR-------');
+      debugPrint('message: $message');
+      debugPrint('error: $error');
+      debugPrint('stackTrace: $stackTrace');
+    }
   }
+
+  void debugPrint(String message) {
+    if (_debug) {
+      print(message);
+    }
+  }
+
+  @override
+  void onChange(BlocBase bloc, Change change) {}
+
+  @override
+  void onClose(BlocBase bloc) {}
+
+  @override
+  void onCreate(BlocBase bloc) {}
 }
 
 class BlocEventBusMock extends Mock implements BlocEventBus {}
@@ -800,45 +850,58 @@ Future<void> expectExactlyLater<B extends Bloc<dynamic, State>, State>(
 }) async {
   assert(bloc != null);
   final states = <State>[];
-  final subscription = bloc.skip(skip).listen(states.add);
+  final sub1 = _printStream('expectExactlyLater', bloc.stream);
+  final sub2 = bloc.stream.skip(skip).listen(
+        states.add,
+      );
   if (duration != null) await Future.delayed(duration);
   if (close) {
     await bloc.close();
   }
   expect(states, expected);
-  await subscription.cancel();
+  await _cancelPrintStream('expectExactlyLater', bloc.stream, sub1);
+  await sub2.cancel();
 }
 
 void expectThrough<B extends Bloc<dynamic, State>, State>(
   B bloc,
   expected, {
   bool close = false,
-}) {
+}) async {
   assert(bloc != null);
   assert(expected != null);
-  expect(bloc, emitsThrough(expected));
+  final sub = _printStream('expectThrough', bloc.stream);
+  expect(bloc.stream, emitsThrough(expected));
   if (close) {
     bloc.close();
   }
+  await _cancelPrintStream('expectThrough', bloc.stream, sub);
 }
 
 void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
   B bloc,
   Iterable expected, {
   bool close = false,
-}) {
+}) async {
   assert(bloc != null);
   assert(expected != null);
-  expect(bloc, emitsThrough(emitsInOrder(expected)));
+  final sub = _printStream('expectThroughInOrder', bloc.stream);
+  expect(bloc.stream, emitsThrough(emitsInOrder(expected)));
   if (close) {
     bloc.close();
   }
+  await _cancelPrintStream('expectThroughInOrder', bloc.stream, sub);
 }
 
-Future<void> expectThroughLater(Stream<BlocState> bloc, expected) async {
-  assert(bloc != null);
+Future<void> expectThroughLater(Stream<BlocState> stream, expected) async {
+  assert(stream != null);
   assert(expected != null);
-  await expectLater(bloc, emitsThrough(expected));
+  var sub;
+  if (stream.isBroadcast) {
+    sub = _printStream('expectThroughLater', stream);
+  }
+  await expectLater(stream, emitsThrough(expected));
+  await _cancelPrintStream('expectThroughLater', stream, sub);
 }
 
 Future<void> expectThroughLaterIf<State extends BlocState>(
@@ -849,10 +912,12 @@ Future<void> expectThroughLaterIf<State extends BlocState>(
   assert(bloc != null);
   if (bloc.state is State) {
     assert(expected != null);
-    await expectLater(bloc, emitsThrough(expected));
+    final sub = _printStream('expectThroughLaterIf', bloc.stream);
+    await expectLater(bloc.stream, emitsThrough(expected));
     if (close) {
       bloc.close();
     }
+    await _cancelPrintStream('expectThroughLaterIf', bloc.stream, sub);
   }
 }
 
@@ -863,11 +928,13 @@ Future<void> expectThroughLaterIfNot<State extends BlocState>(
 }) async {
   assert(bloc != null);
   if (bloc.state is! State) {
+    final sub = _printStream('expectThroughLaterIfNot', bloc.stream);
     assert(expected != null);
-    await expectLater(bloc, emitsThrough(expected));
+    await expectLater(bloc.stream, emitsThrough(expected));
     if (close) {
       bloc.close();
     }
+    await _cancelPrintStream('expectThroughLaterIfNot', bloc.stream, sub);
   }
 }
 
@@ -878,10 +945,12 @@ Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>, State>(
 }) async {
   assert(bloc != null);
   assert(expected != null);
-  await expectLater(bloc, emitsThrough(emitsInOrder(expected)));
+  final sub = _printStream('expectThroughInOrderLater', bloc.stream);
+  await expectLater(bloc.stream, emitsThrough(emitsInOrder(expected)));
   if (close) {
     await bloc.close();
   }
+  await _cancelPrintStream('expectThroughInOrderLater', bloc.stream, sub);
 }
 
 Stream<StorageStatus> toStatusChanges(Stream<StorageTransition> changes) =>
@@ -919,6 +988,7 @@ Future expectStorageStatusLater(
       emitsThrough(
         isA<StorageTransition>().having(
           (transition) =>
+              transition.status == expected &&
               transition.to?.value is Aggregate &&
               (transition.to?.value as Aggregate)?.uuid == uuid &&
               (remote ? transition.isRemote : transition.isLocal),
@@ -944,9 +1014,47 @@ Future expectStorageStatusLater(
   );
 }
 
-bool _debug = false;
-void _print(String message) {
-  if (_debug) {
-    print(message);
+var _debugStreams = false;
+
+final _streamEvents = <String, List<String>>{};
+
+StreamSubscription _printStream(String test, Stream stream) {
+  final key = '$test:${stream.runtimeType}';
+  final buffer = StringBuffer();
+  buffer.writeln('------STREAM------');
+  buffer.writeln('test: $test');
+  buffer.writeln('type: ${stream?.runtimeType}');
+  buffer.writeln('event: listening');
+  _logStreamEvent(key, buffer);
+
+  return stream.listen((e) {
+    final buffer = StringBuffer();
+    buffer.writeln('------STREAM------');
+    buffer.writeln('test: $test');
+    buffer.writeln('type: ${stream?.runtimeType}');
+    buffer.writeln('event: ${e.runtimeType}');
+    _logStreamEvent(key, buffer);
+  });
+}
+
+void _logStreamEvent(String key, StringBuffer buffer) {
+  _streamEvents.update(
+    key,
+    (events) => events..add(buffer.toString()),
+    ifAbsent: () => [buffer.toString()],
+  );
+  if (_debugStreams) {
+    print(buffer.toString());
   }
+}
+
+Future<void> _cancelPrintStream(String test, Stream stream, StreamSubscription sub) {
+  final key = '$test:${stream.runtimeType}';
+  final buffer = StringBuffer();
+  buffer.writeln('------STREAM------');
+  buffer.writeln('test: $test');
+  buffer.writeln('type: ${stream?.runtimeType}');
+  buffer.writeln('event: cancelled');
+  _logStreamEvent(key, buffer);
+  return sub?.cancel();
 }

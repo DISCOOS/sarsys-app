@@ -76,10 +76,10 @@ class OperationUnselected extends OperationState<Operation> {
 
 class OperationsLoaded extends OperationState<Iterable<String>> {
   OperationsLoaded(
-    Iterable<String> data, {
+    Iterable<String> uuids, {
     this.incidents,
     bool isRemote = false,
-  }) : super(data, isRemote: isRemote, props: [incidents]);
+  }) : super(uuids, isRemote: isRemote, props: [incidents]);
 
   final List<String> incidents;
 
@@ -164,7 +164,7 @@ class OperationSelected extends OperationState<Operation> {
   OperationSelected(Operation data) : super(data);
 
   @override
-  String toString() => '$runtimeType {operation: $data}';
+  String toString() => '$runtimeType {operation: $data, isRemote: $isRemote}';
 }
 
 class OperationDeleted extends OperationState<Operation> {
@@ -181,7 +181,7 @@ class OperationsUnloaded extends OperationState<Iterable<Operation>> {
   OperationsUnloaded(Iterable<Operation> operations) : super(operations);
 
   @override
-  String toString() => '$runtimeType {operations: $data}';
+  String toString() => '$runtimeType {operations: $data, isRemote: $isRemote}';
 }
 
 /// ---------------------

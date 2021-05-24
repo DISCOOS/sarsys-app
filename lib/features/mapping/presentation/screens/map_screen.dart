@@ -57,7 +57,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
   /// Initialize blocs and restart app after blocs are rebuilt
   void _listenForIncidentStates() {
     _subscription?.cancel();
-    _subscription = context.bloc<OperationBloc>().listen((state) {
+    _subscription = context.read<OperationBloc>().stream.listen((state) {
       setState(() {
         _unloaded = state.shouldUnload(widget.operation?.uuid);
       });
@@ -70,7 +70,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
-      floatingActionButton: _showFAB && context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander)
+      floatingActionButton: _showFAB && context.read<OperationBloc>().isAuthorizedAs(UserRole.commander)
           ? FloatingActionButton(
               onPressed: () {
                 _showCreateItemSheet(context);
@@ -112,7 +112,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
 
   void _showCreateItemSheet(BuildContext context) {
     final style = Theme.of(context).textTheme.headline6;
-    final isSelected = context.bloc<OperationBloc>().isSelected;
+    final isSelected = context.read<OperationBloc>().isSelected;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

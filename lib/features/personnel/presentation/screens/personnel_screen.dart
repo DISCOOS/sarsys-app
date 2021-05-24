@@ -68,10 +68,10 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     super.didChangeDependencies();
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<PersonnelBloc>().onChanged(widget.personnel))
-      ..add(context.bloc<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid, skipPosition: true));
+      ..add(context.read<PersonnelBloc>().onChanged(widget.personnel))
+      ..add(context.read<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid, skipPosition: true));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<TrackingBloc>().onMoved(widget.personnel?.tracking?.uuid).listen(_onMove);
+    _onMoved = context.read<TrackingBloc>().onMoved(widget.personnel?.tracking?.uuid).listen(_onMove);
   }
 
   @override
@@ -84,7 +84,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     super.dispose();
   }
 
-  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
+  bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   @override
   List<Widget> buildAppBarActions() {
@@ -95,7 +95,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               onMessage: showMessage,
               onDeleted: () => Navigator.pop(context),
               type: ActionGroupType.popupMenuButton,
-              unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+              unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
               onChanged: (personnel) => setState(() => _personnel = personnel),
             )
           ]
@@ -106,7 +106,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return RefreshIndicator(
       onRefresh: () async {
-        context.bloc<PersonnelBloc>().load();
+        context.read<PersonnelBloc>().load();
       },
       child: ListView(
         padding: const EdgeInsets.all(PersonnelScreen.SPACING),
@@ -136,9 +136,9 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         withActions: false,
         personnel: _personnel,
         controller: _controller,
-        unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
-        tracking: context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
-        devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
+        unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+        tracking: context.read<TrackingBloc>().trackings[_personnel.tracking.uuid],
+        devices: context.read<TrackingBloc>().devices(_personnel.tracking.uuid),
         onGoto: (point) => jumpToPoint(context, center: point),
         onMessage: showMessage,
         onDeleted: () => Navigator.pop(context),

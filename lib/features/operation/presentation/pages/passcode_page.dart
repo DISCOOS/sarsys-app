@@ -77,11 +77,11 @@ class _PasscodePageState extends State<PasscodePage> {
           ),
           Divider(),
           StreamBuilder<UserState>(
-            stream: context.bloc<UserBloc>(),
-            initialData: context.bloc<UserBloc>().state,
+            stream: context.read<UserBloc>().stream,
+            initialData: context.read<UserBloc>().state,
             builder: (context, snapshot) {
               final forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data.isError();
-              final authorization = context.bloc<UserBloc>().getAuthorization(widget.operation);
+              final authorization = context.read<UserBloc>().getAuthorization(widget.operation);
               final command = _verifying && !authorization.withCommanderCode && widget.requireCommand;
               return _buildPasscodeInput(
                 errorText: forbidden || command

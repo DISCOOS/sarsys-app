@@ -477,7 +477,7 @@ Color toAffiliationStandbyStatusColor(AffiliationStandbyStatus status) {
 
 IconData toAffiliationIconData(BuildContext context, Affiliation affiliation) {
   return SarSysIcons.of(
-    context.bloc<AffiliationBloc>().orgs[affiliation?.org?.uuid]?.prefix,
+    context.read<AffiliationBloc>().orgs[affiliation?.org?.uuid]?.prefix,
   ).icon;
 }
 

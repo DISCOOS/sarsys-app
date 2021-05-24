@@ -107,9 +107,9 @@ class AppController {
   );
 
   final Client client;
-  final AppBlocDelegate delegate = AppBlocDelegate(BlocEventBus());
+  final AppBlocObserver observer = AppBlocObserver();
 
-  BlocEventBus get bus => delegate.bus;
+  BlocEventBus get bus => observer.bus;
 
   /// Get SARSys api implementation
   Api get api => _api;
@@ -503,10 +503,14 @@ class AppController {
         _onUserState(bloc<UserBloc>().state);
 
         // Toggles between Anonymous and Authenticated states
-        registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
+        registerStreamSubscription(
+          bloc<UserBloc>().stream.listen(_onUserState),
+        );
 
         // Toggles between loading and ready state
-        registerStreamSubscription(bloc<AffiliationBloc>().listen(_onModalState));
+        registerStreamSubscription(
+          bloc<AffiliationBloc>().stream.listen(_onModalState),
+        );
       }
     } catch (e, stackTrace) {
       Catcher.reportCheckedError(e, stackTrace);

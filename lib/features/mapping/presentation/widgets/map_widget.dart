@@ -349,7 +349,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       _tileProvider?.evictErrorTiles();
       _tileProvider = ManagedCacheTileProvider(
         FileCacheService(
-          context.bloc<AppConfigBloc>().config,
+          context.read<AppConfigBloc>().config,
         ),
         connectivity: ConnectivityService(),
       );
@@ -375,7 +375,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void _initWakeLock() async {
     _wakeLockWasOn = await Wakelock.enabled;
     if (mounted) {
-      await Wakelock.toggle(enable: context.bloc<AppConfigBloc>().config.keepScreenOn);
+      await Wakelock.toggle(enable: context.read<AppConfigBloc>().config.keepScreenOn);
     }
   }
 
@@ -436,28 +436,28 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         tools: [
           MeasureTool(),
           POITool(
-            context.bloc<OperationBloc>(),
+            context.read<OperationBloc>(),
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_POI),
           ),
           UnitTool(
-            context.bloc<TrackingBloc>(),
-            user: context.bloc<UserBloc>().user,
+            context.read<TrackingBloc>(),
+            user: context.read<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_UNIT),
           ),
           PersonnelTool(
-            context.bloc<TrackingBloc>(),
-            user: context.bloc<UserBloc>().user,
+            context.read<TrackingBloc>(),
+            user: context.read<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_PERSONNEL),
           ),
           DeviceTool(
-            context.bloc<TrackingBloc>(),
-            user: context.bloc<UserBloc>().user,
+            context.read<TrackingBloc>(),
+            user: context.read<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_DEVICE),
@@ -513,7 +513,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   PermissionController _ensurePermissionController() {
     _permissionController ??= PermissionController(
-      configBloc: context.bloc<AppConfigBloc>(),
+      configBloc: context.read<AppConfigBloc>(),
       onMessage: widget.onMessage,
     );
     return _permissionController;
@@ -537,8 +537,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   LatLng _centerFromIncident(Position current) {
     final candidate = widget.center ??
-        (context.bloc<OperationBloc>()?.selected?.meetup != null
-            ? toLatLng(context.bloc<OperationBloc>()?.selected?.meetup?.point)
+        (context.read<OperationBloc>()?.selected?.meetup != null
+            ? toLatLng(context.read<OperationBloc>()?.selected?.meetup?.point)
             : null) ??
         (current != null ? LatLng(current.lat, current.lon) : Defaults.origo);
     return candidate;
@@ -696,7 +696,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       );
 
   bool get useRetinaMode =>
-      context.bloc<AppConfigBloc>().config.mapRetinaMode && MediaQuery.of(context).devicePixelRatio > 1.0;
+      context.read<AppConfigBloc>().config.mapRetinaMode && MediaQuery.of(context).devicePixelRatio > 1.0;
 
   void _onTap(LatLng point) {
     if (_searchMatch == null) _clearSearchField();
@@ -846,7 +846,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     return widget.operation == null
         ? null
         : POILayerOptions(
-            context.bloc<OperationBloc>(),
+            context.read<OperationBloc>(),
             ouuid: widget.operation.uuid,
             align: AnchorAlign.top,
             icon: Icon(
@@ -854,13 +854,13 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
               size: 30,
               color: Colors.red,
             ),
-            rebuild: context.bloc<OperationBloc>().map((_) => null),
+            rebuild: context.read<OperationBloc>().stream.map((_) => null),
           );
   }
 
   DeviceLayerOptions _buildDeviceOptions() {
     return DeviceLayerOptions(
-      bloc: context.bloc<TrackingBloc>(),
+      bloc: context.read<TrackingBloc>(),
       onMessage: widget.onMessage,
       showTail: _useLayers.contains(LAYER_TRACKING),
     );
@@ -868,7 +868,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   PersonnelLayerOptions _buildPersonnelOptions() {
     return PersonnelLayerOptions(
-      bloc: context.bloc<TrackingBloc>(),
+      bloc: context.read<TrackingBloc>(),
       onMessage: widget.onMessage,
       showRetired: widget.showRetired,
       showTail: _useLayers.contains(LAYER_TRACKING),
@@ -877,7 +877,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   UnitLayerOptions _buildUnitOptions() {
     return UnitLayerOptions(
-      bloc: context.bloc<TrackingBloc>(),
+      bloc: context.read<TrackingBloc>(),
       onMessage: widget.onMessage,
       showRetired: widget.showRetired,
       showTail: _useLayers.contains(LAYER_TRACKING),

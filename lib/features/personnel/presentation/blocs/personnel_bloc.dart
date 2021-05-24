@@ -44,7 +44,7 @@ class PersonnelBloc
     this.affiliationBloc,
     this.operationBloc,
     BlocEventBus bus,
-  ) : super(bus: bus) {
+  ) : super(PersonnelsEmpty(), bus: bus) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
@@ -112,9 +112,6 @@ class PersonnelBloc
 
   /// Get uuid of [Operation] that manages personnels in [repo]
   String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
-
-  @override
-  PersonnelState get initialState => PersonnelsEmpty();
 
   /// Get [Personnel] from [puuids]
   Iterable<Aggregate> from(List<String> puuids) =>
@@ -194,11 +191,13 @@ class PersonnelBloc
       );
 
   /// Stream of changes on given [personnel]
-  Stream<Personnel> onChanged(Personnel personnel) => where(
+  Stream<Personnel> onChanged(Personnel personnel) => stream
+      .where(
         (state) =>
             (state is PersonnelUpdated && state.data.uuid == personnel.uuid) ||
             (state is PersonnelsLoaded && state.data.contains(personnel.uuid)),
-      ).map((state) => state is PersonnelsLoaded ? repo[personnel.uuid] : state.data);
+      )
+      .map((state) => state is PersonnelsLoaded ? repo[personnel.uuid] : state.data);
 
   /// Get count
   int count({
@@ -360,7 +359,7 @@ class PersonnelBloc
   }
 
   Future<AffiliationState> _onAffiliationState<T extends AffiliationState>({bool isRemote = true}) =>
-      affiliationBloc.where((s) => s.isRemote == isRemote && s is T).first;
+      affiliationBloc.stream.where((s) => s.isRemote == isRemote && s is T).first;
 
   Stream<PersonnelState> _mobilize(MobilizeUser command) async* {
     final user = command.user;

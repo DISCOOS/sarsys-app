@@ -125,7 +125,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     return current?.isRemote == true
         ? StorageState.updated(
             next,
-            getVersion('$version'),
+            getVersion('$version') + 1,
           )
         : StorageState.created(
             next,

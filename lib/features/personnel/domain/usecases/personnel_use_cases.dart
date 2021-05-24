@@ -65,7 +65,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 
     // Will create affiliation if not exists
     final affiliation = params.affiliation ??
-        params.context.bloc<AffiliationBloc>().findPersonnelAffiliation(
+        params.context.read<AffiliationBloc>().findPersonnelAffiliation(
               result.data,
             );
 
@@ -83,7 +83,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     );
 
     // Update tracking
-    await params.context.bloc<TrackingBloc>().replace(
+    await params.context.read<TrackingBloc>().replace(
           tracking.uuid,
           devices: result.devices,
           position: result.position,
@@ -118,7 +118,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       // Create personnel from given affiliation?
       final personnel = _findPersonnel(params, affiliation);
       if (personnel == null) {
-        final person = params.context.bloc<AffiliationBloc>().persons[affiliation.person.uuid];
+        final person = params.context.read<AffiliationBloc>().persons[affiliation.person.uuid];
         return dartz.right(await params.bloc.create(PersonnelModel(
           uuid: Uuid().v4(),
           affiliation: affiliation.copyWith(
@@ -197,12 +197,12 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     // If was retired, tracking bloc will handle tracking
     final personnel = await params.bloc.update(result.data);
     if (result.affiliation != null) {
-      await params.context.bloc<AffiliationBloc>().update(result.affiliation);
+      await params.context.read<AffiliationBloc>().update(result.affiliation);
     }
 
     // Only update tracking if mobilized
     if (personnel.isMobilized) {
-      await params.context.bloc<TrackingBloc>().replace(
+      await params.context.read<TrackingBloc>().replace(
             personnel.tracking.uuid,
             devices: result.devices,
             position: result.position,
@@ -226,7 +226,7 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
     assert(params.data != null, "Personnel must be supplied");
 
     final tuuid = params.data.tracking.uuid;
-    final tracking = params.context.bloc<TrackingBloc>().repo[tuuid];
+    final tracking = params.context.read<TrackingBloc>().repo[tuuid];
     assert(tracking != null, "Tracking not found: $tuuid");
 
     var position = await showDialog<Position>(
@@ -239,7 +239,7 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
     if (position == null) return dartz.Left(false);
 
     // Update tracking with manual position
-    await params.context.bloc<TrackingBloc>().update(
+    await params.context.read<TrackingBloc>().update(
           tracking.uuid,
           position: position,
         );
@@ -263,16 +263,16 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
     // Get or select unit?
     Personnel personnel = await _getOrSelectPersonnel(
       params,
-      params.context.bloc<TrackingBloc>(),
+      params.context.read<TrackingBloc>(),
     );
     if (personnel == null) return dartz.Left(false);
 
     final tuuid = personnel.tracking.uuid;
-    final tracking = params.context.bloc<TrackingBloc>().repo[tuuid];
+    final tracking = params.context.read<TrackingBloc>().repo[tuuid];
     assert(tracking != null, "Tracking not found: $tuuid");
 
     // Add to tracking
-    final next = await params.context.bloc<TrackingBloc>().attach(
+    final next = await params.context.read<TrackingBloc>().attach(
           personnel.tracking.uuid,
           devices: params.devices,
         );
@@ -324,12 +324,12 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
 
     // Collect kept devices and personnel
     final keepDevices = params.context
-        .bloc<TrackingBloc>()
+        .read<TrackingBloc>()
         .devices(personnel.tracking.uuid)
         .where((test) => !devices.contains(test))
         .toList();
 
-    final tracking = await params.context.bloc<TrackingBloc>().replace(
+    final tracking = await params.context.read<TrackingBloc>().replace(
           personnel.tracking.uuid,
           devices: keepDevices,
         );

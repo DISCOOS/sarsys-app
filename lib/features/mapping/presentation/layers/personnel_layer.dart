@@ -34,7 +34,7 @@ class PersonnelLayerOptions extends LayerOptions {
     this.showTail = true,
     this.showRetired = false,
     this.onMessage,
-  }) : super(rebuild: bloc.map((_) => null));
+  }) : super(rebuild: bloc.stream.map((_) => null));
 }
 
 class PersonnelLayer extends MapPlugin {

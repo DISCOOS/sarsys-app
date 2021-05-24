@@ -49,7 +49,7 @@ class PersonnelEditor extends StatefulWidget {
     var phone = personnel?.phone;
     if (personnel != null && phone == null) {
       if (personnel?.tracking != null) {
-        final devices = context.bloc<TrackingBloc>().devices(
+        final devices = context.read<TrackingBloc>().devices(
           personnel?.tracking?.uuid,
           // Include closed tracks
           exclude: [],
@@ -110,7 +110,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     _devices ??= _getActualDevices();
     fleetMap = null;
     if (widget.affiliation != null) {
-      fleetMap = context.bloc<AffiliationBloc>().orgs[widget.affiliation?.org?.uuid]?.fleetMap;
+      fleetMap = context.read<AffiliationBloc>().orgs[widget.affiliation?.org?.uuid]?.fleetMap;
     }
   }
 
@@ -138,7 +138,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     _setText(_phoneController, _defaultPhone());
   }
 
-  bool isTemporary(BuildContext context) => context.bloc<AffiliationBloc>().isTemporary(
+  bool isTemporary(BuildContext context) => context.read<AffiliationBloc>().isTemporary(
         widget.personnel?.affiliation?.uuid,
       );
 
@@ -260,7 +260,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
-  AffiliationBloc get affiliationBloc => context.bloc<AffiliationBloc>();
+  AffiliationBloc get affiliationBloc => context.read<AffiliationBloc>();
   Affiliation _currentAffiliation() => widget.affiliation ?? affiliationBloc.repo[widget.personnel?.affiliation?.uuid];
 
   Affiliation _ensureAffiliation() {
@@ -397,7 +397,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   String _validateName(String fname, String lname) {
     Personnel personnel = context
-        .bloc<PersonnelBloc>()
+        .read<PersonnelBloc>()
         .repo
         .map
         .values
@@ -507,7 +507,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   String _validatePhone(phone) {
     Personnel match = context
-        .bloc<PersonnelBloc>()
+        .read<PersonnelBloc>()
         .repo
         .map
         .values
@@ -569,7 +569,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   List<Device> _findDevices(String type, String query) {
     var actual = _getActualDevices().map((device) => device.uuid);
     return context
-        .bloc<DeviceBloc>()
+        .read<DeviceBloc>()
         .values
         .where((device) => _canAddDevice(actual, device))
         .where((device) => _deviceMatch(device, type, query))
@@ -588,7 +588,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     if (actual.contains(match.uuid)) {
       return true;
     }
-    final bloc = context.bloc<TrackingBloc>();
+    final bloc = context.read<TrackingBloc>();
     if (widget.personnel?.tracking?.uuid != null) {
       // Was device tracked by this personnel earlier?
       final trackings = bloc.find(match).map((t) => t.uuid);
@@ -619,12 +619,12 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Position _toPosition() {
-    final tracking = context.bloc<TrackingBloc>().trackings[widget?.personnel?.tracking?.uuid];
+    final tracking = context.read<TrackingBloc>().trackings[widget?.personnel?.tracking?.uuid];
     return tracking?.position;
   }
 
   bool get hasAvailableDevices =>
-      context.bloc<TrackingBloc>().findAvailablePersonnel().isNotEmpty || _getActualDevices().isNotEmpty;
+      context.read<TrackingBloc>().findAvailablePersonnel().isNotEmpty || _getActualDevices().isNotEmpty;
 
   List<Device> _getLocalDevices() =>
       _formKey.currentState == null || _formKey.currentState.fields['devices'].value == null
@@ -635,7 +635,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   List<Device> _getActualDevices() {
     return (widget?.personnel?.tracking != null
-        ? context.bloc<TrackingBloc>().devices(
+        ? context.read<TrackingBloc>().devices(
             widget?.personnel?.tracking?.uuid,
             // Include closed tracks
             exclude: [],

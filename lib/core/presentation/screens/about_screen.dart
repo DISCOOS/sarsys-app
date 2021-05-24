@@ -53,7 +53,7 @@ class _AboutScreenState extends State<AboutScreen> {
 
   _buildPacketInfo(BuildContext context, PackageInfo data) {
     final channel = context.service<MessageChannel>();
-    final auuid = context.bloc<DeviceBloc>().app?.uuid;
+    final auuid = context.read<DeviceBloc>().app?.uuid;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ListView(
@@ -251,9 +251,9 @@ class _AboutScreenState extends State<AboutScreen> {
     );
     if (answer) {
       channel.close();
-      if (context.bloc<UserBloc>().repo.isTokenExpired) {
+      if (context.read<UserBloc>().repo.isTokenExpired) {
         try {
-          await context.bloc<UserBloc>().repo.refresh();
+          await context.read<UserBloc>().repo.refresh();
         } on UserServiceException catch (e) {
           debugPrint('Failed to refresh token: $e');
           // Prompt user to login
@@ -265,7 +265,7 @@ class _AboutScreenState extends State<AboutScreen> {
       if (!channel.isOpen) {
         channel.open(
           url: channel.url,
-          appId: context.bloc<AppConfigBloc>().config.udid,
+          appId: context.read<AppConfigBloc>().config.udid,
         );
       }
       setState(() {});

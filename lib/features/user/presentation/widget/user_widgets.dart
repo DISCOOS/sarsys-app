@@ -155,7 +155,7 @@ class UserWidget extends StatelessWidget {
       );
 
   Widget _buildAffiliationView(BuildContext context) {
-    final affiliation = context.bloc<AffiliationBloc>().findUserAffiliation();
+    final affiliation = context.read<AffiliationBloc>().findUserAffiliation();
     return AffiliationView(
       onMessage: onMessage,
       affiliation: affiliation,
@@ -343,7 +343,7 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                   subtitle: Text('Kan bli lagret i aksjonen'),
                   onChanged: manual
                       ? (value) {
-                          context.bloc<AppConfigBloc>().updateWith(
+                          context.read<AppConfigBloc>().updateWith(
                                 locationAllowSharing: value,
                               );
                           setState(() {});
@@ -357,7 +357,7 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                   subtitle: Text('Lagres lokalt når du er uten nett'),
                   onChanged: manual
                       ? (value) {
-                          context.bloc<AppConfigBloc>().updateWith(
+                          context.read<AppConfigBloc>().updateWith(
                                 locationStoreLocally: value,
                               );
                           setState(() {});

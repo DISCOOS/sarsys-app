@@ -12,7 +12,6 @@ import 'package:SarSys/features/operation/domain/repositories/operation_reposito
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
 import 'operation_commands.dart';
@@ -32,14 +31,18 @@ class OperationBloc
   ///
   /// Default constructor
   ///
-  OperationBloc(this.repo, this.userBloc, BlocEventBus bus) : super(bus: bus) {
+  OperationBloc(
+    this.repo,
+    this.userBloc,
+    BlocEventBus bus,
+  ) : super(OperationsEmpty(), bus: bus) {
     assert(this.userBloc != null, "userBloc can not be null");
     assert(this.repo != null, "operations repository can not be null");
     assert(this.incidents != null, "incidents repository can not be null");
     assert(this.repo.service != null, "operations service can not be null");
     assert(this.incidents.service != null, "incidents service can not be null");
 
-    registerStreamSubscription(userBloc.listen(
+    registerStreamSubscription(userBloc.stream.listen(
       // Load and unload operations as needed
       _processUserState,
     ));
@@ -103,17 +106,9 @@ class OperationBloc
         }
       }
     } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
+      addError(error, stackTrace);
     }
   }
-
-  @override
-  OperationsEmpty get initialState => OperationsEmpty();
 
   /// Check if an operation is selected
   bool get isSelected => _ouuid != null;
@@ -143,14 +138,18 @@ class OperationBloc
       );
 
   /// Stream of switched between given operations
-  Stream<Operation> get onSwitched => where(
+  Stream<Operation> get onSwitched => stream
+      .where(
         (state) => state is OperationSelected && state.data.uuid != _ouuid,
-      ).map((state) => state.data);
+      )
+      .map((state) => state.data);
 
   /// Stream of operation changes
-  Stream<Operation> onChanged([Operation operation]) => where(
+  Stream<Operation> onChanged([Operation operation]) => stream
+      .where(
         (state) => _isOn(operation, state) && state.isCreated() || state.isUpdated() || state.isSelected(),
-      ).map((state) => state.data);
+      )
+      .map((state) => state.data);
 
   bool _isOn(Operation operation, OperationState state) => (operation == null || state.data.uuid == operation.uuid);
 

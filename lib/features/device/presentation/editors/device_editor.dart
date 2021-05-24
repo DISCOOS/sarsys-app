@@ -40,7 +40,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   String _editedAffiliation;
   String _editedFunction;
 
-  Organisation get organisation => context.bloc<AffiliationBloc>().findUserOrganisation();
+  Organisation get organisation => context.read<AffiliationBloc>().findUserOrganisation();
 
   @override
   void initState() {
@@ -182,7 +182,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       validator: FormBuilderValidators.compose([
         FormBuilderValidators.required(context, errorText: 'Påkrevd'),
         (number) {
-          Device device = context.bloc<DeviceBloc>().values.firstWhere(
+          Device device = context.read<DeviceBloc>().values.firstWhere(
                 (Device device) => isSameNumber(device, number),
                 orElse: () => null,
               );
@@ -229,7 +229,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       );
 
-  String _defaultAffiliation() => context.bloc<AffiliationBloc>().findEntityName(widget?.device?.number);
+  String _defaultAffiliation() => context.read<AffiliationBloc>().findEntityName(widget?.device?.number);
 
   InputDecorator _buildOrgAliasField() => InputDecorator(
         decoration: InputDecoration(
@@ -263,7 +263,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       );
 
-  String _defaultFunction() => context.bloc<AffiliationBloc>().findFunction(widget?.device?.number)?.name ?? '';
+  String _defaultFunction() => context.read<AffiliationBloc>().findFunction(widget?.device?.number)?.name ?? '';
 
   FormBuilderTextField _buildAliasField() {
     var originalValue = widget.device?.alias;
@@ -293,7 +293,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       valueTransformer: (value) => emptyAsNull(value),
       validator: FormBuilderValidators.compose([
         (alias) {
-          Device device = context.bloc<DeviceBloc>().values.firstWhere(
+          Device device = context.read<DeviceBloc>().values.firstWhere(
                 (Device device) => _isSameAlias(device, alias),
                 orElse: () => null,
               );
@@ -325,7 +325,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     if (update) setState(() {});
   }
 
-  AffiliationBloc get affiliations => context.bloc<AffiliationBloc>();
+  AffiliationBloc get affiliations => context.read<AffiliationBloc>();
 
   Widget _buildTypeField() {
     final defaultValue = widget.type;

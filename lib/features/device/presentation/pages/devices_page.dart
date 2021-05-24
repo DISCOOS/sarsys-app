@@ -57,12 +57,12 @@ class DevicesPageState extends State<DevicesPage> {
     super.didChangeDependencies();
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<UserBloc>())
-      ..add(context.bloc<UnitBloc>())
-      ..add(context.bloc<PersonnelBloc>())
-      ..add(context.bloc<DeviceBloc>())
-      ..add(context.bloc<TrackingBloc>());
-//    _divisions = context.bloc<AffiliationBloc>().repo[Defaults.orgId];
+      ..add(context.read<UserBloc>().stream)
+      ..add(context.read<UnitBloc>().stream)
+      ..add(context.read<PersonnelBloc>().stream)
+      ..add(context.read<DeviceBloc>().stream)
+      ..add(context.read<TrackingBloc>().stream);
+//    _divisions = context.read<AffiliationBloc>().repo[Defaults.orgId];
 //    _functions = await FleetMapService().fetchFunctions(Defaults.orgId);
   }
 
@@ -77,16 +77,16 @@ class DevicesPageState extends State<DevicesPage> {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
       return RefreshIndicator(
         onRefresh: () async {
-          context.bloc<DeviceBloc>().load();
+          context.read<DeviceBloc>().load();
         },
         child: Container(
           child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var units = context.bloc<TrackingBloc>().units.devices();
-                var personnel = context.bloc<TrackingBloc>().personnels.devices();
-                var tracked = context.bloc<TrackingBloc>().asDeviceIds();
+                var units = context.read<TrackingBloc>().units.devices();
+                var personnel = context.read<TrackingBloc>().personnels.devices();
+                var tracked = context.read<TrackingBloc>().asDeviceIds();
                 var devices = _filteredDevices();
                 return devices.isEmpty || snapshot.hasError
                     ? toRefreshable(
@@ -110,7 +110,7 @@ class DevicesPageState extends State<DevicesPage> {
   }
 
   List<Device> _filteredDevices() => context
-      .bloc<DeviceBloc>()
+      .read<DeviceBloc>()
       .values
       .where((device) =>
           _filter.contains(device.type) &&
@@ -138,7 +138,7 @@ class DevicesPageState extends State<DevicesPage> {
   ) {
     final device = devices[index];
     final status = _toTrackingStatus(tracked, device);
-    final isThisApp = context.bloc<DeviceBloc>().isThisApp(device);
+    final isThisApp = context.read<DeviceBloc>().isThisApp(device);
     return GestureDetector(
       child: widget.withActions && (isCommander || isThisApp)
           ? Slidable(
@@ -221,8 +221,8 @@ class DevicesPageState extends State<DevicesPage> {
         },
       );
 
-  bool get isSelected => context.bloc<OperationBloc>().isSelected;
-  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
+  bool get isSelected => context.read<OperationBloc>().isSelected;
+  bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
     return tracked[device.uuid]
@@ -234,8 +234,8 @@ class DevicesPageState extends State<DevicesPage> {
         TrackingStatus.none;
   }
 
-  String _toDivision(String number) => context.bloc<AffiliationBloc>().findDivision(number)?.name;
-  String _toFunction(String number) => context.bloc<AffiliationBloc>().findFunction(number)?.name;
+  String _toDivision(String number) => context.read<AffiliationBloc>().findDivision(number)?.name;
+  String _toFunction(String number) => context.read<AffiliationBloc>().findFunction(number)?.name;
 
   void showFilterSheet() {
     showModalBottomSheet(

@@ -14,7 +14,7 @@ class AppParams<T> extends BlocParams<AppConfigBloc, AppConfig> {
     AppConfigBloc bloc,
   }) : super(config, bloc: bloc);
 
-  UserBloc get users => context.bloc<UserBloc>();
+  UserBloc get users => context.read<UserBloc>();
 }
 
 /// Configure app

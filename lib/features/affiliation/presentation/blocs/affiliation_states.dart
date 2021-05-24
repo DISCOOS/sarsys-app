@@ -152,8 +152,8 @@ class AffiliationPersonUpdated extends AffiliationState<Person> {
   @override
   String toString() => '$runtimeType {'
       'incident: $data, '
-      'isRemote: $isRemote'
-      'previous: $previous'
+      'isRemote: $isRemote,'
+      'previous: $previous,'
       'affiliations: $affiliations, '
       '}';
 }

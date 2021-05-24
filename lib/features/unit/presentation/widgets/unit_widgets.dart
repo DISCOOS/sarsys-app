@@ -297,7 +297,7 @@ class UnitWidget extends StatelessWidget {
               context: context,
               label: "Mannskaper",
               icon: Icon(Icons.group_work),
-              value: _toPersonnel(context.bloc<PersonnelBloc>().repo),
+              value: _toPersonnel(context.read<PersonnelBloc>().repo),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -405,7 +405,7 @@ class UnitActionGroup extends StatelessWidget {
         onPressed: _onEdit,
       ),
       _buildTransitionActionItem(context),
-      if (context.bloc<UserBloc>().user.isAdmin)
+      if (context.read<UserBloc>().user.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,

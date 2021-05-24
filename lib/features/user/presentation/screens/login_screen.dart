@@ -79,9 +79,9 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final bloc = context.bloc<UserBloc>();
+    final bloc = context.read<UserBloc>();
     _subscription?.cancel();
-    _subscription = bloc.listen((UserState state) {
+    _subscription = bloc.stream.listen((UserState state) {
       _process(state, bloc, context);
     });
   }
@@ -99,7 +99,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     );
 
     return StreamBuilder<UserState>(
-        stream: context.bloc<UserBloc>(),
+        stream: context.read<UserBloc>().stream,
         builder: (context, snapshot) {
           return Scaffold(
             backgroundColor: Colors.grey[300],
@@ -113,7 +113,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                       color: Colors.white.withOpacity(0.8),
                       borderRadius: BorderRadius.circular(4.0),
                     ),
-                    child: _buildBody(context, context.bloc<UserBloc>()),
+                    child: _buildBody(context, context.read<UserBloc>()),
                   ),
                 ),
               ),
@@ -375,7 +375,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                if (bloc.isPersonal || context.bloc<AppConfigBloc>().config.idpHints.contains('rodekors'))
+                if (bloc.isPersonal || context.read<AppConfigBloc>().config.idpHints.contains('rodekors'))
                   _buildOrgLoginAction(bloc),
                 if (bloc.isPersonal) _buildGoogleLoginAction(bloc),
                 _buildDivider(),

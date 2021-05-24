@@ -537,9 +537,9 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
       );
 
   UserBloc _toBloc(BuildContext context) {
-    final bloc = context.bloc<UserBloc>();
+    final bloc = context.read<UserBloc>();
     _subscription?.cancel();
-    _subscription = bloc.listen((UserState state) {
+    _subscription = bloc.stream.listen((UserState state) {
       _process(state, bloc, context);
     });
     return bloc;

@@ -34,7 +34,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _configBloc = context.bloc<AppConfigBloc>();
+    _configBloc = context.read<AppConfigBloc>();
   }
 
   @override //new
@@ -69,7 +69,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         setState(() {});
       },
       child: StreamBuilder(
-        stream: _configBloc,
+        stream: _configBloc.stream,
         builder: (context, snapshot) {
           return snapshot.hasData
               ? Padding(
@@ -149,7 +149,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       trailing: Icon(Icons.keyboard_arrow_right),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-          return AffiliationConfigScreen(organisation: context.bloc<UserBloc>().user?.org);
+          return AffiliationConfigScreen(organisation: context.read<UserBloc>().user?.org);
         }));
       },
     );

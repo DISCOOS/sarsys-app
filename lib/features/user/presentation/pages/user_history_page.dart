@@ -22,9 +22,9 @@ class UserHistoryPageState extends State<UserHistoryPage> {
     super.didChangeDependencies();
     _group?.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<PersonnelBloc>())
-      ..add(context.bloc<TrackingBloc>())
-      ..add(context.bloc<UserBloc>());
+      ..add(context.read<PersonnelBloc>().stream)
+      ..add(context.read<TrackingBloc>().stream)
+      ..add(context.read<UserBloc>().stream);
   }
 
   @override

@@ -166,9 +166,9 @@ class FatalErrorWidget extends StatelessWidget {
   }
 }
 
-class FatalErrorAppBlocDelegate extends FatalErrorApp implements BlocDelegate {
+class FatalErrorAppBlocObserver extends FatalErrorApp implements BlocObserver {
   @override
-  void onError(Bloc bloc, Object error, StackTrace stackTrace) {
+  void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
     runApp(FatalErrorApp(
       error: error,
       stackTrace: stackTrace,
@@ -180,4 +180,13 @@ class FatalErrorAppBlocDelegate extends FatalErrorApp implements BlocDelegate {
 
   @override
   void onTransition(Bloc bloc, Transition transition) {}
+
+  @override
+  void onChange(BlocBase bloc, Change change) {}
+
+  @override
+  void onClose(BlocBase bloc) {}
+
+  @override
+  void onCreate(BlocBase bloc) {}
 }

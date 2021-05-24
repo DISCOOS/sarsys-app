@@ -65,7 +65,7 @@ class PersonnelWidget extends StatelessWidget {
   static const SPACING = 8.0;
   static const ELEVATION = 2.0;
 
-  bool isTemporary(BuildContext context) => context.bloc<AffiliationBloc>().isTemporary(
+  bool isTemporary(BuildContext context) => context.read<AffiliationBloc>().isTemporary(
         personnel.affiliation?.uuid,
       );
 
@@ -156,7 +156,7 @@ class PersonnelWidget extends StatelessWidget {
         ],
       );
 
-  bool isAffiliated(BuildContext context) => context.bloc<AffiliationBloc>().repo[personnel.affiliation?.uuid] != null;
+  bool isAffiliated(BuildContext context) => context.read<AffiliationBloc>().repo[personnel.affiliation?.uuid] != null;
 
   Widget _buildLandscape(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
@@ -284,7 +284,7 @@ class PersonnelWidget extends StatelessWidget {
 
   Widget _buildAffiliationView(BuildContext context) => AffiliationView(
         onMessage: onMessage,
-        affiliation: context.bloc<AffiliationBloc>().repo[personnel.affiliation?.uuid],
+        affiliation: context.read<AffiliationBloc>().repo[personnel.affiliation?.uuid],
         onComplete: () => _onComplete(personnel),
       );
 
@@ -346,7 +346,7 @@ class PersonnelActionGroup extends StatelessWidget {
           child: _buildAddToUnitAction(context),
           onPressed: _onAddToUnit,
         ),
-      if (context.bloc<UserBloc>().user.isAdmin)
+      if (context.read<UserBloc>().user.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,
@@ -666,7 +666,7 @@ class PersonnelContactView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final units = context.bloc<UnitBloc>().findUnitsWithPersonnel(
+    final units = context.read<UnitBloc>().findUnitsWithPersonnel(
           personnel.uuid,
         );
     final phone = PersonnelEditor.findPersonnelPhone(
@@ -758,7 +758,7 @@ class PersonnelTile extends StatelessWidget {
     return ListTile(
       key: ObjectKey(personnel),
       leading: AffiliationAvatar(
-        affiliation: context.bloc<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
+        affiliation: context.read<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
         size: 10.0,
       ),
       title: Text(personnel.name),
@@ -784,7 +784,7 @@ class PersonnelChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           AffiliationAvatar(
-            affiliation: context.bloc<AffiliationBloc>().repo[personnel.affiliation?.uuid],
+            affiliation: context.read<AffiliationBloc>().repo[personnel.affiliation?.uuid],
             size: 6.0,
             maxRadius: 10.0,
           ),

@@ -17,7 +17,7 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   LocationService _service;
-  AppConfigBloc get bloc => context.bloc<AppConfigBloc>();
+  AppConfigBloc get bloc => context.read<AppConfigBloc>();
 
   @override
   void didChangeDependencies() {

@@ -38,9 +38,9 @@ class _AppDrawerState extends State<AppDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final UserBloc userBloc = context.bloc<UserBloc>();
+    final UserBloc userBloc = context.read<UserBloc>();
     final User user = userBloc.user;
-    final isPrivate = !context.bloc<PersonnelBloc>().isUserMobilized;
+    final isPrivate = !context.read<PersonnelBloc>().isUserMobilized;
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
@@ -192,7 +192,7 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   ListTile _buildOperationHeader(bool isPrivate, BuildContext context) {
-    final selected = context.bloc<OperationBloc>().selected;
+    final selected = context.read<OperationBloc>().selected;
     final labels = selected == null
         ? ['Ingen aksjon valgt']
         : [

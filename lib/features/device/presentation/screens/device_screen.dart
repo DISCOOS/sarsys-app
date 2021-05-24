@@ -62,7 +62,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     super.didChangeDependencies();
     if (_onMoved != null) _onMoved.cancel();
     if (isCommander || isSelected) {
-      _onMoved = context.bloc<DeviceBloc>().onMoved(_device).listen(_onMove);
+      _onMoved = context.read<DeviceBloc>().onMoved(_device).listen(_onMove);
     }
   }
 
@@ -76,8 +76,8 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     super.dispose();
   }
 
-  bool get isSelected => context.bloc<OperationBloc>().isSelected;
-  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
+  bool get isSelected => context.read<OperationBloc>().isSelected;
+  bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   @override
   List<Widget> buildAppBarActions() {
@@ -88,9 +88,9 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
               onMessage: showMessage,
               type: ActionGroupType.popupMenuButton,
               onDeleted: () => Navigator.pop(context),
-              unit: context.bloc<TrackingBloc>().units.find(_device),
+              unit: context.read<TrackingBloc>().units.find(_device),
               onChanged: (device) => setState(() => _device = device),
-              personnel: context.bloc<TrackingBloc>().personnels.find(_device),
+              personnel: context.read<TrackingBloc>().personnels.find(_device),
             )
           ]
         : [];
@@ -100,7 +100,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return RefreshIndicator(
       onRefresh: () async {
-        context.bloc<DeviceBloc>().load();
+        context.read<DeviceBloc>().load();
       },
       child: ListView(
         padding: const EdgeInsets.all(DeviceScreen.SPACING),
@@ -108,18 +108,18 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
         children: [
           StreamBuilder<Device>(
             initialData: _device,
-            stream: context.bloc<DeviceBloc>().onChanged(_device, skipPosition: true),
+            stream: context.read<DeviceBloc>().onChanged(_device, skipPosition: true),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return Center(child: Text("Ingen data"));
               if (snapshot.data is Device) {
                 _device = snapshot.data;
               }
-              final unit = context.bloc<TrackingBloc>().units.find(_device);
-              final personnel = context.bloc<TrackingBloc>().personnels.find(
+              final unit = context.read<TrackingBloc>().units.find(_device);
+              final personnel = context.read<TrackingBloc>().personnels.find(
                     _device,
                   );
               final person = personnel?.person ??
-                  context.bloc<AffiliationBloc>().persons.findUser(
+                  context.read<AffiliationBloc>().persons.findUser(
                         _device.networkId,
                       );
               return DeviceWidget(
@@ -135,7 +135,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                 onDeleted: () => Navigator.pop(context),
                 onGoto: (point) => jumpToPoint(context, center: point),
                 onChanged: (device) => setState(() => _device = device),
-                tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
+                tracking: context.read<TrackingBloc>().trackings[unit?.tracking?.uuid],
               );
             },
           ),

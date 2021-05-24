@@ -56,9 +56,9 @@ class _OperationPageState extends State<OperationPage> {
     super.didChangeDependencies();
     _group?.close();
     _group = StreamGroup<BlocState>.broadcast()
-      ..add(context.bloc<UnitBloc>())
-      ..add(context.bloc<OperationBloc>())
-      ..add(context.bloc<PersonnelBloc>());
+      ..add(context.read<UnitBloc>().stream)
+      ..add(context.read<OperationBloc>().stream)
+      ..add(context.read<PersonnelBloc>().stream);
   }
 
   @override
@@ -76,12 +76,12 @@ class _OperationPageState extends State<OperationPage> {
     codeStyle = TextStyle(fontFamily: 'PTMono', fontSize: 18.0);
     return RefreshIndicator(
       onRefresh: () async {
-        context.bloc<OperationBloc>().load();
+        context.read<OperationBloc>().load();
       },
       child: StreamBuilder<BlocState>(
         stream: _group.stream,
         builder: (context, snapshot) {
-          final operation = context.bloc<OperationBloc>().selected;
+          final operation = context.read<OperationBloc>().selected;
           return Container(
             color: operation == null ? null : Color.fromRGBO(168, 168, 168, 0.6),
             child: Padding(
@@ -92,7 +92,7 @@ class _OperationPageState extends State<OperationPage> {
                     )
                   : _buildDashboard(
                       context,
-                      context.bloc<OperationBloc>().incidents.get(operation.incident.uuid),
+                      context.read<OperationBloc>().incidents.get(operation.incident.uuid),
                       operation,
                     ),
             ),
@@ -126,8 +126,8 @@ class _OperationPageState extends State<OperationPage> {
     );
   }
 
-  User get user => context.bloc<OperationBloc>().userBloc.user;
-  bool isAuthor(Operation operation) => context.bloc<OperationBloc>().userBloc.isAuthor(operation);
+  User get user => context.read<OperationBloc>().userBloc.user;
+  bool isAuthor(Operation operation) => context.read<OperationBloc>().userBloc.isAuthor(operation);
 
   Widget _buildMapTile(BuildContext context, Operation operation) {
     final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
@@ -197,10 +197,10 @@ class _OperationPageState extends State<OperationPage> {
         Expanded(
           flex: 5,
           child: StreamBuilder<PersonnelState>(
-              stream: context.bloc<PersonnelBloc>(),
+              stream: context.read<PersonnelBloc>().stream,
               builder: (context, snapshot) {
                 return _buildValueTile(
-                  "${snapshot.hasData ? context.bloc<PersonnelBloc>().count() : "-"}",
+                  "${snapshot.hasData ? context.read<PersonnelBloc>().count() : "-"}",
                   label: "Mnsk",
                   onValueTap: () => Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_PERSONNEL_LIST),
                 );
@@ -210,10 +210,10 @@ class _OperationPageState extends State<OperationPage> {
         Expanded(
           flex: 5,
           child: StreamBuilder<UnitState>(
-              stream: context.bloc<UnitBloc>(),
+              stream: context.read<UnitBloc>().stream,
               builder: (context, snapshot) {
                 return _buildValueTile(
-                  "${snapshot.hasData ? context.bloc<UnitBloc>().count() : "-"}",
+                  "${snapshot.hasData ? context.read<UnitBloc>().count() : "-"}",
                   label: "Enheter",
                   onValueTap: () => Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_UNIT_LIST),
                 );
@@ -647,11 +647,11 @@ class OperationActionGroup extends StatelessWidget {
     BuildContext context,
     OperationResolution resolution,
   ) async {
-    var incident = context.bloc<OperationBloc>().selected.copyWith(
+    var incident = context.read<OperationBloc>().selected.copyWith(
           resolution: resolution,
           status: OperationStatus.completed,
         );
-    await context.bloc<OperationBloc>().update(incident);
+    await context.read<OperationBloc>().update(incident);
     _onMessage("${incident.name} er ${enumName(resolution)}");
     _onDeleted();
     _onCompleted();

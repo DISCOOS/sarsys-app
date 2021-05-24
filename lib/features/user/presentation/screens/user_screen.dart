@@ -65,9 +65,9 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _user = context.bloc<UserBloc>().user;
-    _personnel = context.bloc<PersonnelBloc>().findUser(userId: _user.userId).firstOrNull;
-    _unit = context.bloc<UnitBloc>().findUnitsWithPersonnel(_personnel?.uuid).firstOrNull;
+    _user = context.read<UserBloc>().user;
+    _personnel = context.read<PersonnelBloc>().findUser(userId: _user.userId).firstOrNull;
+    _unit = context.read<UnitBloc>().findUnitsWithPersonnel(_personnel?.uuid).firstOrNull;
   }
 
   @override
@@ -84,10 +84,10 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: context.bloc<OperationBloc>().onChanged(),
-        initialData: context.bloc<OperationBloc>().selected,
+        stream: context.read<OperationBloc>().onChanged(),
+        initialData: context.read<OperationBloc>().selected,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
-          final operation = (snapshot.hasData ? context.bloc<OperationBloc>().selected : null);
+          final operation = (snapshot.hasData ? context.read<OperationBloc>().selected : null);
           final tabs = [
             UserStatusPage(
               key: _statusKey,
@@ -163,7 +163,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
               onMessage: _showMessage,
               type: ActionGroupType.popupMenuButton,
               onChanged: (personnel) => setState(() => _personnel = personnel),
-              unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+              unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
             )
         ];
       case UserScreen.TAB_UNIT:
@@ -177,9 +177,9 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
             )
         ];
       case UserScreen.TAB_OPERATION:
-        final selected = context.bloc<OperationBloc>().selected;
+        final selected = context.read<OperationBloc>().selected;
         return [
-          if (selected != null && context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander))
+          if (selected != null && context.read<OperationBloc>().isAuthorizedAs(UserRole.commander))
             OperationActionGroup(
               onMessage: _showMessage,
               type: ActionGroupType.popupMenuButton,

@@ -147,7 +147,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
         // Disable automatic permission prompts (toast are still shown when applicable)
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool("checkPermission", false);
-        await context.bloc<AppConfigBloc>().updateWith(
+        await context.read<AppConfigBloc>().updateWith(
               firstSetup: true,
               securityMode: _mode,
               storage: isStorageGranted,

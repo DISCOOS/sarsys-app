@@ -33,7 +33,7 @@ class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
   final List<String> templates;
   final List<Personnel> personnels;
 
-  PersonnelBloc get personnelBloc => context.bloc<PersonnelBloc>();
+  PersonnelBloc get personnelBloc => context.read<PersonnelBloc>();
 }
 
 /// Create unit with tracking of given devices
@@ -72,7 +72,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
         position: next,
         devices: params.devices,
         personnels: params.personnels,
-        operation: params.context.bloc<OperationBloc>().selected,
+        operation: params.context.read<OperationBloc>().selected,
       ),
     );
     if (result == null) {
@@ -108,7 +108,7 @@ class CreateUnits extends UseCase<bool, List<Unit>, UnitParams> {
   Future<dartz.Either<bool, List<Unit>>> execute(UnitParams params) async {
     assert(params.templates?.isNotEmpty == true, "templates must be supplied");
 
-    final department = params.context.bloc<AffiliationBloc>().findUserDepartment();
+    final department = params.context.read<AffiliationBloc>().findUserDepartment();
     final units = <Unit>[];
     int count = 0;
     params.templates.forEach((template) async {
@@ -153,7 +153,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
 
     // Only update tracking if not retired
     if (UnitStatus.retired != unit.status) {
-      await params.context.bloc<TrackingBloc>().replace(
+      await params.context.read<TrackingBloc>().replace(
             unit.tracking.uuid,
             devices: result.devices,
             position: result.position,
@@ -178,7 +178,7 @@ class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
     assert(params.data != null, "Unit must be supplied");
 
     final tuuid = params.data.tracking.uuid;
-    final tracking = params.context.bloc<TrackingBloc>().repo[tuuid];
+    final tracking = params.context.read<TrackingBloc>().repo[tuuid];
     assert(tracking != null, "Tracking not found: $tuuid");
 
     final position = await showDialog<Position>(
@@ -191,7 +191,7 @@ class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
     if (position == null) return dartz.Left(false);
 
     // Update tracking with manual position
-    await params.context.bloc<TrackingBloc>().update(
+    await params.context.read<TrackingBloc>().update(
           tracking.uuid,
           position: position,
         );
@@ -216,7 +216,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
   @override
   Future<dartz.Either<bool, Unit>> execute(params) async {
     // Create unit instead?
-    if (!hasSelectableUnits(params, params.context.bloc<TrackingBloc>())) {
+    if (!hasSelectableUnits(params, params.context.read<TrackingBloc>())) {
       return createUnit(
         devices: params.devices,
         personnels: params.personnels,
@@ -226,7 +226,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
     // Get or select unit?
     var unit = await _getOrSelectUnit(
       params,
-      params.context.bloc<TrackingBloc>(),
+      params.context.read<TrackingBloc>(),
     );
     if (unit == null) return dartz.Left(false);
 
@@ -240,11 +240,11 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
     }
 
     final tuuid = unit.tracking.uuid;
-    final tracking = params.context.bloc<TrackingBloc>().repo[tuuid];
+    final tracking = params.context.read<TrackingBloc>().repo[tuuid];
     assert(tracking != null, "Tracking not found: $tuuid");
 
     // Add devices and personnel to unit tracking
-    await params.context.bloc<TrackingBloc>().attach(
+    await params.context.read<TrackingBloc>().attach(
           unit.tracking.uuid,
           devices: params.devices,
           personnels: params.personnels,
@@ -319,7 +319,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
 
     // Collect kept devices and personnel
     final keepDevices = params.context
-        .bloc<TrackingBloc>()
+        .read<TrackingBloc>()
         .devices(unit.tracking.uuid)
         .where((test) => !devices.contains(test))
         .toList();
@@ -335,7 +335,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     }
 
     // Perform tracking update
-    final tracking = await params.context.bloc<TrackingBloc>().replace(
+    final tracking = await params.context.read<TrackingBloc>().replace(
           unit.tracking.uuid,
           devices: keepDevices,
           personnels: keepPersonnel,

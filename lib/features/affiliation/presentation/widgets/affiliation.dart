@@ -38,7 +38,7 @@ class AffiliationAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       child: SarSysIcons.of(
-        context.bloc<AffiliationBloc>().orgs[affiliation.org?.uuid]?.prefix,
+        context.read<AffiliationBloc>().orgs[affiliation.org?.uuid]?.prefix,
         size: size,
       ),
       maxRadius: maxRadius,
@@ -67,8 +67,8 @@ class AffiliationView extends StatelessWidget {
           child: buildCopyableText(
             context: context,
             label: "Tilhørighet",
-            icon: SarSysIcons.of(context.bloc<AffiliationBloc>().orgs[affiliation?.org?.uuid]?.prefix),
-            value: context.bloc<AffiliationBloc>().toName(affiliation),
+            icon: SarSysIcons.of(context.read<AffiliationBloc>().orgs[affiliation?.org?.uuid]?.prefix),
+            value: context.read<AffiliationBloc>().toName(affiliation),
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -111,9 +111,9 @@ class AffiliationFormState extends State<AffiliationForm> {
   Division get div => _div.value == null ? null : toDiv(_div.value);
   Organisation get org => _org.value == null ? null : toOrg(_org.value);
 
-  Organisation toOrg(String ouuid) => context.bloc<AffiliationBloc>().orgs[ouuid];
-  Division toDiv(String divuuid) => context.bloc<AffiliationBloc>().divs[divuuid];
-  Department toDep(String depuuid) => context.bloc<AffiliationBloc>().deps[depuuid];
+  Organisation toOrg(String ouuid) => context.read<AffiliationBloc>().orgs[ouuid];
+  Division toDiv(String divuuid) => context.read<AffiliationBloc>().divs[divuuid];
+  Department toDep(String depuuid) => context.read<AffiliationBloc>().deps[depuuid];
 
   @override
   void initState() {
@@ -124,7 +124,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   @override
   void didUpdateWidget(AffiliationForm oldWidget) {
     if (oldWidget.user != widget.user) {
-      _apply(context.bloc<AffiliationBloc>().findUserAffiliation(
+      _apply(context.read<AffiliationBloc>().findUserAffiliation(
             userId: widget.user.userId,
           ));
     }
@@ -242,7 +242,7 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   bool get editable => widget.user == null && (_affiliation?.isAffiliate != true || isTemporary());
 
-  bool isTemporary() => context.bloc<AffiliationBloc>().isTemporary(
+  bool isTemporary() => context.read<AffiliationBloc>().isTemporary(
         _affiliation?.uuid,
       );
 
@@ -256,19 +256,19 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   String _ensureDiv(String ouuid) {
-    final org = context.bloc<AffiliationBloc>().orgs[ouuid];
+    final org = context.read<AffiliationBloc>().orgs[ouuid];
     final duuid = _formKey.currentState.value[DIV_FIELD] ?? _div.value ?? widget.value?.div;
     return org?.divisions?.contains(duuid) == true ? duuid : org?.divisions?.first;
   }
 
   String _ensureDep(String divuuid) {
-    final div = context.bloc<AffiliationBloc>().divs[divuuid];
+    final div = context.read<AffiliationBloc>().divs[divuuid];
     final depuuid = _dep ?? widget.value?.dep;
     return (div?.departments?.contains(depuuid) == true ? depuuid : div?.departments?.first);
   }
 
   List<DropdownMenuItem<String>> _buildOrgItems() {
-    final orgs = context.bloc<AffiliationBloc>().getOrganisations();
+    final orgs = context.read<AffiliationBloc>().getOrganisations();
     return orgs
         .map((org) => DropdownMenuItem<String>(
               value: "${org.uuid}",
@@ -284,7 +284,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   List<DropdownMenuItem<String>> _buildDivItems(Organisation org) {
-    final divs = context.bloc<AffiliationBloc>().getDivisions(org?.uuid);
+    final divs = context.read<AffiliationBloc>().getDivisions(org?.uuid);
     return divs
         .map((div) => DropdownMenuItem<String>(
               value: "${div.uuid}",
@@ -300,7 +300,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   List<DropdownMenuItem<String>> _buildDepItems(Division div) {
-    final deps = context.bloc<AffiliationBloc>().getDepartments(div?.uuid);
+    final deps = context.read<AffiliationBloc>().getDepartments(div?.uuid);
     return deps
         .map((dep) => DropdownMenuItem<String>(
               value: "${dep.uuid}",

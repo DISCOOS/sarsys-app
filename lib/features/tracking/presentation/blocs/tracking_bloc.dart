@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
@@ -19,8 +21,6 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
-import 'package:bloc/bloc.dart';
-import 'package:flutter/foundation.dart';
 
 import 'tracking_bloc_commands.dart';
 import 'tracking_bloc_query.dart';
@@ -45,7 +45,7 @@ class TrackingBloc
     @required this.unitBloc,
     @required this.personnelBloc,
     @required BlocEventBus bus,
-  }) : super(bus: bus) {
+  }) : super(TrackingsEmpty(), bus: bus) {
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
     assert(unitBloc != null, "unitBloc can not be null");
@@ -66,19 +66,19 @@ class TrackingBloc
     registerStreamSubscription(
       // Updates tracking for unit
       // apriori to changes made in backend.
-      unitBloc.where((e) => e.isLocal).listen(_processUnitState),
+      unitBloc.stream.where((e) => e.isLocal).listen(_processUnitState),
     );
 
     registerStreamSubscription(
       // Updates tracking for personnel
       // apriori to changes made in backend.
-      personnelBloc.where((e) => e.isLocal).listen(_processPersonnelState),
+      personnelBloc.stream.where((e) => e.isLocal).listen(_processPersonnelState),
     );
 
     registerStreamSubscription(
       // Updates tracking for device
       // apriori to changes made in backend.
-      deviceBloc.where((e) => e.isLocal).listen(_processDeviceState),
+      deviceBloc.stream.where((e) => e.isLocal).listen(_processDeviceState),
     );
   }
 
@@ -111,9 +111,6 @@ class TrackingBloc
   /// [Operation] that manages given [tra]
   String get ouuid => isReady ? (repo.ouuid ?? operationBloc.selected?.uuid) : null;
 
-  @override
-  TrackingState get initialState => TrackingsEmpty();
-
   /// Process [OperationState] events
   ///
   /// Invokes [load] and [unload] as needed.
@@ -132,12 +129,7 @@ class TrackingBloc
         }
       }
     } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
+      addError(error, stackTrace);
     }
   }
 
@@ -170,12 +162,7 @@ class TrackingBloc
         }
       }
     } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
+      addError(error, stackTrace);
     }
   }
 
@@ -246,12 +233,7 @@ class TrackingBloc
         }
       }
     } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
+      addError(error, stackTrace);
     }
   }
 
@@ -340,12 +322,7 @@ class TrackingBloc
         }
       }
     } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
+      addError(error, stackTrace);
     }
   }
 
@@ -391,19 +368,23 @@ class TrackingBloc
   }
 
   /// Stream of tracking changes for test
-  Stream<Tracking> onChanged(String uuid, {bool skipPosition = false}) => where(
+  Stream<Tracking> onChanged(String uuid, {bool skipPosition = false}) => stream
+      .where(
         (state) =>
             (state is TrackingUpdated &&
                 state.isChanged() &&
                 (!skipPosition || !state.isLocationChanged()) &&
                 state.data.uuid == uuid) ||
             (state is TrackingsLoaded && state.data.contains(uuid)),
-      ).map((state) => state is TrackingsLoaded ? repo[uuid] : state.data);
+      )
+      .map((state) => state is TrackingsLoaded ? repo[uuid] : state.data);
 
   /// Stream of tracking location changes for test
-  Stream<Tracking> onMoved(String uuid) => where(
+  Stream<Tracking> onMoved(String uuid) => stream
+      .where(
         (state) => (state.isLocationChanged() && state.data.uuid == uuid),
-      ).map((state) => state.data);
+      )
+      .map((state) => state.data);
 
   /// Get all tracking objects
   Map<String, Tracking> get trackings => repo.map;

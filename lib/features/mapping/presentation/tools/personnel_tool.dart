@@ -97,7 +97,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
           child: SingleChildScrollView(
             child: StreamBuilder<Personnel>(
               initialData: personnel,
-              stream: context.bloc<PersonnelBloc>().onChanged(personnel),
+              stream: context.read<PersonnelBloc>().onChanged(personnel),
               builder: (context, snapshot) {
                 if (snapshot.data is Personnel) {
                   personnel = snapshot.data;
@@ -112,8 +112,8 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
                   onCompleted: (_) => Navigator.pop(context),
                   onGoto: (point) => _goto(context, point),
                   devices: bloc.devices(personnel.tracking.uuid),
-                  unit: context.bloc<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
-                  withActions: context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander),
+                  unit: context.read<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
+                  withActions: context.read<OperationBloc>().isAuthorizedAs(UserRole.commander),
                 );
               },
             ),

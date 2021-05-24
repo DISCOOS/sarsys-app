@@ -36,12 +36,16 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   ///
   /// Default constructor
   ///
-  DeviceBloc(this.repo, this.userBloc, BlocEventBus bus) : super(bus: bus) {
+  DeviceBloc(
+    this.repo,
+    this.userBloc,
+    BlocEventBus bus,
+  ) : super(DevicesEmpty(), bus: bus) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
     assert(this.userBloc != null, "userBloc can not be null");
 
-    registerStreamSubscription(userBloc.listen(
+    registerStreamSubscription(userBloc.stream.listen(
       // Load and unload devices as needed
       _processUserState,
     ));
@@ -67,12 +71,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         }
       }
     } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
+      addError(error, stackTrace);
     }
   }
 
@@ -155,23 +154,24 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     return uuid != null ? repo[uuid] : null;
   }
 
-  @override
-  DevicesEmpty get initialState => DevicesEmpty();
-
   /// Stream of changes on given device
-  Stream<Device> onChanged(Device device, {bool skipPosition = false}) => where(
+  Stream<Device> onChanged(Device device, {bool skipPosition = false}) => stream
+      .where(
         (state) =>
             (state is DeviceUpdated &&
                 state.isChanged() &&
                 (!skipPosition || !state.isLocationChanged()) &&
                 state.data.uuid == device.uuid) ||
             (state is DevicesLoaded && state.data.contains(device.uuid)),
-      ).map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);
+      )
+      .map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);
 
   /// Stream of changes on given device
-  Stream<Device> onMoved(Device device) => where(
+  Stream<Device> onMoved(Device device) => stream
+      .where(
         (state) => (state.isLocationChanged() && state.data.uuid == device.uuid),
-      ).map((state) => state.data);
+      )
+      .map((state) => state.data);
 
   void _assertState() {
     if (!userBloc.isAuthenticated) {

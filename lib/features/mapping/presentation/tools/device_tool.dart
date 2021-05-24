@@ -88,7 +88,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
           child: SingleChildScrollView(
             child: StreamBuilder<Device>(
               initialData: device,
-              stream: context.bloc<DeviceBloc>().onChanged(device),
+              stream: context.read<DeviceBloc>().onChanged(device),
               builder: (context, snapshot) {
                 if (snapshot.data is Device) {
                   device = snapshot.data;

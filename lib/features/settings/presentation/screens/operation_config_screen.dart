@@ -24,7 +24,7 @@ class _OperationConfigScreenState extends State<OperationConfigScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _bloc = context.bloc<AppConfigBloc>();
+    _bloc = context.read<AppConfigBloc>();
   }
 
   @override //new

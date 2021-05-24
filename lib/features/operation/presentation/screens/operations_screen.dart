@@ -61,7 +61,7 @@ class OperationsScreenState extends ScreenState<OperationsScreen, void> {
 
   @override
   FloatingActionButton buildFAB(BuildContext context) {
-    return context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander)
+    return context.read<OperationBloc>().isAuthorizedAs(UserRole.commander)
         ? FloatingActionButton(
             onPressed: () => _create(context),
             tooltip: 'Ny aksjon',
@@ -143,10 +143,10 @@ class _OperationsPageState extends State<OperationsPage> {
     super.didChangeDependencies();
     _group?.close();
     _group = StreamGroup<BlocState>.broadcast()
-      ..add(context.bloc<UserBloc>())
-      ..add(context.bloc<UnitBloc>())
-      ..add(context.bloc<OperationBloc>())
-      ..add(context.bloc<PersonnelBloc>());
+      ..add(context.read<UserBloc>().stream)
+      ..add(context.read<UnitBloc>().stream)
+      ..add(context.read<OperationBloc>().stream)
+      ..add(context.read<PersonnelBloc>().stream);
   }
 
   @override
@@ -160,7 +160,7 @@ class _OperationsPageState extends State<OperationsPage> {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
       return RefreshIndicator(
         onRefresh: () async {
-          await context.bloc<OperationBloc>().load();
+          await context.read<OperationBloc>().load();
           setState(() {});
         },
         child: StreamBuilder(
@@ -171,7 +171,7 @@ class _OperationsPageState extends State<OperationsPage> {
             return cards.isEmpty
                 ? toRefreshable(
                     viewportConstraints,
-                    message: "0 av ${context.bloc<OperationBloc>().operations.length} hendelser vises",
+                    message: "0 av ${context.read<OperationBloc>().operations.length} hendelser vises",
                   )
                 : toRefreshable(
                     viewportConstraints,
@@ -193,9 +193,9 @@ class _OperationsPageState extends State<OperationsPage> {
       : [];
 
   List<Operation> _filteredOperations() {
-    final incidents = context.bloc<OperationBloc>().incidents;
+    final incidents = context.read<OperationBloc>().incidents;
     return context
-        .bloc<OperationBloc>()
+        .read<OperationBloc>()
         .operations
         .where((operation) => widget.filter.contains(operation?.status))
         .where((operation) => widget.query == null || _prepare(operation).contains(widget.query.toLowerCase()))
@@ -212,14 +212,14 @@ class _OperationsPageState extends State<OperationsPage> {
     final caption = Theme.of(context).textTheme.caption;
 
     return StreamBuilder(
-        stream: context.bloc<UserBloc>(),
+        stream: context.read<UserBloc>().stream,
         builder: (context, snapshot) {
           if (snapshot.hasData == false) return Container();
-          final isCurrent = context.bloc<OperationBloc>().selected == operation;
-          final incident = context.bloc<OperationBloc>().incidents[operation.incident.uuid];
-          final isUserMobilized = context.bloc<PersonnelBloc>().isUserMobilized;
+          final isCurrent = context.read<OperationBloc>().selected == operation;
+          final incident = context.read<OperationBloc>().incidents[operation.incident.uuid];
+          final isUserMobilized = context.read<PersonnelBloc>().isUserMobilized;
           final isMobilized = isCurrent && isUserMobilized;
-          final isAuthorized = isMobilized || context.bloc<UserBloc>().isAuthorized(operation);
+          final isAuthorized = isMobilized || context.read<UserBloc>().isAuthorized(operation);
           return Card(
             elevation: 4.0,
             child: Column(
@@ -298,11 +298,11 @@ class _OperationsPageState extends State<OperationsPage> {
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          if (context.bloc<UserBloc>().isAuthor(operation) || !context.bloc<UserBloc>().hasRoles)
+                          if (context.read<UserBloc>().isAuthor(operation) || !context.read<UserBloc>().hasRoles)
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                context.bloc<UserBloc>().isAuthor(operation) || context.bloc<UserBloc>().hasRoles
+                                context.read<UserBloc>().isAuthor(operation) || context.read<UserBloc>().hasRoles
                                     ? 'Min aksjon'
                                     : 'Ingen roller',
                                 style: Theme.of(context).textTheme.caption,
@@ -326,7 +326,7 @@ class _OperationsPageState extends State<OperationsPage> {
 
   ListTile _buildCardHeader(BuildContext context, Operation operation, TextStyle title, TextStyle caption) {
     return ListTile(
-      selected: context.bloc<OperationBloc>().selected == operation,
+      selected: context.read<OperationBloc>().selected == operation,
       title: Text(
         operation.name,
         style: title,
@@ -343,7 +343,7 @@ class _OperationsPageState extends State<OperationsPage> {
   }
 
   Padding _buildCardStatus(Operation operation, TextStyle caption) {
-    final incident = context.bloc<OperationBloc>().incidents[operation.incident.uuid];
+    final incident = context.read<OperationBloc>().incidents[operation.incident.uuid];
     return Padding(
       padding: EdgeInsets.only(top: 8.0, right: (incident?.exercise == true ? 24.0 : 0.0)),
       child: Column(
@@ -362,7 +362,7 @@ class _OperationsPageState extends State<OperationsPage> {
     );
   }
 
-  bool get hasRoles => context.bloc<UserBloc>()?.hasRoles == true;
+  bool get hasRoles => context.read<UserBloc>()?.hasRoles == true;
 
   String _toDescription(Operation operation) {
     String meetup = operation.meetup.description;

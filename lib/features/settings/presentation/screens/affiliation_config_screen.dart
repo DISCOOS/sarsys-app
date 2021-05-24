@@ -45,14 +45,14 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
           children: <Widget>[
             AffiliationForm(
               key: _affiliationKey,
-              user: context.bloc<UserBloc>().user,
+              user: context.read<UserBloc>().user,
               value: _ensureAffiliation(),
-              onChanged: (affiliation) => context.bloc<AppConfigBloc>().updateWith(
+              onChanged: (affiliation) => context.read<AppConfigBloc>().updateWith(
                     divId: affiliation.div.uuid,
                     depId: affiliation.dep.uuid,
                   ),
             ),
-            if (context.bloc<UserBloc>().user.isAffiliated)
+            if (context.read<UserBloc>().user.isAffiliated)
               Padding(
                   padding: const EdgeInsets.only(top: 24.0),
                   child: InputDecorator(
@@ -79,5 +79,5 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
     );
   }
 
-  Affiliation _ensureAffiliation() => context.bloc<AffiliationBloc>().findUserAffiliation();
+  Affiliation _ensureAffiliation() => context.read<AffiliationBloc>().findUserAffiliation();
 }

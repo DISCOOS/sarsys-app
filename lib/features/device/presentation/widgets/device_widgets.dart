@@ -42,7 +42,7 @@ class DeviceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final person = context.bloc<AffiliationBloc>().persons.findUser(
+    final person = context.read<AffiliationBloc>().persons.findUser(
           device.networkId,
         );
     String title = _toDeviceTitle(
@@ -110,7 +110,7 @@ class DeviceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.caption;
-    final person = context.bloc<AffiliationBloc>().persons.findUser(
+    final person = context.read<AffiliationBloc>().persons.findUser(
           device.networkId,
         );
     final name = _toDeviceTitle(
@@ -267,7 +267,7 @@ class DeviceWidget extends StatelessWidget {
   }
 
   List<Widget> _buildData(BuildContext context, TextTheme theme) {
-    final bloc = context.bloc<AffiliationBloc>();
+    final bloc = context.read<AffiliationBloc>();
     final entity = _getEntity(bloc, person, device);
     final org = organisation ?? bloc.orgs[entity?.org?.uuid];
 
@@ -463,7 +463,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Funksjon",
               icon: Icon(Icons.functions),
-              value: context.bloc<AffiliationBloc>().findFunction(device.number)?.name ?? 'Ingen',
+              value: context.read<AffiliationBloc>().findFunction(device.number)?.name ?? 'Ingen',
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -605,7 +605,7 @@ class DeviceActionGroup extends StatelessWidget {
   }
 
   List<ActionMenuItem> _buildActionItems(BuildContext context) {
-    final isSelected = context.bloc<OperationBloc>().isSelected;
+    final isSelected = context.read<OperationBloc>().isSelected;
 
     return <ActionMenuItem>[
       ActionMenuItem(
@@ -627,7 +627,7 @@ class DeviceActionGroup extends StatelessWidget {
           child: _buildAddToUnitAction(context),
           onPressed: _onAddToUnit,
         ),
-      if (device.manual == true && context.bloc<UserBloc>().user.isAdmin)
+      if (device.manual == true && context.read<UserBloc>().user.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,
@@ -795,7 +795,7 @@ Affiliation _getEntity(AffiliationBloc bloc, Person person, Device device) {
 }
 
 String _toDeviceTitle(BuildContext context, Person person, Device device) {
-  final bloc = context.bloc<AffiliationBloc>();
+  final bloc = context.read<AffiliationBloc>();
   final entity = _getEntity(bloc, person, device);
   final name = person?.fname ?? device.alias ?? bloc.orgs[entity?.org?.uuid]?.fleetMap?.alias;
   final alias = device.type != DeviceType.app

@@ -22,7 +22,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   AppConfigBloc _bloc;
-  Organisation get organisation => context.bloc<AffiliationBloc>().findUserOrganisation();
+  Organisation get organisation => context.read<AffiliationBloc>().findUserOrganisation();
 
   List<TalkGroupCatalog> get catalogs => sortList(
         organisation.fleetMap?.catalogs ?? [],
@@ -43,7 +43,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _bloc = context.bloc<AppConfigBloc>();
+    _bloc = context.read<AppConfigBloc>();
   }
 
   @override //new

@@ -15,16 +15,16 @@ typedef void AppConfigCallback(VoidCallback fn);
 class AppConfigBloc
     extends StatefulBloc<AppConfigCommand, AppConfigState, AppConfigBlocError, String, AppConfig, AppConfigService>
     with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig> {
-  AppConfigBloc(this.repo, BlocEventBus bus) : super(bus: bus);
+  AppConfigBloc(
+    this.repo,
+    BlocEventBus bus,
+  ) : super(AppConfigEmpty(), bus: bus);
   final AppConfigRepository repo;
 
   /// All repositories
   Iterable<StatefulRepository> get repos => [repo];
 
   AppConfigService get service => repo.service;
-
-  @override
-  AppConfigEmpty get initialState => AppConfigEmpty();
 
   /// Check if [config] is empty
   @override
@@ -140,7 +140,7 @@ class AppConfigBloc
       yield* _update(command);
     } else if (command is DeleteAppConfig) {
       yield* _delete(command);
-    } else if (command is _StateChange) {
+    } else if (command is _NotifyBlocStateChange) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -172,7 +172,7 @@ class AppConfigBloc
           config,
           isLocal: false,
         ),
-        toCommand: (state) => _StateChange(state),
+        toCommand: (state) => _NotifyBlocStateChange(state),
         toError: (error, stackTrace) => toError(
           command,
           error,
@@ -204,7 +204,7 @@ class AppConfigBloc
         config,
         isLocal: false,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -233,7 +233,7 @@ class AppConfigBloc
         repo.config,
         isLocal: false,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -260,7 +260,7 @@ class AppConfigBloc
         config,
         isLocal: false,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -313,8 +313,8 @@ class DeleteAppConfig extends AppConfigCommand<AppConfig> {
   String toString() => '$runtimeType {}';
 }
 
-class _StateChange extends AppConfigCommand<AppConfigState> {
-  _StateChange(
+class _NotifyBlocStateChange extends AppConfigCommand<AppConfigState> {
+  _NotifyBlocStateChange(
     AppConfigState state,
   ) : super(state);
 

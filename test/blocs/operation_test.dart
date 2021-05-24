@@ -1,11 +1,11 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
-import 'package:uuid/uuid.dart';
 
 import '../mock/incident_service_mock.dart';
 import '../mock/operation_service_mock.dart';
@@ -24,55 +24,46 @@ void main() async {
     )
     ..install();
 
-  test(
-    'Operation bloc should be EMPTY and UNSET',
-    () async {
-      expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD BE unset");
-      expect(harness.operationsBloc.repo.isEmpty, isTrue, reason: "SHOULD BE empty");
-      expect(harness.operationsBloc.initialState, isA<OperationsEmpty>(), reason: "Unexpected operation state");
-      expect(harness.operationsBloc, emits(isA<OperationsEmpty>()));
-    },
-  );
+  test('Operation bloc should be EMPTY and UNSET', () async {
+    expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD BE unset");
+    expect(harness.operationsBloc.repo.isEmpty, isTrue, reason: "SHOULD BE empty");
+    expect(harness.operationsBloc.state, isA<OperationsEmpty>());
+  });
 
-  test(
-    'Operation bloc should be load when user is authenticated',
-    () async {
-      // Arrange
-      await _authenticate(harness);
+  test('Operation bloc should be load when user is authenticated', () async {
+    // Arrange
+    await _authenticate(harness);
 
-      // Assert
-      expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD BE unset");
-      expect(harness.operationsBloc.initialState, isA<OperationsEmpty>(), reason: "Unexpected operation state");
-    },
-  );
+    // Assert
+    expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD BE unset");
+  });
 
-  test(
-    'Operation bloc should be unload when user is logged out',
-    () async {
-      // Arrange
-      await _authenticate(harness);
+  test('Operation bloc should be unload when user is logged out', () async {
+    // Arrange
+    await _authenticate(harness);
 
-      // Act
-      await harness.userBloc.logout();
+    // Act
+    await _logout(harness);
 
-      // Assert
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsUnloaded>()));
-    },
-  );
+    // Assert
+    expect(harness.operationsBloc.state, isA<OperationsUnloaded>());
+  });
 
   test(
     'Operation bloc should be reload when user is logged in again',
     () async {
       // Arrange
       await _authenticate(harness);
-      await harness.userBloc.logout();
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsUnloaded>()));
 
       // Act
-      await _authenticate(harness);
+      await _logout(harness);
+      await _authenticate(
+        harness,
+        exists: true,
+      );
 
       // Assert
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsLoaded>()));
+      expect(harness.operationsBloc.state, isA<OperationsLoaded>());
     },
   );
 
@@ -271,7 +262,7 @@ void main() async {
       expect(operations.length, 0, reason: "SHOULD NOT contain operations");
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD NOT be in SELECTED state");
       await expectThroughLater(
-        harness.operationsBloc,
+        harness.operationsBloc.stream,
         emits(isA<OperationsLoaded>()),
       );
     });
@@ -300,7 +291,6 @@ void main() async {
       );
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.operationsBloc.selected.uuid, equals(operation1.uuid), reason: "SHOULD selected first");
-      expect(harness.operationsBloc, emitsThrough(isA<OperationSelected>()));
     });
 
     test('SHOULD selected last operation with state CREATED', () async {
@@ -316,6 +306,10 @@ void main() async {
 
       // Act
       await harness.operationsBloc.select(operation2.uuid);
+      expectThroughLater(
+        harness.operationsBloc.stream,
+        emits(isA<OperationSelected>().having((e) => e.isLocal, 'Should be local', isTrue)),
+      );
 
       // Assert
       verifyZeroInteractions(harness.operationService);
@@ -326,7 +320,6 @@ void main() async {
       );
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.operationsBloc.selected.uuid, equals(operation2.uuid), reason: "SHOULD selected last");
-      expect(harness.operationsBloc, emitsThrough(isA<OperationSelected>()));
     });
 
     test('SHOULD create operation with state CREATED', () async {
@@ -338,6 +331,10 @@ void main() async {
 
       // Act
       await harness.operationsBloc.create(operation, incident: incident);
+      expectThroughLater(
+        harness.operationsBloc.stream,
+        emits(isA<OperationSelected>().having((e) => e.isLocal, 'Should be local', isTrue)),
+      );
 
       // Assert
       verifyZeroInteractions(harness.operationService);
@@ -355,7 +352,6 @@ void main() async {
         isTrue,
         reason: "SHOULD contain incident",
       );
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationCreated>(), isA<OperationSelected>()]);
     });
 
     test('SHOULD update operation with state CREATED', () async {
@@ -369,6 +365,10 @@ void main() async {
 
       // Act
       await harness.operationsBloc.update(operation);
+      expectThroughLater(
+        harness.operationsBloc.stream,
+        emits(isA<OperationSelected>().having((e) => e.isLocal, 'Should be local', isTrue)),
+      );
 
       // Assert
       verifyZeroInteractions(harness.operationService);
@@ -380,7 +380,6 @@ void main() async {
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.operationsBloc.selected.uuid, equals(operation.uuid), reason: "SHOULD select created");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationUpdated>(), isA<OperationSelected>()]);
     });
 
     test('SHOULD delete local operation', () async {
@@ -447,9 +446,23 @@ void main() async {
   });
 }
 
+Future<void> _logout(BlocTestHarness harness) async {
+  await harness.userBloc.logout();
+  await Future.wait([
+    expectThroughLater(
+      harness.operationsBloc.stream,
+      isA<OperationsUnloaded>(),
+    ),
+    expectThroughLater(
+      harness.affiliationBloc.stream,
+      isA<AffiliationsUnloaded>(),
+    )
+  ]);
+}
+
 Future<void> expectLocalIsEmpty<T extends OperationState>(BlocTestHarness harness) {
   return expectThroughLater(
-    harness.operationsBloc,
+    harness.operationsBloc.stream,
     emits(isA<T>().having(
       (event) {
         return event.isLocal && (event.data is Iterable ? (event.data as Iterable).isEmpty : event.data == null);
@@ -462,7 +475,7 @@ Future<void> expectLocalIsEmpty<T extends OperationState>(BlocTestHarness harnes
 
 Future<void> expectLocalIsNotEmpty<T extends OperationState>(BlocTestHarness harness) {
   return expectThroughLater(
-    harness.operationsBloc,
+    harness.operationsBloc.stream,
     emits(isA<T>().having(
       (event) {
         return event.isLocal && (event.data is Iterable ? (event.data as Iterable).isNotEmpty : event.data != null);
@@ -475,7 +488,7 @@ Future<void> expectLocalIsNotEmpty<T extends OperationState>(BlocTestHarness har
 
 Future<void> expectRemoteIsEmpty<T extends OperationState>(BlocTestHarness harness) {
   return expectThroughLater(
-    harness.operationsBloc,
+    harness.operationsBloc.stream,
     emits(isA<T>().having(
       (event) {
         return event.isRemote && (event.data is Iterable ? (event.data as Iterable).isEmpty : event.data == null);
@@ -488,7 +501,7 @@ Future<void> expectRemoteIsEmpty<T extends OperationState>(BlocTestHarness harne
 
 Future<void> expectRemoteIsNotEmpty<T extends OperationState>(BlocTestHarness harness) {
   return expectThroughLater(
-    harness.operationsBloc,
+    harness.operationsBloc.stream,
     emits(isA<T>().having(
       (event) {
         return event.isRemote && (event.data is Iterable ? (event.data as Iterable).isNotEmpty : event.data != null);
@@ -500,31 +513,26 @@ Future<void> expectRemoteIsNotEmpty<T extends OperationState>(BlocTestHarness ha
 }
 
 // Authenticate user
+//
 // Since 'authenticate = false' is passed
 // to Harness to allow for testing of
 // initial states and transitions of
 // OperationBloc, all tests that require
 // an authenticated user must call this
-Future _authenticate(BlocTestHarness harness, {bool reset = true}) async {
+//
+Future _authenticate(BlocTestHarness harness, {bool exists = false}) async {
   await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
-  // Wait for UserOnboarded event
-  await expectThroughLater(
-    harness.affiliationBloc,
-    emits(isA<UserOnboarded>().having(
-      (event) => event.isRemote,
-      'Should be remote',
-      isTrue,
-    )),
-  );
-  await expectThroughLater(
-    harness.operationsBloc,
-    emits(isA<OperationsLoaded>().having(
-      (event) => event.isRemote,
-      'Should be remote',
-      isTrue,
-    )),
-  );
-  if (reset) {
-    clearInteractions(harness.operationService);
-  }
+  await Future.wait([
+    expectThroughLater(
+      harness.operationsBloc.stream,
+      isA<OperationsLoaded>().having((event) => event.isRemote, 'Should be remote', isTrue),
+    ),
+    expectThroughLater(
+      harness.affiliationBloc.stream,
+      emits(exists
+          ? isA<AffiliationUpdated>().having((event) => event.isRemote, 'Should be remote', isTrue)
+          : isA<UserOnboarded>().having((event) => event.isRemote, 'Should be remote', isTrue)),
+    )
+  ]);
+  clearInteractions(harness.operationService);
 }

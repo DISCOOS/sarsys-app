@@ -60,9 +60,9 @@ class UnitsPageState extends State<UnitsPage> {
     super.didChangeDependencies();
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<UnitBloc>())
-      ..add(context.bloc<TrackingBloc>())
-      ..add(context.bloc<UserBloc>());
+      ..add(context.read<UnitBloc>().stream)
+      ..add(context.read<TrackingBloc>().stream)
+      ..add(context.read<UserBloc>().stream);
   }
 
   @override
@@ -78,7 +78,7 @@ class UnitsPageState extends State<UnitsPage> {
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return RefreshIndicator(
           onRefresh: () async {
-            context.bloc<UnitBloc>().load();
+            context.read<UnitBloc>().load();
           },
           child: Container(
             child: StreamBuilder(
@@ -113,7 +113,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   List<Unit> _filteredUnits() {
     return context
-        .bloc<UnitBloc>()
+        .read<UnitBloc>()
         .units
         .values
         .where((unit) => _filter.contains(unit.status))
@@ -131,7 +131,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   Widget _buildUnit(List<Unit> units, int index) {
     var unit = units[index];
-    var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().trackings[unit.tracking.uuid];
+    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && isCommander
@@ -204,7 +204,7 @@ class UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
+  bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   _onTap(Unit unit) {
     if (widget.onSelection == null) {

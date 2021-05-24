@@ -40,8 +40,8 @@ dependencies:
   web_socket_channel: ^1.2.0
   rxdart: ^0.23.1
   json_annotation: ^3.1.1
-  bloc: ^3.0.0
-  flutter_bloc: ^3.2.0
+  bloc: ^7.0.0
+  flutter_bloc: ^7.0.0
   equatable: ^2.0.0
   jaguar_jwt: ^2.1.6
   flutter_form_builder: ^4.2.0
@@ -62,7 +62,7 @@ dependencies:
   dartz: ^0.9.1
   intro_views_flutter: ^3.0.0
   flutter_email_sender: ^5.0.0
-  provider: ^4.3.3
+  provider: ^5.0.0
   wakelock: ^0.5.0+2
   faker: ^1.1.1
   connectivity: ^3.0.3
@@ -138,7 +138,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   mockito: ^4.1.4
-  bloc_test: ^4.0.0
+  bloc_test: ^8.0.0
   build_runner: ^1.11.1
   json_serializable: ^3.5.1
   chopper_generator: ^3.0.6

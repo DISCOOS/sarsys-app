@@ -19,8 +19,7 @@ void main() async {
   test('User SHOULD be UNSET initially', () async {
     // Assert
     expect(harness.userBloc.user, isNull, reason: "UserRepository SHOULD not contain User");
-    expect(harness.userBloc.initialState, isA<UserUnset>(), reason: "UserBloc SHOULD be in EMPTY state");
-    expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
+    expect(harness.userBloc.state, isA<UserUnset>());
   });
 
   group('WHEN UserBloc is ONLINE', () {
@@ -30,11 +29,14 @@ void main() async {
 
       // Act
       await harness.userBloc.load();
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigInitialized>()));
+      await expectThroughLater(
+        harness.configBloc.stream,
+        emits(isA<AppConfigInitialized>()),
+      );
 
       // Assert
       expect(harness.userBloc.user, isNull, reason: "SHOULD NOT have user");
-      expect(harness.userBloc, emits(isA<UserUnset>()));
+      expect(harness.userBloc.state, isA<UserUnset>());
       expect(harness.configBloc.config, isA<AppConfig>(), reason: "SHOULD HAVE an AppConfig");
     });
 
@@ -42,16 +44,19 @@ void main() async {
       // Arrange
       harness.connectivity.cellular();
 
-      // Act
-      await harness.userBloc.login(
+      // Act without waiting
+      harness.userBloc.login(
         username: BlocTestHarness.UNTRUSTED,
         password: BlocTestHarness.PASSWORD,
       );
       // Assert
+      expectThroughInOrder(harness.userBloc, [
+        isA<UserAuthenticating>(),
+        isA<UserAuthenticated>(),
+      ]);
+      await _waitForConfigBloc(harness, StorageStatus.updated);
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
-      expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
-      await _waitForConfigBloc(harness, StorageStatus.updated);
     });
 
     test('SHOULD reload user', () async {
@@ -85,10 +90,13 @@ void main() async {
         username: BlocTestHarness.UNTRUSTED,
         password: BlocTestHarness.PASSWORD,
       );
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+      await expectThroughLater(
+        harness.configBloc.stream,
+        emits(isA<AppConfigLoaded>()),
+      );
 
       final events = <UserState>[];
-      harness.userBloc.listen((e) => events.add(e));
+      harness.userBloc.stream.listen((e) => events.add(e));
 
       // Act
       await harness.userBloc.login(
@@ -152,10 +160,16 @@ void main() async {
         username: BlocTestHarness.UNTRUSTED,
         password: BlocTestHarness.PASSWORD,
       );
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+      await expectThroughLater(
+        harness.configBloc.stream,
+        emits(isA<AppConfigLoaded>()),
+      );
       final newTalkGroupCatalog = '123456';
       await harness.configBloc.updateWith(talkGroupCatalog: newTalkGroupCatalog);
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigUpdated>()));
+      await expectThroughLater(
+        harness.configBloc.stream,
+        emits(isA<AppConfigUpdated>()),
+      );
 
       // Act
       harness.connectivity.offline();
@@ -179,7 +193,10 @@ void main() async {
         username: BlocTestHarness.UNTRUSTED,
         password: BlocTestHarness.PASSWORD,
       );
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+      await expectThroughLater(
+        harness.configBloc.stream,
+        emits(isA<AppConfigLoaded>()),
+      );
 
       // Act
       harness.connectivity.offline();
@@ -217,7 +234,10 @@ void main() async {
 }
 
 Future _waitForConfigBloc(BlocTestHarness harness, StorageStatus status) async {
-  await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+  await expectThroughLater(
+    harness.configBloc.stream,
+    emits(isA<AppConfigLoaded>()),
+  );
   await expectStorageStatusLater(
     harness.configBloc.config.uuid,
     harness.configBloc.repo,
@@ -301,7 +321,10 @@ Future _testAuthenticatedAnyUntrustedSecuringShouldNotYieldTrust(BlocTestHarness
     username: BlocTestHarness.UNTRUSTED,
     password: BlocTestHarness.PASSWORD,
   );
-  await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+  await expectThroughLater(
+    harness.configBloc.stream,
+    emits(isA<AppConfigLoaded>()),
+  );
   if (offline) {
     harness.connectivity.offline();
   }

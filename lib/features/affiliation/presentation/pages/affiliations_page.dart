@@ -71,9 +71,9 @@ class AffiliationsPageState extends State<AffiliationsPage> {
     super.didChangeDependencies();
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<AffiliationBloc>())
-      ..add(context.bloc<TrackingBloc>())
-      ..add(context.bloc<UserBloc>());
+      ..add(context.read<AffiliationBloc>().stream)
+      ..add(context.read<TrackingBloc>().stream)
+      ..add(context.read<UserBloc>().stream);
   }
 
   @override
@@ -89,7 +89,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
       builder: (BuildContext context, BoxConstraints constraints) {
         return RefreshIndicator(
           onRefresh: () async {
-            context.bloc<AffiliationBloc>().load();
+            context.read<AffiliationBloc>().load();
           },
           child: Container(
 //            color: Color.fromRGBO(168, 168, 168, 0.6),
@@ -97,13 +97,13 @@ class AffiliationsPageState extends State<AffiliationsPage> {
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var affiliations = _filteredAffiliation(context.bloc<AffiliationBloc>());
+                var affiliations = _filteredAffiliation(context.read<AffiliationBloc>());
                 return affiliations.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         constraints,
                         message: _toEmptyListMessage(snapshot),
                       )
-                    : _buildList(context.bloc<AffiliationBloc>(), affiliations);
+                    : _buildList(context.read<AffiliationBloc>(), affiliations);
               },
             ),
           ),
@@ -122,7 +122,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
 
   List<Affiliation> _filteredAffiliation(AffiliationBloc bloc) {
     final affiliations = context
-        .bloc<AffiliationBloc>()
+        .read<AffiliationBloc>()
         .repo
         .values
         .where((affiliation) => _filter.contains(affiliation.status))
@@ -147,7 +147,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
   String _prepare(AffiliationBloc bloc, Affiliation affiliation) =>
       "${bloc.toSearchable(affiliation.uuid)}".toLowerCase();
 
-  AffiliationBloc get affiliationBloc => context.bloc<AffiliationBloc>();
+  AffiliationBloc get affiliationBloc => context.read<AffiliationBloc>();
 
   Widget _buildList(AffiliationBloc bloc, List affiliations) {
     return widget.withGrouped
@@ -192,7 +192,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
   Widget _buildAffiliation(AffiliationBloc bloc, Affiliation affiliation) {
     final person = bloc.persons[affiliation.person?.uuid];
     return GestureDetector(
-      child: widget.withActions && context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander)
+      child: widget.withActions && context.read<OperationBloc>().isAuthorizedAs(UserRole.commander)
           ? Slidable(
               actionPane: SlidableScrollActionPane(),
               actionExtentRatio: 0.2,
@@ -249,7 +249,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
                 padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
                 child: Icon(_selected.contains(affiliation.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
               ),
-            if (widget.withActions && context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander))
+            if (widget.withActions && context.read<OperationBloc>().isAuthorizedAs(UserRole.commander))
               RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
@@ -279,7 +279,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
           caption: translateAffiliationStandbyStatus(AffiliationStandbyStatus.unavailable),
           color: toAffiliationStandbyStatusColor(AffiliationStandbyStatus.available),
           icon: Icons.check_circle,
-          onTap: () async => await context.bloc<AffiliationBloc>().update(affiliation.copyWith(
+          onTap: () async => await context.read<AffiliationBloc>().update(affiliation.copyWith(
                 status: AffiliationStandbyStatus.available,
               )),
         );
@@ -288,7 +288,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
           caption: translateAffiliationStandbyStatus(AffiliationStandbyStatus.available),
           color: toAffiliationStandbyStatusColor(AffiliationStandbyStatus.short_notice),
           icon: Icons.check_circle,
-          onTap: () async => await context.bloc<AffiliationBloc>().update(affiliation.copyWith(
+          onTap: () async => await context.read<AffiliationBloc>().update(affiliation.copyWith(
                 status: AffiliationStandbyStatus.short_notice,
               )),
         );
@@ -298,7 +298,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
           caption: translateAffiliationStandbyStatus(AffiliationStandbyStatus.short_notice),
           color: toAffiliationStandbyStatusColor(AffiliationStandbyStatus.unavailable),
           icon: Icons.archive,
-          onTap: () async => await context.bloc<AffiliationBloc>().update(affiliation.copyWith(
+          onTap: () async => await context.read<AffiliationBloc>().update(affiliation.copyWith(
                 status: AffiliationStandbyStatus.unavailable,
               )),
         );
@@ -514,7 +514,7 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
       _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
       _recent.value = recent.toSet() ?? [];
     }
-    _bloc ??= context.bloc<AffiliationBloc>();
+    _bloc ??= context.read<AffiliationBloc>();
     if (translateAffiliationStandbyStatus(AffiliationStandbyStatus.available) == query) {
       _debouncer.value = enumName(AffiliationStandbyStatus.available);
     } else if (translateAffiliationStandbyStatus(AffiliationStandbyStatus.unavailable) == query) {
@@ -592,7 +592,7 @@ Future<Affiliation> selectOrCreateAffiliation(
             Navigator.pop(
               context,
               result.isRight()
-                  ? context.bloc<AffiliationBloc>().repo[result.toIterable().first.affiliation.uuid]
+                  ? context.read<AffiliationBloc>().repo[result.toIterable().first.affiliation.uuid]
                   : null,
             );
           },

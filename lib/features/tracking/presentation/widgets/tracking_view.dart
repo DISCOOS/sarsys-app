@@ -22,7 +22,7 @@ class TrackingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = context.bloc<TrackingBloc>();
+    final bloc = context.read<TrackingBloc>();
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[

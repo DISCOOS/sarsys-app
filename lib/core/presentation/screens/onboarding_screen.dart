@@ -125,7 +125,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPressed: () async {
                   timer?.cancel();
                   timer = null;
-                  await context.bloc<AppConfigBloc>().updateWith(
+                  await context.read<AppConfigBloc>().updateWith(
                         onboarded: true,
                       );
                   Navigator.pushReplacementNamed(context, FirstSetupScreen.ROUTE);
@@ -197,19 +197,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: <Widget>[
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              SizedBox(
-                height:SizeConfig.safeBlockVertical * 8 + 32,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(2.0),
-                child: _buildIcon(asset),
-              ),
-            ],
-          ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(
+                  height: SizeConfig.safeBlockVertical * 8 + 32,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: _buildIcon(asset),
+                ),
+              ],
+            ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[

@@ -23,7 +23,11 @@ typedef void UserCallback(VoidCallback fn);
 
 class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     with LoadableBloc<User>, UnloadableBloc<List<User>> {
-  UserBloc(this.repo, this.configBloc, BlocEventBus bus) : super(bus: bus) {
+  UserBloc(
+    this.repo,
+    this.configBloc,
+    BlocEventBus bus,
+  ) : super(UserUnset(), bus: bus) {
     // Notify when token changes
     registerStreamSubscription(repo.onRefresh.listen((token) {
       dispatch(_NotifyAuthTokenRefreshed(token));
@@ -33,9 +37,6 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   final UserRepository repo;
   final AppConfigBloc configBloc;
   final _authorized = <String, UserAuthorized>{};
-
-  @override
-  UserUnset get initialState => UserUnset();
 
   /// [UserService] instance
   UserService get service => repo.service;

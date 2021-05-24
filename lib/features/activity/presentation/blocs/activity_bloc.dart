@@ -15,7 +15,12 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBlocError> {
-  ActivityBloc({@required BlocEventBus bus}) : super(bus: bus) {
+  ActivityBloc({
+    @required BlocEventBus bus,
+  }) : super(
+          ActivityInitialized(ActivityProfile.PRIVATE),
+          bus: bus,
+        ) {
     assert(bus != null, "bus can not be null");
     subscribe<UserUnset>(_processAuth);
     subscribe<UserAuthenticated>(_processAuth);
@@ -29,12 +34,9 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     subscribe<PersonnelsUnloaded>(_processPersonnel);
   }
 
-  @override
-  ActivityInitialized get initialState => ActivityInitialized(ActivityProfile.PRIVATE);
-
   /// Get stream of [ActivityProfile] changes
   Stream<ActivityProfile> get onChanged =>
-      where((event) => event.data is ActivityProfile).map((event) => event.data as ActivityProfile);
+      stream.where((event) => event.data is ActivityProfile).map((event) => event.data as ActivityProfile);
 
   /// Get trackable [Device]
   Device get trackable => _device;

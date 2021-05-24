@@ -66,13 +66,13 @@ class UserStatusPageState extends State<UserStatusPage> {
     return RefreshIndicator(
       onRefresh: () async {
         if (_personnel == null) {
-          context.bloc<ActivityBloc>().apply();
+          context.read<ActivityBloc>().apply();
         } else {
-          context.bloc<PersonnelBloc>().load();
+          context.read<PersonnelBloc>().load();
         }
       },
       child: StreamBuilder<PersonnelState>(
-          stream: context.bloc<PersonnelBloc>(),
+          stream: context.read<PersonnelBloc>().stream,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final state = snapshot.data;
@@ -116,8 +116,8 @@ class UserStatusPageState extends State<UserStatusPage> {
   Widget _buildProfile(BuildContext context) {
     final service = LocationService();
     return StreamBuilderWidget<ActivityProfile>(
-      stream: context.bloc<ActivityBloc>().onChanged,
-      initialData: context.bloc<ActivityBloc>().profile,
+      stream: context.read<ActivityBloc>().onChanged,
+      initialData: context.read<ActivityBloc>().profile,
       builder: (context, profile) {
         var status;
         switch (profile) {
@@ -153,7 +153,7 @@ class UserStatusPageState extends State<UserStatusPage> {
             break;
           default:
             status = Text(
-              'profile: ${context.bloc<ActivityBloc>().profile}',
+              'profile: ${context.read<ActivityBloc>().profile}',
             );
         }
 
@@ -161,9 +161,9 @@ class UserStatusPageState extends State<UserStatusPage> {
           children: [
             Padding(
               padding: const EdgeInsets.all(14.0),
-              child: status ?? Text('profile: ${context.bloc<ActivityBloc>().profile}'),
+              child: status ?? Text('profile: ${context.read<ActivityBloc>().profile}'),
             ),
-            if (context.bloc<ActivityBloc>().isTrackable) _buildLocationBuffer(),
+            if (context.read<ActivityBloc>().isTrackable) _buildLocationBuffer(),
           ],
         );
       },
@@ -269,7 +269,7 @@ class UserStatusPageState extends State<UserStatusPage> {
       );
 
   ElevatedButton _buildEnrouteAction(BuildContext context) {
-    final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
+    final personnel = context.read<PersonnelBloc>().findUser().firstOrNull;
     return ElevatedButton.icon(
       icon: Icon(Icons.directions_run),
       label: Text('PÅ VEI'),
@@ -278,7 +278,7 @@ class UserStatusPageState extends State<UserStatusPage> {
   }
 
   ElevatedButton _buildCheckInAction(BuildContext context) {
-    final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
+    final personnel = context.read<PersonnelBloc>().findUser().firstOrNull;
     return ElevatedButton.icon(
       icon: Icon(Icons.assignment_turned_in),
       label: Text('SJEKK INN'),
@@ -287,7 +287,7 @@ class UserStatusPageState extends State<UserStatusPage> {
   }
 
   ElevatedButton _buildCheckOutAction(BuildContext context) {
-    final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
+    final personnel = context.read<PersonnelBloc>().findUser().firstOrNull;
     return ElevatedButton.icon(
       icon: Icon(Icons.directions_walk),
       label: Text('SJEKK UT'),
@@ -296,7 +296,7 @@ class UserStatusPageState extends State<UserStatusPage> {
   }
 
   ElevatedButton _buildRetireAction(BuildContext context) {
-    final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
+    final personnel = context.read<PersonnelBloc>().findUser().firstOrNull;
     return ElevatedButton.icon(
       icon: Icon(Icons.home),
       label: Text('HJEMME'),
@@ -321,9 +321,9 @@ class UserStatusPageState extends State<UserStatusPage> {
   }
 
   Widget _buildStandbyStatus(BuildContext context) {
-    final operation = context.bloc<OperationBloc>().selected;
-    final personnel = context.bloc<PersonnelBloc>().findUser();
-    final affiliation = context.bloc<AffiliationBloc>().findUserAffiliation();
+    final operation = context.read<OperationBloc>().selected;
+    final personnel = context.read<PersonnelBloc>().findUser();
+    final affiliation = context.read<AffiliationBloc>().findUserAffiliation();
     final status = personnel.isNotEmpty == true
         ? translatePersonnelStatus(personnel.first.status)
         : translateAffiliationStandbyStatus(affiliation?.status ?? AffiliationStandbyStatus.unavailable);
@@ -383,7 +383,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   PersonnelWidget _buildPersonnelWidget(BuildContext context) {
     final tuuid = _personnel.tracking.uuid;
-    final tracking = context.bloc<TrackingBloc>().trackings[tuuid];
+    final tracking = context.read<TrackingBloc>().trackings[tuuid];
     return PersonnelWidget(
       withName: true,
       withHeader: false,
@@ -392,9 +392,9 @@ class UserStatusPageState extends State<UserStatusPage> {
       tracking: tracking,
       personnel: _personnel,
       onMessage: widget.onMessage,
-      devices: context.bloc<TrackingBloc>().devices(tuuid),
+      devices: context.read<TrackingBloc>().devices(tuuid),
       onGoto: (point) => jumpToPoint(context, center: point),
-      unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+      unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
     );
   }
 }
@@ -424,10 +424,10 @@ class UserUnitPageState extends State<UserUnitPage> {
     super.didChangeDependencies();
     _group?.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<UserBloc>())
-      ..add(context.bloc<PersonnelBloc>())
-      ..add(context.bloc<UnitBloc>().onChanged(_unit?.uuid))
-      ..add(context.bloc<TrackingBloc>().onChanged(_unit?.tracking?.uuid));
+      ..add(context.read<UserBloc>().stream)
+      ..add(context.read<PersonnelBloc>().stream)
+      ..add(context.read<UnitBloc>().onChanged(_unit?.uuid))
+      ..add(context.read<TrackingBloc>().onChanged(_unit?.tracking?.uuid));
     _unit = widget.unit;
   }
 
@@ -442,8 +442,8 @@ class UserUnitPageState extends State<UserUnitPage> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        context.bloc<UnitBloc>().load();
-        context.bloc<PersonnelBloc>().load();
+        context.read<UnitBloc>().load();
+        context.read<PersonnelBloc>().load();
       },
       child: StreamBuilder(
           stream: _group.stream,
@@ -473,7 +473,7 @@ class UserUnitPageState extends State<UserUnitPage> {
   }
 
   Widget _build(BuildContext context) {
-    final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
+    final tracking = context.read<TrackingBloc>().trackings[_unit.tracking.uuid];
     return UnitWidget(
       unit: _unit,
       withMap: true,
@@ -482,7 +482,7 @@ class UserUnitPageState extends State<UserUnitPage> {
       tracking: tracking,
       onMessage: widget.onMessage,
       onGoto: (point) => jumpToPoint(context, center: point),
-      devices: context.bloc<TrackingBloc>().devices(_unit.tracking.uuid),
+      devices: context.read<TrackingBloc>().devices(_unit.tracking.uuid),
     );
   }
 }

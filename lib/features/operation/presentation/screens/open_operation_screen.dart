@@ -51,7 +51,7 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
   Stream<DownloadProgress> get onProgress => _progressController.stream;
   StreamController<DownloadProgress> _progressController = StreamController.broadcast();
 
-  bool get isAuthorized => context.bloc<UserBloc>().isAuthorized(widget.operation);
+  bool get isAuthorized => context.read<UserBloc>().isAuthorized(widget.operation);
 
   @override
   Widget build(BuildContext context) {
