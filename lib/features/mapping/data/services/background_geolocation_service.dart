@@ -254,7 +254,9 @@ class BackgroundGeolocationService implements LocationService {
         _options,
       ));
 
-      completer.complete(_options);
+      if (!completer.isCompleted) {
+        completer.complete(_options);
+      }
 
       if (!wasSharing && isSharing) {
         await push();
