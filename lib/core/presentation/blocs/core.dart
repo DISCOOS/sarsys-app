@@ -311,6 +311,13 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
   @visibleForOverriding
   Error createError(Object error, {StackTrace stackTrace});
 
+  @override
+  // ignore: must_call_super
+  void onError(Object error, StackTrace stackTrace) {
+    // ignore: invalid_use_of_protected_member
+    Bloc.observer.onError(this, error, stackTrace);
+  }
+
   bool get isClosed => !isOpen;
   bool get isOpen => _isOpen;
   bool _isOpen = true;
