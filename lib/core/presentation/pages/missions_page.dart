@@ -84,6 +84,7 @@ class MissionsPageState extends State<MissionsPage> {
 //            color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
               stream: _group.stream,
+              initialData: context.read<UnitBloc>().state,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
                 var units = _filteredUnits();

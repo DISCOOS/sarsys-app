@@ -95,6 +95,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
 //            color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
               stream: _group.stream,
+              initialData: context.read<AffiliationBloc>().state,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
                 var affiliations = _filteredAffiliation(context.read<AffiliationBloc>());

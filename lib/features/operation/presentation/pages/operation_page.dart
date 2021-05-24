@@ -80,6 +80,7 @@ class _OperationPageState extends State<OperationPage> {
       },
       child: StreamBuilder<BlocState>(
         stream: _group.stream,
+        initialData: context.read<OperationBloc>().state,
         builder: (context, snapshot) {
           final operation = context.read<OperationBloc>().selected;
           return Container(
@@ -198,6 +199,7 @@ class _OperationPageState extends State<OperationPage> {
           flex: 5,
           child: StreamBuilder<PersonnelState>(
               stream: context.read<PersonnelBloc>().stream,
+              initialData: context.read<PersonnelBloc>().state,
               builder: (context, snapshot) {
                 return _buildValueTile(
                   "${snapshot.hasData ? context.read<PersonnelBloc>().count() : "-"}",
@@ -211,6 +213,7 @@ class _OperationPageState extends State<OperationPage> {
           flex: 5,
           child: StreamBuilder<UnitState>(
               stream: context.read<UnitBloc>().stream,
+              initialData: context.read<UnitBloc>().state,
               builder: (context, snapshot) {
                 return _buildValueTile(
                   "${snapshot.hasData ? context.read<UnitBloc>().count() : "-"}",

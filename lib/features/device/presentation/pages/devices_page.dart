@@ -82,6 +82,7 @@ class DevicesPageState extends State<DevicesPage> {
         child: Container(
           child: StreamBuilder(
               stream: _group.stream,
+              initialData: context.read<DeviceBloc>().state,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
                 var units = context.read<TrackingBloc>().units.devices();

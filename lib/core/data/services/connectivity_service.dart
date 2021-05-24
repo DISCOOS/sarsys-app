@@ -205,7 +205,7 @@ class ConnectivityService extends Service {
     return result;
   }
 
-  calcTimeouts() {
+  int calcTimeouts() {
     final toc = DateTime.now();
     final timeouts = _timeouts.values
         .where((result) => toc.difference(result.timestamp) < const Duration(minutes: 1))

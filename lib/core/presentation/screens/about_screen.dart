@@ -101,8 +101,8 @@ class _AboutScreenState extends State<AboutScreen> {
           _buildConnectivityStateTile(context),
           GestureDetector(
             child: StreamBuilderWidget(
-                initialData: channel.state,
                 stream: channel.onChanged,
+                initialData: channel.state,
                 builder: (context, _) {
                   return _buildChannelStatusTile(channel, context);
                 }),
@@ -143,8 +143,8 @@ class _AboutScreenState extends State<AboutScreen> {
     final state = ConnectivityService().state;
     return ListTile(
       title: Text("Tilkobling"),
-      subtitle: Text('${translateConnectivityStatus(state.status)} med kvalitet '
-          '${translateConnectivityQuality(state.quality).toLowerCase()} (forbruk ${state.speed})'),
+      subtitle: Text('${translateConnectivityStatus(state.status)} med '
+          '${translateConnectivityQuality(state.quality).toLowerCase()} kvalitet (forbruk ${state.speed})'),
       trailing: context.service<ConnectivityService>().isOnline
           ? Icon(Icons.check_circle, color: Colors.green)
           : Icon(Icons.warning, color: Colors.orange),

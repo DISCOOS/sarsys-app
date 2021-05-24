@@ -102,6 +102,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
           },
           child: StreamBuilder(
             stream: _group.stream,
+            initialData: context.read<PersonnelBloc>().state,
             builder: (context, snapshot) {
               if (snapshot.hasData == false) return Container();
               var personnels = _filteredPersonnel();

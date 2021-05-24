@@ -83,6 +83,7 @@ class UnitsPageState extends State<UnitsPage> {
           child: Container(
             child: StreamBuilder(
               stream: _group.stream,
+              initialData: context.read<UnitBloc>().state,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
                 var units = _filteredUnits();

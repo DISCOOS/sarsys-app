@@ -73,6 +73,7 @@ class UserStatusPageState extends State<UserStatusPage> {
       },
       child: StreamBuilder<PersonnelState>(
           stream: context.read<PersonnelBloc>().stream,
+          initialData: context.read<PersonnelBloc>().state,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final state = snapshot.data;
@@ -171,17 +172,19 @@ class UserStatusPageState extends State<UserStatusPage> {
   }
 
   Widget _buildCoordinateWidget(LocationService service, BuildContext context) {
-    return StreamBuilder(
-        stream: service.onEvent,
+    return StreamBuilder<Position>(
+        stream: service.stream,
+        initialData: service.current,
         builder: (context, snapshot) {
+          final position = snapshot.hasData ? snapshot.data : null;
           return CoordinateWidget(
             isDense: false,
             withIcons: false,
             withNavigation: false,
+            accuracy: position?.acc,
+            point: position?.geometry,
             onMessage: widget.onMessage,
-            accuracy: service.current?.acc,
-            point: service.current?.geometry,
-            timestamp: service.current?.timestamp,
+            timestamp: position?.timestamp,
             onGoto: (point) => jumpToPoint(context, center: point),
           );
         });
@@ -447,6 +450,7 @@ class UserUnitPageState extends State<UserUnitPage> {
       },
       child: StreamBuilder(
           stream: _group.stream,
+          initialData: context.read<UserBloc>().state,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final state = snapshot.data;
