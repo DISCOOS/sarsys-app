@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:math';
 
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/mapping/presentation/painters.dart';
 import 'package:SarSys/core/proj4d.dart';
@@ -16,13 +17,11 @@ import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:catcher/catcher.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
 typedef LocationCallback = void Function(LatLng point, bool located, bool locked);
-
 
 class MyLocationLayerOptions extends LayerOptions {
   MyLocationLayerOptions(
@@ -340,12 +339,12 @@ class MyLocationLayerController {
   void _subscribe() {
     if (_positionSubscription == null) {
       _positionSubscription = service.stream.listen(
-            (position) => _updateLocation(position, false),
+        (position) => _updateLocation(position, false),
       );
       if (Platform.isIOS) {
         // Proposed workaround on iOS for https://github.com/BaseflowIT/flutter-geolocator/issues/190
         _positionSubscription.onError((e, stackTrace) {
-          Catcher.reportCheckedError(e, stackTrace);
+          SarSysApp.reportCheckedError(e, stackTrace);
           _positionSubscription.cancel();
           _subscribe();
         });
@@ -460,11 +459,11 @@ class MyLocationLayerController {
           // Wait before retrying
           await Future.delayed(
             const Duration(milliseconds: 100),
-                () => _handle(completer),
+            () => _handle(completer),
           );
         } else if (!service.isReady) {
           service.onEvent.where((event) => event is ConfigureEvent).first.then(
-                (_) {
+            (_) {
               return _onReady(completer);
             },
           );

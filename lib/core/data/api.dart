@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
@@ -43,6 +44,7 @@ class Api {
           interceptors: [
             GzipInterceptor(),
             BearerTokenInterceptor(users),
+            SpeedAnalyserRequestInterceptor(),
             TransactionRequestInterceptor(manager),
             TransactionResponseInterceptor(manager),
             if (kDebugMode && Defaults.debugPrintHttp) HttpLoggingInterceptor(),
@@ -233,6 +235,49 @@ class TransactionRequestInterceptor implements RequestInterceptor {
       '$X_TRANSACTION_ID=${manager.begin()}',
       override: true,
     );
+  }
+}
+
+class SpeedAnalyserRequestInterceptor implements RequestInterceptor, ResponseInterceptor {
+  SpeedAnalyserRequestInterceptor();
+
+  static const _methods = const <String>['get', 'post', 'patch', 'put'];
+
+  final _requests = <String, DateTime>{};
+
+  String toKeyFromRequest(Request request) => '${request.method} '
+      '${buildUri(request.baseUrl, request.url, request.parameters)}';
+
+  String toKeyFromResponse(Response response) => '${response.base.request.method} ${response.base.request.url}';
+
+  @override
+  FutureOr<Request> onRequest(Request request) async {
+    if (_methods.contains(request.method.toLowerCase())) {
+      _requests[toKeyFromRequest(request)] = DateTime.now();
+    }
+    return request;
+  }
+
+  @override
+  FutureOr<Response> onResponse(Response response) {
+    final tic = _requests.remove(toKeyFromResponse(response));
+    if (tic != null) {
+      final request = response.base.request;
+      final method = request.method.toLowerCase();
+      final duration = DateTime.now().difference(tic);
+      final both = method == 'get';
+      final size = (both ? request.contentLength : 0) + response.base.contentLength;
+      final speed = size / duration.inMilliseconds * (both ? 2 : 1);
+      ConnectivityService().onSpeedResult(
+        SpeedResult(
+          size,
+          (speed * 1000).toInt(),
+          method,
+          duration,
+        ),
+      );
+    }
+    return response;
   }
 }
 

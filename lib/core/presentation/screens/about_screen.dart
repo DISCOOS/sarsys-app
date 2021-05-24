@@ -1,3 +1,4 @@
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/presentation/widgets/stream_widget.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
@@ -97,6 +98,7 @@ class _AboutScreenState extends State<AboutScreen> {
             title: Text("REST API"),
             subtitle: Text(Defaults.baseRestUrl),
           ),
+          _buildConnectivityStateTile(context),
           GestureDetector(
             child: StreamBuilderWidget(
                 initialData: channel.state,
@@ -135,6 +137,18 @@ class _AboutScreenState extends State<AboutScreen> {
           }),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackbar);
+  }
+
+  ListTile _buildConnectivityStateTile(BuildContext context) {
+    final state = ConnectivityService().state;
+    return ListTile(
+      title: Text("Tilkobling"),
+      subtitle: Text('${translateConnectivityStatus(state.status)} med kvalitet '
+          '${translateConnectivityQuality(state.quality).toLowerCase()} (forbruk ${state.speed})'),
+      trailing: context.service<ConnectivityService>().isOnline
+          ? Icon(Icons.check_circle, color: Colors.green)
+          : Icon(Icons.warning, color: Colors.orange),
+    );
   }
 
   ListTile _buildChannelStatusTile(MessageChannel channel, BuildContext context) => ListTile(

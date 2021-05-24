@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:catcher/catcher.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 
 import 'callbacks.dart';
+import 'error_handler.dart';
 
 class PermissionController {
   PermissionController({
@@ -349,7 +349,7 @@ class PermissionController {
     } on PlatformException catch (e, stackTrace) {
       // TODO: Implement request queue for sequential processing
       if (e.code != 'ERROR_ALREADY_REQUESTING_PERMISSIONS') {
-        Catcher.reportCheckedError(e, stackTrace);
+        SarSysApp.reportCheckedError(e, stackTrace);
       }
     }
   }

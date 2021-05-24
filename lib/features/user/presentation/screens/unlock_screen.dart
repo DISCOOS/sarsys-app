@@ -1,10 +1,10 @@
 import 'dart:async';
 
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -556,7 +556,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
         break;
       case UserBlocError:
         if (_lastError == null) {
-          Catcher.reportCheckedError(
+          SarSysApp.reportCheckedError(
             state.data,
             (state as UserBlocError).stackTrace,
           );

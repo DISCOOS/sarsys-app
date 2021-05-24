@@ -202,12 +202,13 @@ class UserRepository implements Repository<String, User> {
             lock: isSecured(userId: response.body.userId),
           );
         case HttpStatus.unauthorized:
-          throw UserUnauthorizedException('${actualId ?? username ?? 'unknown'}');
+          throw UserUnauthorizedException('${actualId ?? username ?? 'unknown'}', this);
         case HttpStatus.forbidden:
-          throw UserForbiddenException('${actualId ?? username ?? 'unknown'}');
+          throw UserForbiddenException('${actualId ?? username ?? 'unknown'}', this);
         default:
           throw UserServiceException(
             'Failed to login user ${actualId ?? username ?? 'unknown'}',
+            this,
             response: response,
           );
       }
@@ -215,6 +216,7 @@ class UserRepository implements Repository<String, User> {
     throw UserRepositoryOfflineException(
       actualId,
       'Unable to login user ${actualId ?? username ?? 'unknown'} in offline mode',
+      this,
     );
   }
 
@@ -238,11 +240,13 @@ class UserRepository implements Repository<String, User> {
       }
       throw UserServiceException(
         'Failed to refresh token for user ${actualId ?? 'unknown'}',
+        this,
         response: response,
       );
     }
     throw UserServiceException(
       'Token ${actualId ?? 'unknown'} not found',
+      this,
     );
   }
 
@@ -279,11 +283,13 @@ class UserRepository implements Repository<String, User> {
       }
       throw UserServiceException(
         'Failed to logout user ${actualUserId ?? 'unknown'}',
+        this,
         response: response,
       );
     }
     throw UserServiceException(
       'User ${_userId ?? 'unknown'} not found',
+      this,
     );
   }
 
@@ -335,7 +341,10 @@ class UserRepository implements Repository<String, User> {
       );
       return next;
     }
-    throw UserNotFoundException(actualId);
+    throw UserNotFoundException(
+      actualId,
+      this,
+    );
   }
 
   /// Authorize [user] access with given passcodes
@@ -355,7 +364,10 @@ class UserRepository implements Repository<String, User> {
         ),
       );
     }
-    throw UserNotFoundException(actualId);
+    throw UserNotFoundException(
+      actualId,
+      this,
+    );
   }
 
   /// Lock [user] access
@@ -374,9 +386,15 @@ class UserRepository implements Repository<String, User> {
           mode: security.mode,
           trusted: security.trusted,
         );
-      throw UserNotSecuredException(userId ?? _userId);
+      throw UserNotSecuredException(
+        userId ?? _userId,
+        this,
+      );
     }
-    throw UserNotFoundException(userId ?? _userId);
+    throw UserNotFoundException(
+      userId ?? _userId,
+      this,
+    );
   }
 
   /// Unlock [user] access with given pin
@@ -400,11 +418,20 @@ class UserRepository implements Repository<String, User> {
           ));
           return security;
         }
-        throw UserForbiddenException(userId ?? _userId);
+        throw UserForbiddenException(
+          userId ?? _userId,
+          this,
+        );
       }
-      throw UserNotSecuredException(userId ?? _userId);
+      throw UserNotSecuredException(
+        userId ?? _userId,
+        this,
+      );
     }
-    throw UserNotFoundException(userId ?? _userId);
+    throw UserNotFoundException(
+      userId ?? _userId,
+      this,
+    );
   }
 
   /// Get current token from secure storage
@@ -435,6 +462,7 @@ class UserRepository implements Repository<String, User> {
     }
     throw UserServiceException(
       'Token ${actualId ?? 'unknown'} not found',
+      this,
     );
   }
 
@@ -531,17 +559,26 @@ class UserRepository implements Repository<String, User> {
 }
 
 class UserNotSecuredException extends RepositoryException {
-  UserNotSecuredException(this.userId) : super('User $userId is not secured');
+  UserNotSecuredException(
+    this.userId,
+    UserRepository repo,
+  ) : super('User $userId is not secured', repo);
   final String userId;
 }
 
 class UserNotFoundException extends RepositoryException {
-  UserNotFoundException(this.userId) : super('User $userId not found');
+  UserNotFoundException(
+    this.userId,
+    UserRepository repo,
+  ) : super('User $userId not found', repo);
   final String userId;
 }
 
 class UserUnauthorizedException extends RepositoryException {
-  UserUnauthorizedException(this.userId) : super('User $userId access unauthorized');
+  UserUnauthorizedException(
+    this.userId,
+    UserRepository repo,
+  ) : super('User $userId access unauthorized', repo);
   final String userId;
 
   @override
@@ -551,12 +588,19 @@ class UserUnauthorizedException extends RepositoryException {
 }
 
 class UserRepositoryOfflineException extends RepositoryException {
-  UserRepositoryOfflineException(this.userId, String message) : super(message);
+  UserRepositoryOfflineException(
+    this.userId,
+    String message,
+    UserRepository repo,
+  ) : super(message, repo);
   final String userId;
 }
 
 class UserForbiddenException extends RepositoryException {
-  UserForbiddenException(this.userId) : super('User $userId access forbidden');
+  UserForbiddenException(
+    this.userId,
+    UserRepository repo,
+  ) : super('User $userId access forbidden', repo);
   final String userId;
 
   @override
@@ -567,10 +611,11 @@ class UserForbiddenException extends RepositoryException {
 
 class UserServiceException extends RepositoryException {
   UserServiceException(
-    Object error, {
+    Object error,
+    UserRepository repo, {
     this.response,
     StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
+  }) : super(error, repo, stackTrace: stackTrace);
   final ServiceResponse response;
 
   @override
@@ -578,13 +623,3 @@ class UserServiceException extends RepositoryException {
     return 'UserServiceException: $message, response: $response, stackTrace: $stackTrace';
   }
 }
-
-// class AuthTokenNotFoundException implements Exception {
-//   AuthTokenNotFoundException(this.userId);
-//   final String userId;
-//
-//   @override
-//   String toString() {
-//     return 'AuthToken for User $userId not found';
-//   }
-// }

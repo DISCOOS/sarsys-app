@@ -276,6 +276,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
         if (fail && transition.isError) {
           throw RepositoryRemoteException(
             'Failed to change state with error ${state.isConflict ? state.conflict.error : state.error}',
+            this,
             state: state,
             stackTrace: StackTrace.current,
           );
@@ -622,11 +623,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// Should handle errors
   @mustCallSuper
   @visibleForOverriding
-  void onError(Object error, StackTrace stackTrace) => RepositorySupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
+  void onError(Object error, StackTrace stackTrace) => RepositorySupervisor.delegate.onError(this, error, stackTrace);
 
   /// Check if in a transaction.
   ///
@@ -676,23 +673,23 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
         if (previous == null || previous.isLocal) {
           return state;
         }
-        throw RepositoryStateExistsException(previous, state);
+        throw RepositoryStateExistsException(previous, state, this);
       case StorageStatus.updated:
         if (previous != null) {
           if (!previous.isDeleted) {
             return previous.isRemote ? state : previous.replace(state.value);
           }
           // Not allowed to update deleted state
-          throw RepositoryIllegalStateException(previous, state);
+          throw RepositoryIllegalStateException(previous, state, this);
         }
-        throw RepositoryStateNotExistsException(state);
+        throw RepositoryStateNotExistsException(this, state);
       case StorageStatus.deleted:
         if (previous == null) {
-          throw RepositoryStateNotExistsException(state);
+          throw RepositoryStateNotExistsException(this, state);
         }
         return state;
     }
-    throw RepositoryIllegalStateException(previous, state);
+    throw RepositoryIllegalStateException(previous, state, this);
   }
 
   /// Test if given transition should

@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:catcher/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -689,7 +689,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         break;
       case UserBlocError:
         if (_lastError == null) {
-          Catcher.reportCheckedError(
+          SarSysApp.reportCheckedError(
             state.data,
             (state as UserBlocError).stackTrace,
           );

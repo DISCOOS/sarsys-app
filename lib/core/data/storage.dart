@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:catcher/catcher.dart';
+import 'package:SarSys/core/error_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
@@ -557,10 +557,10 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
       ));
     } on ArgumentError catch (e, stackTrace) {
       error = e;
-      Catcher.reportCheckedError(error, stackTrace);
+      SarSysApp.reportCheckedError(error, stackTrace);
     } on Exception catch (e, stackTrace) {
       error = e;
-      Catcher.reportCheckedError(error, stackTrace);
+      SarSysApp.reportCheckedError(error, stackTrace);
     }
     return StorageState(
       value: value,
@@ -590,9 +590,9 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
       value = state.hasValue ? toJson(state.value) : null;
       previous = state.hasPrevious ? toJson(state.previous) : null;
     } on ArgumentError catch (error, stackTrace) {
-      Catcher.reportCheckedError(error, stackTrace);
+      SarSysApp.reportCheckedError(error, stackTrace);
     } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(error, stackTrace);
+      SarSysApp.reportCheckedError(error, stackTrace);
     }
     writer.writeMap({
       'value': value,

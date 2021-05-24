@@ -1,4 +1,5 @@
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -22,7 +23,6 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:catcher/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -250,7 +250,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
         context.read<TrackingBloc>().repo.commit(),
       ],
       cleanUp: (_) => setState(() {}),
-    ).catchError(Catcher.reportCheckedError);
+    ).catchError(SarSysApp.reportCheckedError);
   }
 
   void _resetAll() async {
@@ -270,7 +270,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
         context.read<TrackingBloc>().repo.reset(),
       ],
       cleanUp: (_) => setState(() {}),
-    ).catchError(Catcher.reportCheckedError);
+    ).catchError(SarSysApp.reportCheckedError);
   }
 }
 

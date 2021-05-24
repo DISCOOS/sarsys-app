@@ -238,6 +238,7 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
       final duplicates = _duplicates(state);
       if (duplicates.isNotEmpty) {
         throw TrackingSourceAlreadyTrackedException(
+          this,
           state,
           duplicates,
         );

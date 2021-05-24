@@ -902,7 +902,7 @@ class _NotifyRepositoryStateChanged extends TrackingCommand<StorageTransition<Tr
   _NotifyRepositoryStateChanged(StorageTransition<Tracking> transition) : super(transition);
 }
 
-class _NotifyBlocStateChanged extends TrackingCommand<TrackingState<Tracking>, Tracking>
-    with NotifyBlocStateChangedMixin<TrackingState<Tracking>, Tracking> {
+class _NotifyBlocStateChanged extends TrackingCommand<TrackingState, Object>
+    with NotifyBlocStateChangedMixin<TrackingState, Object> {
   _NotifyBlocStateChanged(TrackingState state) : super(state);
 }

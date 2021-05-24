@@ -221,6 +221,7 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
           error: RepositoryServiceException(
             'Failed to load $request',
             response,
+            _repo,
           ),
           stackTrace: response.stackTrace,
         );
@@ -286,6 +287,8 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
         completer.completeError(
           RepositoryTimeoutException(
             "Waiting on $runtimeType to complete async loads failed",
+            _repo,
+            stackTrace: StackTrace.current,
           ),
           StackTrace.current,
         );
@@ -412,6 +415,7 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
             final refs = _repo.toRefs(state.value);
             final error = RepositoryDependencyException(
               refs.toList(),
+              _repo,
               state: state,
               stackTrace: StackTrace.current,
             );
@@ -453,7 +457,10 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
           case StorageStatus.deleted:
             return await _repo.onDelete(state);
         }
-        throw RepositoryException('Unable to process $state');
+        throw RepositoryException(
+          'Unable to process $state',
+          _repo,
+        );
       } on ServiceException catch (e) {
         if (e.is409) {
           return await _repo.onResolve(state, e.response);

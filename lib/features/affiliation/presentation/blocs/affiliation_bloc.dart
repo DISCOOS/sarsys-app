@@ -714,7 +714,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         affiliations: repo.keys,
         persons: repo.persons.keys,
       ),
-      toCommand: (state) => _NotifyBlocStateChanged<Iterable<String>>(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Object>(state),
       toError: (Object error, StackTrace stackTrace) {
         if (!onFetchPersonsError(error)) {
           // Do not call sink.addError

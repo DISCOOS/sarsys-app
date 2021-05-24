@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/core/data/streams.dart';
-import 'package:catcher/core/catcher.dart';
+import 'package:SarSys/core/error_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -371,7 +371,7 @@ class BackgroundGeolocationService implements LocationService {
         _notify(
           ErrorEvent(_options, e, stackTrace),
         );
-        Catcher.reportCheckedError(
+        SarSysApp.reportCheckedError(
           "Failed to get position with error: $e",
           StackTrace.current,
         );
@@ -392,7 +392,7 @@ class BackgroundGeolocationService implements LocationService {
           ErrorEvent(_options, e, stackTrace),
         );
         if (_shouldReport(e)) {
-          Catcher.reportCheckedError(
+          SarSysApp.reportCheckedError(
             "Failed to push backlog error: $e",
             StackTrace.current,
           );
@@ -612,7 +612,7 @@ class BackgroundGeolocationService implements LocationService {
   void _onError(bg.LocationError error) {
     final stackTrace = StackTrace.current;
     _notify(ErrorEvent(_options, error, stackTrace));
-    Catcher.reportCheckedError(
+    SarSysApp.reportCheckedError(
       "Location stream failed with error: $error",
       stackTrace,
     );
@@ -633,6 +633,6 @@ class BackgroundGeolocationService implements LocationService {
 
   /// Send log to given [address]
   static void emailLog(String address) {
-    bg.Logger.emailLog(address).catchError(Catcher.reportCheckedError);
+    bg.Logger.emailLog(address).catchError(SarSysApp.reportCheckedError);
   }
 }

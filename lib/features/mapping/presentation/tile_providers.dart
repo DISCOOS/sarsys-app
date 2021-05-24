@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/file_cache_service.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -39,7 +41,10 @@ class ManagedCacheTileProvider extends TileProvider {
 
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
-    return CachedNetworkImageProvider(getTileUrl(coords, options), cacheManager: cache);
+    return CachedNetworkImageProvider(
+      getTileUrl(coords, options),
+      cacheManager: cache,
+    );
   }
 
   void evictErrorTiles() {
@@ -59,11 +64,17 @@ class ManagedCacheTileProvider extends TileProvider {
     }
   }
 
-  void onError(Tile tile, dynamic error) {
+  void onError(Tile tile, Object error) {
     if (offline) {
       errorTiles[tile.imageProvider] = tile;
     } else {
       _evict(tile.imageProvider);
+    }
+    if (error is HttpExceptionWithStatus) {
+      switch (error.statusCode) {
+        case HttpStatus.requestTimeout:
+          connectivity.onTimeout(error);
+      }
     }
   }
 }

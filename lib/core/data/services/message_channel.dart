@@ -4,8 +4,8 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:SarSys/core/data/models/subscription_model.dart';
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/io.dart';
@@ -152,14 +152,14 @@ class MessageChannel extends Service {
             );
             break;
           default:
-            Catcher.reportCheckedError(
+            SarSysApp.reportCheckedError(
               'Unknown message type: $message',
               StackTrace.current,
             );
             break;
         }
       } else {
-        Catcher.reportCheckedError(
+        SarSysApp.reportCheckedError(
           'Unknown message format: $message',
           StackTrace.current,
         );
@@ -167,7 +167,7 @@ class MessageChannel extends Service {
       _stats = _stats.update(inbound: 1);
       _statsController.add(_stats);
     } catch (e, stackTrace) {
-      Catcher.reportCheckedError(
+      SarSysApp.reportCheckedError(
         'Failed to decode message: $message, error: $e',
         stackTrace,
       );
@@ -184,7 +184,7 @@ class MessageChannel extends Service {
         });
       }
     } catch (e, stackTrace) {
-      Catcher.reportCheckedError(e, stackTrace);
+      SarSysApp.reportCheckedError(e, stackTrace);
     }
   }
 
@@ -280,7 +280,7 @@ class MessageChannel extends Service {
         'MessageChannel >> Sent subscription config $config',
       );
     } catch (e, stackTrace) {
-      Catcher.reportCheckedError(
+      SarSysApp.reportCheckedError(
         'MessageChannel >> Sending config $config failed with $e',
         stackTrace,
       );

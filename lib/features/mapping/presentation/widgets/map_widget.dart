@@ -691,6 +691,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         errorTileCallback: _tileProvider.onError,
         minZoom: _currentBaseMap?.minZoom ?? Defaults.minZoom,
         maxZoom: _currentBaseMap?.maxZoom ?? Defaults.maxZoom,
+        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
         errorImage: _offline ? _tileOfflineImage : _tileErrorImage,
         placeholderImage: _offline ? _tileOfflineImage : _tilePendingImage,
       );

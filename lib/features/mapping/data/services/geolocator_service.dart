@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
-import 'package:catcher/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as gl;
 import 'package:permission_handler/permission_handler.dart';
@@ -153,7 +153,7 @@ class GeolocatorService implements LocationService {
       } on Exception catch (e, stackTrace) {
         _notify(ErrorEvent(_options, e, stackTrace));
         _unsubscribe();
-        Catcher.reportCheckedError("Failed to get position with error: $e", StackTrace.current);
+        SarSysApp.reportCheckedError("Failed to get position with error: $e", StackTrace.current);
       }
     } else {
       await configure();
@@ -249,7 +249,7 @@ class GeolocatorService implements LocationService {
   _handleError(dynamic error, StackTrace stackTrace) {
     _unsubscribe();
     _notify(ErrorEvent(_options, error, stackTrace));
-    Catcher.reportCheckedError(
+    SarSysApp.reportCheckedError(
       "Location stream failed with error: $error",
       stackTrace,
     );

@@ -165,6 +165,7 @@ class _OperationsPageState extends State<OperationsPage> {
         },
         child: StreamBuilder(
           stream: _group.stream,
+          initialData: context.read<OperationBloc>().state,
           builder: (context, snapshot) {
             if (snapshot.hasData == false) return Container();
             var cards = _toCards(snapshot);
@@ -188,21 +189,22 @@ class _OperationsPageState extends State<OperationsPage> {
     });
   }
 
-  List _toCards(AsyncSnapshot snapshot) => snapshot.connectionState == ConnectionState.active && snapshot.hasData
-      ? _filteredOperations().map((operation) => _buildCard(operation)).toList()
-      : [];
+  List _toCards(AsyncSnapshot snapshot) {
+    return snapshot.hasData ? _filteredOperations().map((operation) => _buildCard(operation)).toList() : [];
+  }
 
   List<Operation> _filteredOperations() {
     final incidents = context.read<OperationBloc>().incidents;
-    return context
-        .read<OperationBloc>()
-        .operations
+    final operations = context.read<OperationBloc>().operations;
+    final found = operations
         .where((operation) => widget.filter.contains(operation?.status))
         .where((operation) => widget.query == null || _prepare(operation).contains(widget.query.toLowerCase()))
-        .toList()
-          ..sort(
-            (o1, o2) => incidents[o2.incident.uuid]?.occurred?.compareTo(incidents[o1.incident.uuid]?.occurred) ?? 0,
-          );
+        .toList();
+    return found
+      ..sort(
+        (Operation o1, Operation o2) =>
+            incidents[o2.incident.uuid]?.occurred?.compareTo(incidents[o1.incident.uuid]?.occurred) ?? 0,
+      );
   }
 
   String _prepare(Operation operation) => "${operation.searchable}".toLowerCase();
@@ -213,6 +215,7 @@ class _OperationsPageState extends State<OperationsPage> {
 
     return StreamBuilder(
         stream: context.read<UserBloc>().stream,
+        initialData: context.read<UserBloc>().state,
         builder: (context, snapshot) {
           if (snapshot.hasData == false) return Container();
           final isCurrent = context.read<OperationBloc>().selected == operation;

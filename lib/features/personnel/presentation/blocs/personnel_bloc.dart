@@ -349,7 +349,7 @@ class PersonnelBloc
           isRemote: true,
         );
       },
-      toCommand: (state) => _NotifyBlocStateChanged<List<String>>(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Object>(state),
       toError: (error, stackTrace) => toError(
         command,
         error,

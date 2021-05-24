@@ -3,12 +3,12 @@ import 'dart:convert';
 
 import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/mapping/data/services/geocode_services.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:debounce_throttle/debounce_throttle.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -199,7 +199,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
       });
       return request;
     } catch (error, stackTrace) {
-      Catcher.reportCheckedError(error, stackTrace);
+      SarSysApp.reportCheckedError(error, stackTrace);
     }
     return null;
   }

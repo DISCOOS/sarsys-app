@@ -2,6 +2,7 @@
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/navigation_service.dart';
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/core/presentation/widgets/fatal_error_app.dart';
 import 'package:SarSys/core/presentation/widgets/network_sensitive.dart';
 import 'package:SarSys/core/presentation/widgets/sarsys_app.dart';
@@ -62,7 +63,7 @@ Widget _createApp(
   // after bloc rebuilds
   return Phoenix(
     child: NetworkSensitive(
-      child: SarSysApp(
+      child: SarSysAppWidget(
         bucket: bucket,
         controller: controller,
         navigatorKey: NavigationService.navigatorKey,
@@ -179,6 +180,6 @@ final Map<String, ReportHandler> _catcherExplicitExceptionHandlersMap = Map.from
 class AppRepositoryDelegate implements RepositoryDelegate {
   @override
   void onError(Repository repo, Object error, StackTrace stackTrace) {
-    Catcher.reportCheckedError(error, stackTrace);
+    SarSysApp.reportCheckedError(error, stackTrace);
   }
 }

@@ -1,8 +1,8 @@
 import 'package:SarSys/core/data/services/navigation_service.dart';
+import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/process/presentation/pages/progress_page.dart';
 import 'package:bloc/bloc.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
@@ -82,7 +82,7 @@ abstract class UseCase<E, T, P> {
         return execute(params);
       }
     } catch (error, stackTrace) {
-      Catcher.reportCheckedError(error, stackTrace);
+      SarSysApp.reportCheckedError(error, stackTrace);
     } finally {
       _pop();
     }

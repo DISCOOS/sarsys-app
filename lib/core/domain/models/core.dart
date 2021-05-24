@@ -138,8 +138,9 @@ class JsonUtils {
     return conflicts.isNotEmpty
         ? ConflictModel(
             type: ConflictType.merge,
-            yours: yours,
             mine: mine,
+            yours: yours,
+            paths: conflicts.map((op) => op['path']).toList(),
           )
         : null;
   }

@@ -102,7 +102,8 @@ class TrackingServiceException extends ServiceException {
 class TrackingSourceAlreadyTrackedException extends RepositoryIllegalStateValueException {
   final List<String> duplicates;
   TrackingSourceAlreadyTrackedException(
+    TrackingRepository repo,
     StorageState state,
     this.duplicates,
-  ) : super(state, "Sources already actively tracked: $duplicates");
+  ) : super(repo, state, "Sources already actively tracked: $duplicates");
 }

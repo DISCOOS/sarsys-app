@@ -84,10 +84,7 @@ class BlocTestHarness implements BlocObserver {
   bool get isCellular => connectivity.isCellular;
 
   BlocEventBus get bus => _observer.bus;
-  AppBlocObserver _observer = AppBlocObserver(
-    // Override default handler
-    onError: (_, __, ___) {},
-  );
+  AppBlocObserver _observer = AppBlocObserver();
 
   User get user => _userService.token.toUser();
 
@@ -547,7 +544,7 @@ class BlocTestHarness implements BlocObserver {
         (status) => ConnectivityStatus.offline == status,
       ),
     );
-    when(_connectivity.update()).thenAnswer((_) async => _connectivity.status);
+    when(_connectivity.update()).thenAnswer((_) async => _connectivity.state);
     when(_connectivity.test()).thenAnswer((_) async => ConnectivityStatus.offline != _connectivity.status);
   }
 

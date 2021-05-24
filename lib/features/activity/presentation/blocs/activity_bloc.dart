@@ -241,7 +241,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   Future<LocationOptions> _apply(LocationOptions options, Device device) async {
     final isChanged = service.options != options ||
-        service.token != _users.token && _users?.isTokenValid == true ||
+        service.token != _users?.token && _users?.isTokenValid == true ||
         service.duuid != device?.uuid;
 
     if (_isReady && isChanged) {

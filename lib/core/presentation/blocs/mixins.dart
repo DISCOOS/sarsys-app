@@ -113,6 +113,8 @@ mixin ConnectionAwareBloc<K, V extends JsonObject, S extends StatefulServiceDele
         completer.completeError(
           RepositoryTimeoutException(
             "Waiting on $runtimeType to complete async loads failed",
+            repo,
+            stackTrace: StackTrace.current,
           ),
           StackTrace.current,
         );

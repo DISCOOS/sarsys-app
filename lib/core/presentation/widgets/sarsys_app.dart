@@ -47,11 +47,11 @@ import 'package:SarSys/features/operation/presentation/screens/operations_screen
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:SarSys/core/extensions.dart';
 
-class SarSysApp extends StatefulWidget {
+class SarSysAppWidget extends StatefulWidget {
   final PageStorageBucket bucket;
   final AppController controller;
   final GlobalKey<NavigatorState> navigatorKey;
-  const SarSysApp({
+  const SarSysAppWidget({
     Key key,
     @required this.navigatorKey,
     @required this.controller,
@@ -59,10 +59,10 @@ class SarSysApp extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _SarSysAppState createState() => _SarSysAppState();
+  _SarSysAppWidgetState createState() => _SarSysAppWidgetState();
 }
 
-class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
+class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingObserver {
   List<StreamSubscription> _subscriptions = [];
 
   AppConfigBloc get configBloc => widget.controller.bloc<AppConfigBloc>();

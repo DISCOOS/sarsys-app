@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:SarSys/core/domain/stateful_repository.dart';
+import 'package:SarSys/core/error_handler.dart';
 import 'package:bloc/bloc.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
@@ -287,6 +287,10 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
         object.stackTrace ?? StackTrace.current,
       );
     }
+    addError(
+      error,
+      stackTrace ?? StackTrace.current,
+    );
     _pop(command);
     return object;
   }
@@ -575,9 +579,7 @@ abstract class PushableBlocEvent<T> extends BlocState<T> {
 }
 
 class AppBlocObserver extends BlocObserver {
-  AppBlocObserver({
-    void Function(Bloc, Object, StackTrace) onError,
-  }) : bus = BlocEventBus(onError ?? _onError);
+  AppBlocObserver() : bus = BlocEventBus(_onError);
 
   final BlocEventBus bus;
 
@@ -588,8 +590,7 @@ class AppBlocObserver extends BlocObserver {
   }
 
   static void _onError(BlocBase bloc, Object error, StackTrace stackTrace) {
-    // TODO: Handle bloc errors correctly
-    Catcher.reportCheckedError(error, stackTrace);
+    SarSysApp.reportCheckedError(error, stackTrace);
   }
 
   @override

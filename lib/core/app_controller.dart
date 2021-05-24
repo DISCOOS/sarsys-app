@@ -5,7 +5,6 @@ import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
@@ -100,6 +99,7 @@ import 'data/services/navigation_service.dart';
 import 'data/services/provider.dart';
 import 'domain/repository.dart';
 import 'domain/stateful_repository.dart';
+import 'error_handler.dart';
 
 class AppController {
   AppController._(
@@ -513,7 +513,7 @@ class AppController {
         );
       }
     } catch (e, stackTrace) {
-      Catcher.reportCheckedError(e, stackTrace);
+      SarSysApp.reportCheckedError(e, stackTrace);
     }
   }
 
@@ -550,7 +550,7 @@ class AppController {
         NavigationService().pushReplacementNamed(route);
       }
     } catch (e, stackTrace) {
-      Catcher.reportCheckedError(e, stackTrace);
+      SarSysApp.reportCheckedError(e, stackTrace);
     }
   }
 
