@@ -84,7 +84,6 @@ dependencies:
   percent_indicator: ^3.0.1
   timer_builder: ^2.0.0
   pretty_json: ^1.1.0
-  internet_speed_test: ^1.1.2+1
 
   # Mocking support
   uuid: ^2.2.2

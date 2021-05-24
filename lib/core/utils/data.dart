@@ -46,10 +46,16 @@ String toUTM(
   return ("$prefix ${CoordinateFormat.toUTM(dst, zone: zone, band: band)}").trim();
 }
 
-String formatSince(DateTime timestamp, {bool approx = true, String defaultValue = "-", bool withUnits = true}) {
+String formatSince(
+  DateTime timestamp, {
+  bool approx = true,
+  String defaultValue = "-",
+  bool withUnits = true,
+  DateTime now,
+}) {
   if (timestamp == null) return defaultValue;
   return formatDuration(
-    DateTime.now().difference(timestamp),
+    (now ?? DateTime.now()).difference(timestamp),
     approx: approx,
     defaultValue: defaultValue,
     withUnits: withUnits,

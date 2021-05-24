@@ -1,16 +1,17 @@
-import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/data/services/navigation_service.dart';
-import 'package:SarSys/core/presentation/widgets/stream_widget.dart';
-import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
-import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info/package_info.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:SarSys/core/data/services/navigation_service.dart';
+import 'package:SarSys/core/presentation/widgets/stream_widget.dart';
+import 'package:SarSys/core/presentation/widgets/channel_status_widget.dart';
+import 'package:SarSys/core/presentation/widgets/connectivity_status_widget.dart';
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
+import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/data/services/provider.dart';
@@ -98,7 +99,13 @@ class _AboutScreenState extends State<AboutScreen> {
             title: Text("REST API"),
             subtitle: Text(Defaults.baseRestUrl),
           ),
-          _buildConnectivityStateTile(context),
+          GestureDetector(
+            child: _buildConnectivityStateTile(context),
+            onTap: () async {
+              await _showConnectivityStatistics(context);
+              setState(() {});
+            },
+          ),
           GestureDetector(
             child: StreamBuilderWidget(
                 stream: channel.onChanged,
@@ -151,6 +158,33 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
+  Future _showConnectivityStatistics(BuildContext context) => showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return StatefulBuilder(builder: (context, setState) {
+            return Scaffold(
+              appBar: AppBar(
+                title: Text('Statistikk'),
+                leading: IconButton(
+                  icon: Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.refresh),
+                    onPressed: () => setState(() {}),
+                  )
+                ],
+              ),
+              body: ConnectivityStatusWidget(
+                ConnectivityService(),
+              ),
+            );
+          });
+        },
+      );
+
   ListTile _buildChannelStatusTile(MessageChannel channel, BuildContext context) => ListTile(
         title: Text("Websocket API"),
         subtitle: Text('${Defaults.baseWsUrl} (oppkoblet ${channel.state.opened} '
@@ -165,7 +199,6 @@ class _AboutScreenState extends State<AboutScreen> {
         builder: (BuildContext context) {
           // return object of type Dialog
           return StatefulBuilder(builder: (context, setState) {
-            final closeCodes = channel.state.toCloseReasonAsJson();
             return Scaffold(
               appBar: AppBar(
                 title: Text('Statistikk'),
@@ -180,78 +213,13 @@ class _AboutScreenState extends State<AboutScreen> {
                   )
                 ],
               ),
-              body: StreamBuilderWidget<MessageChannelState>(
-                  stream: channel.onChanged,
-                  initialData: channel.state,
-                  builder: (context, _) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildChannelStatusTile(channel, context),
-                        ListTile(
-                          title: Text("Token status"),
-                          subtitle: Text(
-                            'Token is ${channel.isTokenExpired ? 'expired' : 'valid'}',
-                          ),
-                        ),
-                        ListTile(
-                          title: Text('Meldinger prosessert'),
-                          subtitle: Text(
-                            '${channel.state.inboundCount} ${channel.state.inboundCount > 1 ? 'meldinger' : 'melding'}',
-                          ),
-                        ),
-                        _buildSection(context, 'Årsakskoder', subtitle: closeCodes.isEmpty ? Text('Ingen') : null),
-                        if (closeCodes.isNotEmpty)
-                          ...closeCodes.map(
-                            (json) => ListTile(
-                              title: Text('${json['code']} (${json['name']})'),
-                              subtitle: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ...(json['reasons'] as List).map(
-                                    (reason) => Text.rich(
-                                      TextSpan(
-                                        text: 'count',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                        children: [
-                                          TextSpan(
-                                            text: ': ${reason['count']}, ',
-                                            style: TextStyle(fontWeight: FontWeight.normal),
-                                          ),
-                                          TextSpan(
-                                            text: 'message',
-                                          ),
-                                          TextSpan(
-                                            text: ': ${reason['message']}',
-                                            style: TextStyle(fontWeight: FontWeight.normal),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    );
-                  }),
+              body: MessageChannelStatusWidget(
+                channel,
+              ),
             );
           });
         },
       );
-
-  ListTile _buildSection(BuildContext context, String title, {Widget subtitle}) {
-    return ListTile(
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
-      ),
-      subtitle: subtitle,
-    );
-  }
 
   Future _openChannel(
     BuildContext context,

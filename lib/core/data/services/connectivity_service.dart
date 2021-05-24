@@ -85,7 +85,7 @@ class ConnectivityService extends Service {
   SpeedState _speed = SpeedState.none;
 
   /// Get registered timeouts
-  Map<Object, int> get timeouts => Map.unmodifiable(_timeouts);
+  Map<Object, TimeoutResult> get timeouts => Map.unmodifiable(_timeouts);
   final _timeouts = <Object, TimeoutResult>{};
 
   /// Get registered [SpeedResult]s
@@ -298,8 +298,8 @@ class ConnectivityState {
 }
 
 class SpeedState {
-  const SpeedState(this.average, this.type);
-  final int average;
+  const SpeedState(this.usage, this.type);
+  final int usage;
   final ConnectivitySpeed type;
 
   static const SpeedState none = SpeedState(0, ConnectivitySpeed.slow);
@@ -314,12 +314,12 @@ class SpeedState {
   static const int norm5g = 150 * mib;
 
   String toString() {
-    if (average < kib) {
-      return '$average bit/s';
-    } else if (average < mib) {
-      return '${average ~/ kib} kbit/s';
+    if (usage < kib) {
+      return '$usage bit/s';
+    } else if (usage < mib) {
+      return '${usage ~/ kib} kbit/s';
     }
-    return '${(average ~/ mib)} mbit/s';
+    return '${(usage ~/ mib)} mbit/s';
   }
 }
 
