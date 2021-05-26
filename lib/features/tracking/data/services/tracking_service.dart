@@ -114,27 +114,32 @@ enum TrackingMessageType {
 class TrackingMessage extends MessageModel {
   TrackingMessage(Map<String, dynamic> data) : super(data);
 
-  factory TrackingMessage.created(Tracking tracking) => TrackingMessage.fromType(
+  factory TrackingMessage.created(Tracking tracking, StateVersion version) => TrackingMessage.fromType(
         tracking,
         TrackingMessageType.TrackingCreated,
+        version,
       );
 
-  factory TrackingMessage.updated(Tracking tracking) => TrackingMessage.fromType(
+  factory TrackingMessage.updated(Tracking tracking, StateVersion version) => TrackingMessage.fromType(
         tracking,
         TrackingMessageType.TrackingInformationUpdated,
+        version,
       );
 
-  factory TrackingMessage.deleted(Tracking tracking) => TrackingMessage.fromType(
+  factory TrackingMessage.deleted(Tracking tracking, StateVersion version) => TrackingMessage.fromType(
         tracking,
         TrackingMessageType.TrackingDeleted,
+        version,
       );
 
-  factory TrackingMessage.fromType(Tracking tracking, TrackingMessageType type) => TrackingMessage({
+  factory TrackingMessage.fromType(Tracking tracking, TrackingMessageType type, StateVersion version) =>
+      TrackingMessage({
         'type': enumName(type),
         'data': {
           'uuid': tracking.uuid,
           'changed': tracking.toJson(),
         },
+        'number': version.value,
       });
 
   TrackingMessageType get type {

@@ -55,7 +55,7 @@ class PersonBuilder {
         '"lname": "$lname",'
         '"phone": "$phone",'
         '"email": "$email",'
-        '"userId": "$userId",'
+        '${userId == null ? '' : '"userId": "$userId",'}'
         '"temporary": $temporary'
         '}');
   }

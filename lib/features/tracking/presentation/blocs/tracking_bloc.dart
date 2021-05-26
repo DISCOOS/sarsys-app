@@ -650,17 +650,17 @@ class TrackingBloc
 
   /// Create [_NotifyRepositoryStateChanged] for processing [TrackingMessageType.TrackingCreated]
   _HandleMessage _toAprioriCreate(Tracking tracking) => _HandleMessage(
-        TrackingMessage.created(tracking),
+        TrackingMessage.created(tracking, repo.getVersion(tracking.uuid)),
       );
 
   /// Create [_NotifyRepositoryStateChanged] for processing [TrackingMessageType.TrackingInformationUpdated]
   _HandleMessage _toAprioriChange(Tracking tracking) => _HandleMessage(
-        TrackingMessage.updated(tracking),
+        TrackingMessage.updated(tracking, repo.getVersion(tracking.uuid)),
       );
 
   /// Create [_NotifyRepositoryStateChanged] for processing [TrackingMessageType.TrackingDeleted].
   _HandleMessage _toAprioriDelete(Tracking tracking) => _HandleMessage(
-        TrackingMessage.deleted(tracking),
+        TrackingMessage.deleted(tracking, repo.getVersion(tracking.uuid)),
       );
 
   @override

@@ -49,13 +49,13 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
                 );
               }
             } else {
-              if (message.version == current.version + 1) {
+              if (message.version == current.version) {
                 // Danger >> Remote state should be equal to local
                 state = _onRemoteNextWhenModified(
                   message,
                   current,
                 );
-              } else if (message.version > current.version + 1) {
+              } else if (message.version >= current.version + 1) {
                 // Danger >> Remote state has progress beyond local
                 state = _onRemoteBeyondWhenModified(
                   message,
@@ -191,23 +191,25 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
     V next,
   ) {
     final base = current.previous;
-    final mine = JsonUtils.diff(
-      base,
-      current.value,
-    );
-    final yours = message.isPatches
-        ? message.patches
-        : JsonUtils.diff(
-            base,
-            next,
-          );
-    final conflict = JsonUtils.check(mine, yours);
-    if (conflict != null) {
-      // TODO: Allow user to choose conflict resolution
-      debugPrint(
-        'Conflict >> ${typeOf<V>()} ${message.uuid} lost local changes: '
-        '${mine.where((op) => conflict.paths.contains(op['path']))}',
+    if (base != null) {
+      final mine = JsonUtils.diff(
+        base,
+        current.value,
       );
+      final yours = message.isPatches
+          ? message.patches
+          : JsonUtils.diff(
+              base,
+              next,
+            );
+      final conflict = JsonUtils.check(mine, yours);
+      if (conflict != null) {
+        // TODO: Allow user to choose conflict resolution
+        debugPrint(
+          'Conflict >> ${typeOf<V>()} ${message.uuid} lost local changes: '
+          '${mine.where((op) => conflict.paths.contains(op['path']))}',
+        );
+      }
     }
     // Check if there are local changes left
     // (not consumed by same remote changes)

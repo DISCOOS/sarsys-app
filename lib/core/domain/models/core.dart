@@ -140,7 +140,7 @@ class JsonUtils {
             type: ConflictType.merge,
             mine: mine,
             yours: yours,
-            paths: conflicts.map((op) => op['path']).toList(),
+            paths: conflicts.map((op) => op['path'] as String).toList(),
           )
         : null;
   }

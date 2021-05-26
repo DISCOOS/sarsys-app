@@ -22,6 +22,7 @@ class PersonnelBuilder {
     String auuid,
     String tuuid,
     String userId,
+    bool temporary = true,
     PersonnelStatus status = PersonnelStatus.alerted,
   }) {
     return PersonnelModel.fromJson(
@@ -45,6 +46,7 @@ class PersonnelBuilder {
     String auuid,
     String tuuid,
     String userId,
+    bool temporary = true,
   }) =>
       json.decode('{'
           '"uuid": "$uuid",'
@@ -55,7 +57,8 @@ class PersonnelBuilder {
           '"uuid": "${puuid ?? Uuid().v4()}", '
           '"fname": "${random.faker.person.firstName()}",'
           '"lname": "${random.faker.person.lastName()}",'
-          '"userId": "$userId"'
+          '${userId == null ? '' : '"userId": "$userId",'}'
+          '"temporary": $temporary'
           '}},'
           '"function": "${enumName(OperationalFunctionType.personnel)}",'
           '"operation": {"uuid": "${ouuid ?? Uuid().v4()}", "type": "Operation"},'

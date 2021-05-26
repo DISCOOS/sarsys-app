@@ -62,7 +62,7 @@ class AffiliationBuilder {
   }) {
     return json.decode('{'
         '"uuid": "$uuid",'
-        '"person": {"uuid": "$puuid", "userId": "$userId"},'
+        '"person": {"uuid": "$puuid"${userId == null ? '' : ', "userId": "$userId"'}'
         '"org": {"uuid": "$orguuid"},'
         '"div": {"uuid": "$divuuid"},'
         '"dep": {"uuid": "$depuuid"},'
@@ -264,7 +264,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
 
   static List<StorageState<Person>> _findDuplicateUsers(PersonServiceMock persons, Person person) {
     return persons.personRepo.values
-        .where((s) => person.uuid != s.value.uuid && person.userId == s.value.userId)
+        .where((s) => person.uuid != s.value.uuid && person.userId != null && person.userId == s.value.userId)
         .toList();
   }
 

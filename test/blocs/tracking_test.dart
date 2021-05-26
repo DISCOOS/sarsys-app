@@ -45,8 +45,8 @@ void main() async {
   test('TrackingBloc should be EMPTY and UNSET', () async {
     expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD BE unset");
     expect(harness.trackingBloc.trackings.length, 0, reason: "SHOULD BE empty");
-    expect(harness.trackingBloc, emits(isA<TrackingsEmpty>()));
-  }, skip: true);
+    expect(harness.trackingBloc.state, isA<TrackingsEmpty>());
+  }, skip: false);
 
   group('WHEN TrackingBloc has data', () {
     test('SHOULD contain devices', () async {
@@ -54,21 +54,39 @@ void main() async {
       harness.connectivity.cellular();
       final operation = await _prepare(harness);
 
+      final duuid1 = 'duuid1';
+      final duuid2 = 'duuid2';
+      final duuid3 = 'duuid3';
+      final auuid1 = 'auuid1';
+      final auuid2 = 'auuid2';
+      final auuid3 = 'auuid3';
+      final puuid1 = 'puuid1';
+      final puuid2 = 'puuid2';
+      final puuid3 = 'puuid3';
+
       // Act
-      final d1 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
-      final d2 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
-      final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
+      final d1 = await harness.deviceBloc.create(
+        DeviceBuilder.create(uuid: duuid1, status: DeviceStatus.available),
+      );
+      final d2 = await harness.deviceBloc.create(
+        DeviceBuilder.create(uuid: duuid2, status: DeviceStatus.available),
+      );
+      final d3 = await harness.deviceBloc.create(
+        DeviceBuilder.create(uuid: duuid3, status: DeviceStatus.available),
+      );
 
       final p1 = await harness.personnelBloc.create(
-        PersonnelBuilder.create(ouuid: operation.uuid),
+        PersonnelBuilder.create(uuid: puuid1, ouuid: operation.uuid, auuid: auuid1, puuid: puuid1),
       );
       final pt1 = await _attachDeviceToTrackable(harness, p1, d1);
+
       final p2 = await harness.personnelBloc.create(
-        PersonnelBuilder.create(ouuid: operation.uuid),
+        PersonnelBuilder.create(uuid: puuid2, ouuid: operation.uuid, auuid: auuid2, puuid: puuid2),
       );
       final pt2 = await _attachDeviceToTrackable(harness, p2, d2);
+
       final p3 = await harness.personnelBloc.create(
-        PersonnelBuilder.create(ouuid: operation.uuid),
+        PersonnelBuilder.create(uuid: puuid3, ouuid: operation.uuid, auuid: auuid3, puuid: puuid3),
       );
       final pt3 = await _attachDeviceToTrackable(harness, p3, d3);
 
@@ -83,21 +101,39 @@ void main() async {
       harness.connectivity.cellular();
       final operation = await _prepare(harness);
 
+      final duuid1 = 'duuid1';
+      final duuid2 = 'duuid2';
+      final duuid3 = 'duuid3';
+      final auuid1 = 'auuid1';
+      final auuid2 = 'auuid2';
+      final auuid3 = 'auuid3';
+      final puuid1 = 'puuid1';
+      final puuid2 = 'puuid2';
+      final puuid3 = 'puuid3';
+
       // Act
-      final d1 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
-      final d2 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
-      final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
+      final d1 = await harness.deviceBloc.create(
+        DeviceBuilder.create(uuid: duuid1, status: DeviceStatus.available),
+      );
+      final d2 = await harness.deviceBloc.create(
+        DeviceBuilder.create(uuid: duuid2, status: DeviceStatus.available),
+      );
+      final d3 = await harness.deviceBloc.create(
+        DeviceBuilder.create(uuid: duuid3, status: DeviceStatus.available),
+      );
 
       final p1 = await harness.personnelBloc.create(
-        PersonnelBuilder.create(ouuid: operation.uuid),
+        PersonnelBuilder.create(uuid: puuid1, ouuid: operation.uuid, auuid: auuid1, puuid: puuid1),
       );
       final pt1 = await _attachDeviceToTrackable(harness, p1, d1);
+
       final p2 = await harness.personnelBloc.create(
-        PersonnelBuilder.create(ouuid: operation.uuid),
+        PersonnelBuilder.create(uuid: puuid2, ouuid: operation.uuid, auuid: auuid2, puuid: puuid2),
       );
       final pt2 = await _attachDeviceToTrackable(harness, p2, d2);
+
       final p3 = await harness.personnelBloc.create(
-        PersonnelBuilder.create(ouuid: operation.uuid),
+        PersonnelBuilder.create(uuid: puuid3, ouuid: operation.uuid, auuid: auuid3, puuid: puuid3),
       );
       final pt3 = await _attachDeviceToTrackable(harness, p3, d3);
 
@@ -133,8 +169,10 @@ void main() async {
 
       final p1 = await harness.personnelBloc.create(PersonnelBuilder.create(ouuid: ouuid));
       await _attachDeviceToTrackable(harness, p1, d1);
+
       final p2 = await harness.personnelBloc.create(PersonnelBuilder.create(ouuid: ouuid));
       await _attachDeviceToTrackable(harness, p2, d2);
+
       final p3 = await harness.personnelBloc.create(PersonnelBuilder.create(ouuid: ouuid));
       await _attachDeviceToTrackable(harness, p3, d3);
 
@@ -167,7 +205,7 @@ void main() async {
       expect(units.devices().isEmpty, isTrue, reason: "SHOULD be empty");
       expect(units.devices().isEmpty, isTrue, reason: "SHOULD be empty");
     });
-  }, skip: true);
+  }, skip: false);
 
   group('WHEN TrackingBloc is ONLINE', () {
     test('SHOULD load trackings', () async {
@@ -190,16 +228,20 @@ void main() async {
         // Expect tracking for two personnel and one unit
         count: 3,
         act: (ouuid) async {
-          final p1 = await harness.personnelBloc.create(
-            PersonnelBuilder.create(ouuid: ouuid, uuid: puuid1),
+          await harness.personnelBloc.create(
+            PersonnelBuilder.create(ouuid: ouuid, uuid: puuid1, tuuid: 'tuuid1'),
           );
-          final p2 = await harness.personnelBloc.create(
-            PersonnelBuilder.create(ouuid: ouuid, uuid: puuid2),
+          await harness.personnelBloc.create(
+            PersonnelBuilder.create(ouuid: ouuid, uuid: puuid2, tuuid: 'tuuid2'),
           );
-          return await harness.unitBloc.create(UnitBuilder.create(ouuid: ouuid, personnels: [
-            p1.uuid,
-            p2.uuid,
-          ]));
+          return harness.unitBloc.create(UnitBuilder.create(
+            ouuid: ouuid,
+            tuuid: 'tuuid3',
+            personnels: [
+              puuid1,
+              puuid2,
+            ],
+          ));
         },
       );
 
@@ -664,7 +706,12 @@ void main() async {
 
       // Act - Simulate backend
       final tracking = harness.trackingBloc.repo[tuuid];
-      await _notify(harness, TrackingMessage.created(tracking));
+      _notify(
+          harness,
+          TrackingMessage.created(
+            tracking,
+            harness.trackingBloc.repo.getVersion(tuuid),
+          ));
 
       // Assert remote state
       await _assertTrackingState<TrackingCreated>(
@@ -769,7 +816,7 @@ void main() async {
       // Act and Assert
       await _testShouldUnloadWhenOperationIsUnloaded(harness);
     });
-  }, skip: true);
+  }, skip: false);
 
   group('WHEN TrackingBloc is OFFLINE', () {
     test('SHOULD NOT load trackings', () async {
@@ -1270,7 +1317,12 @@ void main() async {
 
       // Act REMOTELY
       final tracking = harness.trackingBloc.repo[tuuid];
-      await _notify(harness, TrackingMessage.created(tracking));
+      _notify(
+          harness,
+          TrackingMessage.created(
+            tracking,
+            harness.trackingBloc.repo.getVersion(tuuid),
+          ));
 
       // Assert PUSHED
       await expectThroughLater(
@@ -1330,7 +1382,7 @@ void main() async {
         isTrue,
         reason: "SHOULD contain tracking ${tracking.uuid}",
       );
-      expectThroughInOrder(harness.trackingBloc, [isA<TrackingsLoaded>()]);
+      expect(harness.trackingBloc.state, isA<TrackingsLoaded>());
     });
 
     test('SHOULD reload when operation is switched', () async {
@@ -1372,7 +1424,7 @@ void main() async {
       // Act and Assert
       await _testShouldUnloadWhenOperationIsUnloaded(harness);
     });
-  }, skip: true);
+  }, skip: false);
 }
 
 FutureOr<Tracking> _attachDeviceToTrackable(BlocTestHarness harness, Trackable trackable, Device device) async =>
@@ -1583,7 +1635,8 @@ Future<Tracking> _shouldDeleteFromTrackingWhenDeviceDeleted<T extends Trackable>
   // Assert
   await expectDataIsNotEmpty<TrackingUpdated>(
     harness,
-    isRemote: harness.isOnline,
+    // Apriori change
+    isRemote: false,
   );
   final t3 = harness.trackingBloc.repo[t2.uuid];
   expect(t3.status, equals(TrackingStatus.tracking), reason: "SHOULD be status tracking");
@@ -1907,7 +1960,11 @@ Future<T> _shouldCloseTrackingAutomatically<T extends Trackable>(
   if (harness.isOnline) {
     // Act - Simulate backend
     final tracking = harness.trackingBloc.repo[tuuid];
-    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.TrackingInformationUpdated);
+    _putRemoteAndNotify(
+      harness,
+      tracking,
+      TrackingMessageType.TrackingInformationUpdated,
+    );
 
     // Assert REMOTELY
     await _assertTrackingState(
@@ -2003,10 +2060,6 @@ Future<StorageState<Tracking>> _shouldCreateTrackingAutomatically<T extends Trac
   // Act LOCALLY
   final trackable = await act(operation.uuid);
   final tuuid = trackable.tracking.uuid;
-  await expectThroughLater(
-    harness.trackingBloc.stream,
-    emits(isA<TrackingCreated>()),
-  );
 
   // Assert locally CREATED
   final state = await _assertTrackingState<TrackingCreated>(
@@ -2020,7 +2073,11 @@ Future<StorageState<Tracking>> _shouldCreateTrackingAutomatically<T extends Trac
   if (harness.isOnline) {
     // Act - Simulate backend
     final tracking = harness.trackingBloc.repo[tuuid];
-    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.TrackingCreated);
+    _putRemoteAndNotify(
+      harness,
+      tracking,
+      TrackingMessageType.TrackingCreated,
+    );
 
     // Assert
     return _assertTrackingState<TrackingCreated>(
@@ -2079,7 +2136,7 @@ Future _shouldLoadTrackings(BlocTestHarness harness) async {
       reason: "SHOULD contain tracking ${tracking2.uuid}",
     );
   }
-  expectThrough(harness.trackingBloc, emits(isA<TrackingsLoaded>()));
+  expect(harness.trackingBloc.state, isA<TrackingsLoaded>());
 }
 
 Future _assertReopensClosedTrackingAutomatically<T extends Trackable>(
@@ -2102,7 +2159,11 @@ Future _assertReopensClosedTrackingAutomatically<T extends Trackable>(
   if (harness.isOnline) {
     // Act - Simulate backend
     final tracking = harness.trackingBloc.repo[tuuid];
-    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.TrackingInformationUpdated);
+    _putRemoteAndNotify(
+      harness,
+      tracking,
+      TrackingMessageType.TrackingInformationUpdated,
+    );
 
     // Assert REMOTELY
     await _assertTrackingState(
@@ -2123,10 +2184,21 @@ Future<StorageState<Tracking>> _assertTrackingState<T extends TrackingState>(
   @required bool remote,
   int count = 1,
 }) async {
-  await expectThroughLater(
-    harness.trackingBloc.stream,
-    emitsInAnyOrder([isA<T>()]),
-  );
+  final current = harness.trackingBloc.repo.getState(tuuid);
+  if (current == null || current.isRemote != remote) {
+    await expectThroughLater(
+      harness.trackingBloc.stream,
+      emits(
+        isA<T>().having(
+          (t) {
+            return t.data is Tracking && t.data.uuid == tuuid;
+          },
+          'Is uuid $tuuid',
+          isTrue,
+        ),
+      ),
+    );
+  }
   int expected = _ensureTrackingCount(count, harness);
   expect(harness.trackingBloc.repo.length, expected, reason: "SHOULD contain $expected tracking(s)");
   final state = harness.trackingBloc.repo.states[tuuid];
@@ -2144,23 +2216,20 @@ int _ensureTrackingCount(int count, BlocTestHarness harness) {
   return harness.isAuthenticated && !harness.trackingBloc.isUnset ? count + 1 : count;
 }
 
-Future _putRemoteAndNotify(BlocTestHarness harness, Tracking tracking, TrackingMessageType type) async {
+void _putRemoteAndNotify(BlocTestHarness harness, Tracking tracking, TrackingMessageType type) {
   harness.trackingService.put(harness.trackingBloc.ouuid, tracking);
-  await _notify(
+  _notify(
     harness,
-    TrackingMessage.fromType(tracking, type),
+    TrackingMessage.fromType(
+      tracking,
+      type,
+      harness.trackingBloc.repo.getVersion(tracking.uuid),
+    ),
   );
 }
 
-Future _notify(BlocTestHarness harness, TrackingMessage message) async {
-  final messages = <TrackingMessage>[];
-  final subscription = harness.trackingService.messages.listen(
-    messages.add,
-  );
+void _notify(BlocTestHarness harness, TrackingMessage message) {
   harness.trackingService.controller.add(message);
-  await Future.delayed(Duration(milliseconds: 1));
-  expect(messages, [isA<TrackingMessage>()]);
-  await subscription.cancel();
 }
 
 Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness) async {
@@ -2251,16 +2320,19 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness) async 
       resolution: OperationResolution.cancelled,
     ),
   );
-  await expectThroughLater(
-    harness.personnelBloc.stream,
-    emits(isA<PersonnelsUnloaded>()),
-  );
 
   // Assert
-  await expectThroughLater(
-    harness.trackingBloc.stream,
-    emits(isA<TrackingsUnloaded>()),
-  );
+  await Future.wait([
+    expectThroughLater(
+      harness.personnelBloc.stream,
+      emits(isA<PersonnelsUnloaded>()),
+    ),
+    expectThroughLater(
+      harness.personnelBloc.stream,
+      emits(isA<PersonnelsUnloaded>()),
+    ),
+  ]);
+
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.trackingBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
@@ -2313,20 +2385,26 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
   );
 
   // Assert - reload
-  await expectThroughInOrderLater(
-    harness.trackingBloc,
-    [isA<TrackingsUnloaded>(), isA<TrackingsLoaded>()],
-  );
-  await expectThroughLater(
-    harness.personnelBloc.stream,
-    emits(isA<UserMobilized>().having(
-      (event) {
-        return harness.isOnline ? event.isRemote : event.isLocal;
-      },
-      'Should be ${harness.isOnline ? 'remote' : 'local'}',
-      true,
-    )),
-  );
+  await Future.wait([
+    expectThroughInOrderLater(
+      harness.trackingBloc,
+      [isA<TrackingsUnloaded>(), isA<TrackingsLoaded>()],
+    ),
+    expectThroughLater(
+      harness.personnelBloc.stream,
+      emits(isA<UserMobilized>().having(
+        (event) {
+          return harness.isOnline ? event.isRemote : event.isLocal;
+        },
+        'Should be ${harness.isOnline ? 'remote' : 'local'}',
+        true,
+      )),
+    ),
+    expectThroughLater(
+      harness.trackingBloc.stream,
+      emits(isA<TrackingCreated>()),
+    ),
+  ]);
   expect(
     harness.trackingBloc.repo.containsKey(t1.uuid),
     isFalse,
@@ -2355,27 +2433,31 @@ Future<Operation> _prepare(BlocTestHarness harness) async {
     incident: incident,
   );
 
+  // Wait on all expected events
+  await Future.wait([
+    expectThroughLaterIfNot<OperationSelected>(harness.operationsBloc, emits(isA<OperationSelected>())),
+    expectThroughLaterIfNot<PersonnelsLoaded>(harness.personnelBloc, emits(isA<PersonnelsLoaded>())),
+    expectThroughLaterIfNot<UnitsLoaded>(harness.unitBloc, emits(isA<UnitsLoaded>())),
+    expectThroughLaterIfNot<TrackingCreated>(harness.trackingBloc, emits(isA<TrackingCreated>()))
+  ]);
+
   // Prepare OperationBloc
   _print(harness, '_prepare...operation[was:${harness.operationsBloc.state}]');
-  await expectThroughLaterIfNot<OperationSelected>(harness.operationsBloc, emits(isA<OperationSelected>()));
   expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
   _print(harness, '_prepare...operation.ok[is:${harness.operationsBloc.state}]');
 
   // Prepare PersonnelBloc
   _print(harness, '_prepare...personnel[was:${harness.personnelBloc.state}]');
-  await expectThroughLaterIfNot<PersonnelsLoaded>(harness.personnelBloc, emits(isA<PersonnelsLoaded>()));
   expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
   _print(harness, '_prepare...personnel.ok[is:${harness.personnelBloc.state}]');
 
   // Prepare UnitBloc
   _print(harness, '_prepare...unit[was:${harness.unitBloc.state}]');
-  await expectThroughLaterIfNot<UnitsLoaded>(harness.unitBloc, emits(isA<UnitsLoaded>()));
   expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
   _print(harness, '_prepare...unit.ok[is:${harness.unitBloc.state}]');
 
   // Prepare TrackingBloc
   _print(harness, '_prepare...tracking[was: ${harness.trackingBloc.state}]');
-  await expectThroughLaterIfNot<TrackingCreated>(harness.trackingBloc, emits(isA<TrackingCreated>()));
   expect(harness.trackingBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
   expect(harness.trackingBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
   _print(harness, '_prepare...tracking.ok[is: ${harness.trackingBloc.state}]');
@@ -2442,10 +2524,15 @@ Future<void> expectDataIsNotEmpty<T extends TrackingState>(
     harness.trackingBloc.stream,
     emits(isA<T>().having(
       (event) {
-        return event.isRemote == isRemote &&
-            (event.data is Iterable ? (event.data as Iterable).isNotEmpty : event.data != null);
+        return event.isRemote == isRemote;
       },
       'Should be ${isRemote ? 'remote' : 'local'} and not empty',
+      isTrue,
+    ).having(
+      (event) {
+        return (event.data is Iterable ? (event.data as Iterable).isNotEmpty : event.data != null);
+      },
+      'Should be not empty',
       isTrue,
     )),
   );

@@ -245,14 +245,10 @@ class BlocTestHarness implements BlocObserver {
         _buildAppConfigBloc();
       }
       if (_withUserBloc) {
-        await _buildUserBloc().catchError(
-          (e, stackTrace) => debugPrintError('setUp > _buildUserBloc() failed', e, stackTrace),
-        );
+        _buildUserBloc();
       }
       if (_withOperationBloc) {
-        await _buildOperationBloc().catchError(
-          (e, stackTrace) => debugPrintError('setUp > _buildOperationBloc() failed', e, stackTrace),
-        );
+        _buildOperationBloc();
       }
       if (_withAffiliationBloc) {
         await _buildAffiliationBloc().catchError(
@@ -284,14 +280,16 @@ class BlocTestHarness implements BlocObserver {
             _userBloc.stream,
             isA<UserAuthenticated>(),
           ),
-          expectThroughLater(
-            _operationsBloc.stream,
-            isA<OperationsLoaded>().having((event) => event.isRemote, 'Should be remote', isTrue),
-          ),
-          expectThroughLater(
-            _affiliationBloc.stream,
-            emitsThrough(isA<UserOnboarded>().having((event) => event.isRemote, 'Should be remote', isTrue)),
-          ),
+          if (_withOperationBloc)
+            expectThroughLater(
+              _operationsBloc.stream,
+              isA<OperationsLoaded>().having((event) => event.isRemote, 'Should be remote', isTrue),
+            ),
+          if (_withAffiliationBloc)
+            expectThroughLater(
+              _affiliationBloc.stream,
+              emitsThrough(isA<UserOnboarded>().having((event) => event.isRemote, 'Should be remote', isTrue)),
+            ),
         ]);
       }
 
@@ -559,7 +557,7 @@ class BlocTestHarness implements BlocObserver {
     _configBloc = AppConfigBloc(configRepo, bus);
   }
 
-  Future _buildUserBloc() async {
+  void _buildUserBloc() {
     assert(_withConfigBloc, 'UserBloc requires AppConfigBloc');
     _userService = UserServiceMock.build(
       role: UserRole.commander,
@@ -615,10 +613,10 @@ class BlocTestHarness implements BlocObserver {
     return Future.value();
   }
 
-  Future _buildOperationBloc({
+  void _buildOperationBloc({
     UserRole role = UserRole.commander,
     String passcode = 'T123',
-  }) async {
+  }) {
     assert(_withUserBloc, 'OperationBloc requires UserBloc');
 
     _incidentService = IncidentServiceMock.build(
@@ -689,15 +687,6 @@ class BlocTestHarness implements BlocObserver {
       _operationsBloc,
       bus,
     );
-
-    if (_authenticated) {
-      // Consume PersonnelsLoaded fired by OperationsLoaded
-      expectThroughInOrder(
-        _personnelBloc,
-        [isA<PersonnelsEmpty>()],
-        close: false,
-      );
-    }
   }
 
   void _buildUnitBloc({
@@ -740,15 +729,6 @@ class BlocTestHarness implements BlocObserver {
       unitBloc: _unitBloc,
       bus: bus,
     );
-
-    if (_authenticated) {
-      // Consume PersonnelsLoaded fired by IncidentsLoaded
-      expectThroughInOrder(
-        _unitBloc,
-        [isA<UnitsEmpty>()],
-        close: false,
-      );
-    }
   }
 
   final errors = <Bloc, List<Object>>{};
