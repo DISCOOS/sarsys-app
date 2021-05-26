@@ -2289,16 +2289,18 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness) async {
   await harness.operationsBloc.update(
     operation.copyWith(status: OperationStatus.completed),
   );
-  await expectThroughLater(
-    harness.personnelBloc.stream,
-    emits(isA<PersonnelsUnloaded>()),
-  );
 
   // Assert
-  await expectThroughLater(
-    harness.trackingBloc.stream,
-    emits(isA<TrackingsUnloaded>()),
-  );
+  await Future.wait([
+    expectThroughLater(
+      harness.personnelBloc.stream,
+      emits(isA<PersonnelsUnloaded>()),
+    ),
+    expectThroughLater(
+      harness.trackingBloc.stream,
+      emits(isA<TrackingsUnloaded>()),
+    )
+  ]);
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.trackingBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
