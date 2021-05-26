@@ -62,7 +62,7 @@ class AffiliationBuilder {
   }) {
     return json.decode('{'
         '"uuid": "$uuid",'
-        '"person": {"uuid": "$puuid"${userId == null ? '' : ', "userId": "$userId"'}'
+        '"person": {"uuid": "$puuid"${userId == null ? '' : ', "userId": "$userId"'}},'
         '"org": {"uuid": "$orguuid"},'
         '"div": {"uuid": "$divuuid"},'
         '"dep": {"uuid": "$depuuid"},'
