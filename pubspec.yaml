@@ -24,38 +24,38 @@ dependencies:
     sdk: flutter
   flutter_cupertino_localizations: ^1.0.1
 
-  flutter_appauth: ^0.9.2+6
+  flutter_appauth: ^1.1.0
   flutter_secure_storage: ^4.1.0
-  jose: ^0.2.2
+  jose: ^0.3.0
   sqflite: ^2.0.0+3
-  shared_preferences: ^0.5.12+4
-  geolocator: ^6.2.1
+  shared_preferences: ^2.0.0
+  geolocator: ^7.0.0
   geocoder: ^0.2.1
-  flutter_launcher_icons: ^0.8.1
+  flutter_launcher_icons: ^0.9.0
   uni_links: ^0.4.0
-  http: ^0.12.0+2
+  http: ^0.13.0
   path: ^1.6.2
-  path_provider: ^1.6.28
-  protobuf: ^1.1.3
-  web_socket_channel: ^1.2.0
+  path_provider: ^2.0.0
+  protobuf: ^2.0.0
+  web_socket_channel: ^2.0.0
   rxdart: ^0.23.1
-  json_annotation: ^3.1.1
+  json_annotation: ^4.0.0
   bloc: ^7.0.0
   flutter_bloc: ^7.0.0
   equatable: ^2.0.0
-  jaguar_jwt: ^2.1.6
-  flutter_form_builder: ^4.2.0
+  jaguar_jwt: ^3.0.0
+  flutter_form_builder: ^6.0.0
 #  flutter_chips_input: ^1.9.5
   app_settings: ^4.0.2
-  permission_handler: ^5.1.0+2
+  permission_handler: ^8.1.2
   flutter_slidable: ^0.6.0
-  package_info: ^0.4.3+4
+  package_info: ^2.0.0
   font_awesome_flutter: ^9.0.0
   flutter_map: ^0.11.0
   badges: ^1.1.0
   sentry_flutter: ^4.0.6
-  catcher: ^0.4.2
-  device_info: ^1.0.0
+  catcher: ^0.5.0
+  device_info: ^2.0.0
   url_launcher: ^6.0.2
   material_design_icons_flutter: ^4.0.5345
   filesize: ^1.0.4
@@ -67,17 +67,17 @@ dependencies:
   faker: ^1.1.1
   connectivity: ^3.0.3
   data_connection_checker: ^0.3.4
-  xml: ^4.5.1
+  xml: ^5.0.0
   pin_code_fields: ^7.0.0
   local_auth: ^1.1.4
-  hive: ^1.4.4+1
-  hive_flutter: ^0.3.0+2
+  hive: ^2.0.0
+  hive_flutter: ^1.0.0
   flutter_udid: ^1.0.1
   json_patch: ^2.0.0
   cached_network_image: ^2.4.1
   flutter_cache_manager: ^2.1.2
   flutter_phoenix: ^1.0.0
-  chopper: ^3.0.6
+  chopper: ^4.0.0
   debounce_throttle: ^2.0.0
   grouped_list: ^4.0.0
   flutter_background_geolocation: ^2.0.2
@@ -86,7 +86,7 @@ dependencies:
   pretty_json: ^1.1.0
 
   # Mocking support
-  uuid: ^2.2.2
+  uuid: ^3.0.0-nullsafety.0
   random_string: ^2.1.0
 
   # The following adds the Cupertino Icons font to your application.
@@ -96,7 +96,7 @@ dependencies:
 dependency_overrides:
 
   intl: ^0.17.0
-  sentry_flutter: 4.0.6
+#  sentry_flutter: 4.0.6
   country_pickers: 2.0.0
   test_api: ^0.2.19-nullsafety
 
@@ -137,17 +137,18 @@ dependency_overrides:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  mockito: ^4.1.4
+  mockito: ^5.0.0
   bloc_test: ^8.0.0
-  build_runner: ^1.11.1
-  json_serializable: ^3.5.1
-  chopper_generator: ^3.0.6
+  build_runner: ^2.0.0
+  json_serializable: ^4.0.0
+  chopper_generator: ^4.0.0
 
 flutter_icons:
   android: true #"launcher_icon"
   ios: true
   image_path: "assets/icon.png"
   image_path_android: "assets/icon_android.png"
+  #image_path_ios: "assets/images/icon-710x599-ios.png"
   #image_path_ios: "assets/images/icon-710x599-ios.png"
 
 
