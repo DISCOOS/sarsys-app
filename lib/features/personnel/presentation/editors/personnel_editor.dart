@@ -471,7 +471,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
             maxLines: 1,
             name: 'phone',
             maxLength: 12,
-            maxLengthEnforced: true,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
             controller: _phoneController,
             decoration: InputDecoration(
               filled: true,
