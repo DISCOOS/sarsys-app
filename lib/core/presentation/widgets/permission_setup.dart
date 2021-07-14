@@ -52,42 +52,36 @@ class PermissionSetupState extends State<PermissionSetup> {
       // Track permission changes and update views
       _permissions.responses.listen((response) async {
         final Permission permission = response.request.permission;
-        switch (permission) {
-          case Permission.locationAlways:
+        if (permission == Permission.locationAlways) {
+          setState(() {
+            _locationAlwaysStatus = Future.value(response.status);
+            _storageStatus ??= _permissions.check(_permissions.storageRequest);
+            _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
+            _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
+          });
+        } else if (permission == Permission.locationWhenInUse) {
+          setState(() {
+            _locationWhenInUseStatus = Future.value(response.status);
+            _storageStatus ??= _permissions.check(_permissions.storageRequest);
+            _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
+            _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
+          });
+        } else {
+          if (permission == Permission.activityRecognition) {
             setState(() {
-              _locationAlwaysStatus = Future.value(response.status);
+              _activityRecognitionStatus = Future.value(response.status);
               _storageStatus ??= _permissions.check(_permissions.storageRequest);
+              _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
+              _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
+            });
+          } else if (permission == Permission.storage) {
+            setState(() {
+              _storageStatus = Future.value(response.status);
+              _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
               _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
               _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
             });
-            break;
-          case Permission.locationWhenInUse:
-            setState(() {
-              _locationWhenInUseStatus = Future.value(response.status);
-              _storageStatus ??= _permissions.check(_permissions.storageRequest);
-              _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
-              _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
-            });
-            break;
-          default:
-            switch (permission) {
-              case Permission.activityRecognition:
-                setState(() {
-                  _activityRecognitionStatus = Future.value(response.status);
-                  _storageStatus ??= _permissions.check(_permissions.storageRequest);
-                  _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
-                  _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
-                });
-                break;
-              case Permission.storage:
-                setState(() {
-                  _storageStatus = Future.value(response.status);
-                  _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
-                  _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
-                  _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
-                });
-                break;
-            }
+          }
         }
         if (widget.onChanged != null) {
           widget.onChanged(response);
