@@ -69,7 +69,7 @@ class _OperationConfigScreenState extends State<OperationConfigScreen> {
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: FormBuilderChipsInput(
+/*          child: FormBuilderChipsInput(
             name: 'units',
             maxChips: 15,
             initialValue: _bloc.config.units,
@@ -115,7 +115,7 @@ class _OperationConfigScreenState extends State<OperationConfigScreen> {
             keyboardAppearance: Brightness.dark,
             inputAction: TextInputAction.done,
             textCapitalization: TextCapitalization.none,
-          ),
+          ),*/
         )
       ],
     );

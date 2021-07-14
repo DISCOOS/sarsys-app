@@ -746,7 +746,7 @@ class _OperationEditorState extends State<OperationEditor> {
     final style = Theme.of(context).textTheme.caption;
     return Padding(
       padding: EdgeInsets.zero,
-      child: FormBuilderChipsInput(
+/*      child: FormBuilderChipsInput(
         name: 'units',
         maxChips: 15,
         initialValue: context.read<AppConfigBloc>().config.units,
@@ -790,7 +790,7 @@ class _OperationEditorState extends State<OperationEditor> {
         autocorrect: true,
         textCapitalization: TextCapitalization.sentences,
         textStyle: TextStyle(height: 1.8, fontSize: 16.0),
-      ),
+      ),*/
     );
   }
 
