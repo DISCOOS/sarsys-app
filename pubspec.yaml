@@ -38,49 +38,49 @@ dependencies:
   path_provider: ^2.0.0
   protobuf: ^2.0.0
   web_socket_channel: ^2.0.0
-  rxdart: ^0.23.1
+  rxdart: ^0.27.1
   json_annotation: ^4.0.0
   bloc: ^7.0.0
-  flutter_bloc: ^7.0.0
-  equatable: ^2.0.0
+  flutter_bloc: ^7.0.1
+  equatable: ^2.0.3
   jaguar_jwt: ^3.0.0
   flutter_form_builder: ^6.0.1
 #  flutter_chips_input: ^1.9.5
-  app_settings: ^4.0.2
+  app_settings: ^4.1.1
   permission_handler: ^8.1.2
   flutter_slidable: ^0.6.0
   package_info: ^2.0.0
   font_awesome_flutter: ^9.0.0
   flutter_map: ^0.11.0
-  badges: ^1.1.0
-  sentry_flutter: ^4.0.6
-  catcher: ^0.5.0
+  badges: ^2.0.1
+  sentry_flutter: ^5.1.0
+  catcher: ^0.6.7
   device_info: ^2.0.0
   url_launcher: ^6.0.2
   material_design_icons_flutter: ^4.0.5345
-  filesize: ^1.0.4
+  filesize: ^2.0.1
   dartz: ^0.9.1
   intro_views_flutter: ^3.0.0
-  flutter_email_sender: ^5.0.0
+  flutter_email_sender: ^5.0.2
   provider: ^5.0.0
   wakelock: ^0.5.0+2
-  faker: ^1.1.1
-  connectivity: ^3.0.3
+  faker: ^2.0.0
+  connectivity: ^3.0.6
   data_connection_checker: ^0.3.4
   xml: ^5.0.0
   pin_code_fields: ^7.0.0
   local_auth: ^1.1.4
   hive: ^2.0.0
   hive_flutter: ^1.0.0
-  flutter_udid: ^1.0.1
+  flutter_udid: ^2.0.0
   json_patch: ^2.0.0
-  cached_network_image: ^2.4.1
-  flutter_cache_manager: ^2.1.2
+  cached_network_image: ^3.0.0
+  flutter_cache_manager: ^3.1.2
   flutter_phoenix: ^1.0.0
   chopper: ^4.0.0
   debounce_throttle: ^2.0.0
   grouped_list: ^4.0.0
-  flutter_background_geolocation: ^2.0.2
+  flutter_background_geolocation: ^4.0.2
   percent_indicator: ^3.0.1
   timer_builder: ^2.0.0
   pretty_json: ^1.1.0
