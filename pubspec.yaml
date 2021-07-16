@@ -15,7 +15,7 @@ version: 0.1.1+86
 
 environment:
   sdk: ">=2.11.0 <3.0.0"
-  flutter: ">=2.2.0"
+  flutter: ">=2.2.3"
 
 dependencies:
   flutter:
@@ -84,10 +84,12 @@ dependencies:
   percent_indicator: ^3.0.1
   timer_builder: ^2.0.0
   pretty_json: ^2.0.0
+  country_pickers: ^2.0.0
+  intl: ^0.17.0
 
   # Mocking support
-  uuid: ^3.0.0-nullsafety.0
-  random_string: ^2.1.0
+  uuid: ^3.0.4
+  random_string: ^2.3.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -95,10 +97,10 @@ dependencies:
 
 dependency_overrides:
 
-  intl: ^0.17.0
+#  intl: ^0.17.0
 #  sentry_flutter: 4.0.6
-  country_pickers: 2.0.0
-  test_api: ^0.2.19-nullsafety
+#  country_pickers: 2.0.0
+#  test_api: ^0.2.19-nullsafety
 
 #  flutter_map:
 #    # Use local branch of flutter_map
@@ -137,7 +139,7 @@ dependency_overrides:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  mockito: ^5.0.0
+  mockito: ^5.0.11
   bloc_test: ^8.0.2
   build_runner: ^2.0.0
   json_serializable: ^4.1.4
