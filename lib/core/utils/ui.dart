@@ -223,7 +223,7 @@ Widget buildChipsField<T>({
   ValueChanged<Iterable<T>> onChanged,
   Iterable<DropdownMenuItem<String>> categories = const [],
 }) {
-  var query;
+  var query = '';
   return FormBuilderField<Iterable<T>>(
     name: name,
     initialValue: items(),
