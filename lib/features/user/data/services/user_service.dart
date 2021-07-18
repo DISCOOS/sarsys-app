@@ -227,7 +227,7 @@ class UserIdentityService extends UserService {
       // resolved by actively invalidating the session using the
       // openid connect logout endpoint.
       //
-      final url = '$_logoutUrl?redirect_uri=$_redirectUrl';
+      final url = Uri.parse('$_logoutUrl?redirect_uri=$_redirectUrl');
       await client.post(
         url,
         headers: {
@@ -273,7 +273,7 @@ class UserCredentialsService extends UserService {
     // TODO: Handle various login/network errors and throw appropriate errors
     try {
       var response = await http.post(
-        url,
+        Uri.parse(url),
         body: {
           'username': username,
           'password': password,

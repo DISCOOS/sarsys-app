@@ -297,7 +297,7 @@ class PermissionController {
     final status = await request.permission.status;
     if (status.isPermanentlyDenied) {
       await _onOpenSetting(request);
-    } else if ([PermissionStatus.undetermined, PermissionStatus.denied, PermissionStatus.restricted].contains(status)) {
+    } else if ([PermissionStatus.denied, PermissionStatus.restricted].contains(status)) {
       var deniedBefore = prefs.getInt("userDeniedGroupBefore_${request.permission}") ?? 0;
       // Only supported on Android, iOS always return false
       if (deniedBefore > 0 || await request.permission.shouldShowRequestRationale) {

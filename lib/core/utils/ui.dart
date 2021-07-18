@@ -223,7 +223,7 @@ Widget buildChipsField<T>({
   ValueChanged<Iterable<T>> onChanged,
   Iterable<DropdownMenuItem<String>> categories = const [],
 }) {
-  var query;
+  var query = '';
   return FormBuilderField<Iterable<T>>(
     name: name,
     initialValue: items(),
@@ -531,7 +531,7 @@ void jumpToMe(
 }) async {
   final service = LocationService();
   var status = await service.status;
-  if (PermissionStatus.undetermined == status) {
+  if (PermissionStatus.denied == status) {
     await service.configure();
   }
   if (status == PermissionStatus.granted) {
@@ -573,7 +573,7 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
   if (success == false && Platform.isIOS) {
     final service = LocationService();
     var status = await service.status;
-    if (PermissionStatus.undetermined == status) {
+    if (PermissionStatus.denied == status) {
       await service.configure();
     }
     if (status == PermissionStatus.granted) {

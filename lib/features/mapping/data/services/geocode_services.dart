@@ -96,7 +96,7 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
 
   Future<List<GeocodeResult>> search(String query) async {
     final request = '$url?antPerSide=$maxCount&eksakteForst=$exactFirst&epsgKode=4326&json&navn=${query.trim()}*';
-    final response = await client.get(Uri.encodeFull(request));
+    final response = await client.get(Uri.parse(request));
     if (response.statusCode == 200) {
       final doc = XmlDocument.parse(toUtf8(response.body));
       final result = doc.findAllElements('sokRes').first;
@@ -222,7 +222,7 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
   }) async {
     if (kDebugMode) debugPrint(request);
     final response = await client.get(
-      Uri.encodeFull(request),
+      Uri.parse(request),
       headers: {
         // Comply with Entur strict rate-limiting policy
         'ET-Client-Name': 'discoos.org - sarsys',

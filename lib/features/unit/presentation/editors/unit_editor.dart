@@ -239,7 +239,7 @@ class _UnitEditorState extends State<UnitEditor> {
       maxLines: 1,
       name: 'number',
       maxLength: 2,
-      maxLengthEnforced: true,
+      maxLengthEnforcement: MaxLengthEnforcement.enforced,
       controller: _numberController,
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -351,7 +351,7 @@ class _UnitEditorState extends State<UnitEditor> {
       maxLines: 1,
       name: 'phone',
       maxLength: 12,
-      maxLengthEnforced: true,
+      maxLengthEnforcement: MaxLengthEnforcement.enforced,
       controller: _phoneController,
       decoration: InputDecoration(
         filled: true,

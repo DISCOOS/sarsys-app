@@ -91,30 +91,25 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
   }
 
   void _onPermissionResponse(PermissionResponse response) {
-    switch (response.request.permission) {
-      case Permission.locationAlways:
+    if (response.request.permission == Permission.locationAlways) {
+      setState(
+        () => _isLocationAlwaysGranted = PermissionStatus.granted == response.status,
+      );
+    } else if (response.request.permission == Permission.locationWhenInUse) {
+      setState(
+        () => _isLocationWhenInUseGranted = PermissionStatus.granted == response.status,
+      );
+    } else {
+      if (response.request.permission == Permission.storage) {
         setState(
-          () => _isLocationAlwaysGranted = PermissionStatus.granted == response.status,
+          () => _isStorageGranted = PermissionStatus.granted == response.status,
         );
-        break;
-      case Permission.locationWhenInUse:
+      }
+      if (response.request.permission == Permission.activityRecognition) {
         setState(
-          () => _isLocationWhenInUseGranted = PermissionStatus.granted == response.status,
+          () => _isActivityRecognitionGranted = PermissionStatus.granted == response.status,
         );
-        break;
-      default:
-        switch (response.request.permission) {
-          case Permission.storage:
-            setState(
-              () => _isStorageGranted = PermissionStatus.granted == response.status,
-            );
-            break;
-          case Permission.activityRecognition:
-            setState(
-              () => _isActivityRecognitionGranted = PermissionStatus.granted == response.status,
-            );
-            break;
-        }
+      }
     }
     _index = 1;
   }

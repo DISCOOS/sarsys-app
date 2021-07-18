@@ -148,7 +148,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       maxLines: 1,
       name: 'number',
       maxLength: 12,
-      maxLengthEnforced: true,
+      maxLengthEnforcement: MaxLengthEnforcement.enforced,
       controller: _numberController,
       onChanged: (value) => _setText(
         _numberController,

@@ -182,7 +182,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
   Widget _buildMap() {
     return MapWidget(
       operation: widget.operation,
-      center: _mapController.ready ? _mapController.center : LatLng(_current.lat, _current.lon),
+      center: _mapController.center,
       mapController: _mapController,
       withRead: true,
       readLayers: true,

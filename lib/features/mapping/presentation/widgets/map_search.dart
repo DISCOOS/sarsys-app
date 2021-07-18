@@ -455,7 +455,7 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
 
   Padding _toSource(GeocodeResult data, BuildContext context, {LatLng center}) {
     final caption = Theme.of(context).textTheme.caption;
-    final origo = center ?? (controller.ready ? controller.center : null);
+    final origo = center ?? controller.center;
     final distance = formatDistance(data.distance ?? _distance(data, origo));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
