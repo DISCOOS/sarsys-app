@@ -71,7 +71,7 @@ class GeolocatorService implements LocationService {
     return _status;
   }
 
-  PermissionStatus _status = PermissionStatus.undetermined;
+  PermissionStatus _status = PermissionStatus.denied;
 
   @override
   bool get isReady => _isReady;

@@ -20,6 +20,42 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 
+class UnitTemplateChip extends StatelessWidget {
+  const UnitTemplateChip({
+    Key key,
+    @required this.unit,
+  }) : super(key: key);
+
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.caption;
+
+    return Chip(
+      key: ObjectKey(unit),
+      labelPadding: EdgeInsets.symmetric(horizontal: 4.0),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          CircleAvatar(
+            child: Icon(
+              toUnitIconData(UnitType.other), // TODO: Show correct icon
+              size: 14.0,
+              color: Colors.white,
+            ),
+            maxRadius: 10.0,
+//            backgroundColor: toUnitStatusColor(unit.status), // TODO: Consider remove
+          ),
+          SizedBox(width: 6.0),
+          Text(unit, style: style),
+        ],
+      ),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+}
+
 class UnitWidget extends StatelessWidget {
   UnitWidget({
     Key key,

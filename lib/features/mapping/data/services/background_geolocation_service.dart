@@ -77,7 +77,7 @@ class BackgroundGeolocationService implements LocationService {
     return _status;
   }
 
-  PermissionStatus _status = PermissionStatus.undetermined;
+  PermissionStatus _status = PermissionStatus.denied;
 
   StreamController<Position> _positionController = StreamController.broadcast();
   StreamController<LocationEvent> _eventController = StreamController.broadcast();

@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
+import 'package:SarSys/core/extensions.dart';
 
 class OperationConfigScreen extends StatefulWidget {
   @override
@@ -16,9 +19,12 @@ class _OperationConfigScreenState extends State<OperationConfigScreen> {
 
   AppConfigBloc _bloc;
 
+  List<String> _templates;
+
   @override
   void initState() {
     super.initState();
+    _templates ??= context.read<AppConfigBloc>().config.units;
   }
 
   @override
@@ -46,78 +52,59 @@ class _OperationConfigScreenState extends State<OperationConfigScreen> {
         child: ListView(
           shrinkWrap: true,
           children: <Widget>[
-            _buildUnitsField(),
+            _buildUnitsTemplateField(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildUnitsField() {
-    final style = Theme.of(context).textTheme.caption;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        ListTile(
-          title: Text(
-            "Standard enheter",
-            style: Theme.of(context).textTheme.bodyText2,
+  Widget _buildUnitsTemplateField() {
+    final enabled = true; //hasAvailableDevices;
+    final types = List.from(UnitType.values)
+      ..sort(
+        (a, b) => enumName(a).compareTo(enumName(b)),
+      );
+    return buildChipsField<String>(
+        name: 'units',
+        enabled: enabled,
+        labelText: 'Enheter',
+        selectorLabel: 'Enheter',
+        hintText: 'Søk etter enheter',
+        selectorTitle: 'Velg enheter',
+        emptyText: 'Fant ingen enheter',
+        helperText: 'Listen kan endres i Hendelsesopppsett',
+        builder: (context, unit) => UnitTemplateChip(unit: unit),
+        categories: [
+          DropdownMenuItem<String>(
+            value: 'alle',
+            child: Text('Alle'),
           ),
-          subtitle: Text(
-            "Nye aksjoner får disse lagt til automatisk",
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: FormBuilderChipsInput(
-            name: 'units',
-            maxChips: 15,
-            initialValue: _bloc.config.units,
-            decoration: InputDecoration(
-              labelText: "Opprett enheter",
-              hintText: "Søk etter enheter",
-              filled: true,
-              contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
+          ...types.map(
+            (type) => DropdownMenuItem<String>(
+              value: enumName(translateUnitType(type)),
+              child: Text(translateUnitType(type).capitalize()),
             ),
-            findSuggestions: (String query) async {
-              if (query.length != 0) {
-                var lowercaseQuery = query.toLowerCase();
-                final templates = asUnitTemplates(query, 15);
-                return templates
-                    .where((template) => template.toLowerCase().contains(lowercaseQuery))
-                    .toList(growable: false);
-              } else {
-                return const <String>[];
-              }
-            },
-            chipBuilder: (context, state, template) {
-              return InputChip(
-                key: ObjectKey(template),
-                label: Text(template, style: style),
-                onDeleted: () => state.deleteChip(template),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              );
-            },
-            suggestionBuilder: (context, state, template) {
-              return ListTile(
-                key: ObjectKey(template),
-                title: Text(template),
-                onTap: () => state.selectSuggestion(template),
-              );
-            },
-            onChanged: (value) => setState(() {
-              _bloc.updateWith(units: List<String>.from(value));
-            }),
-            // BUG: These are required, no default values are given.
-            obscureText: false,
-            autocorrect: false,
-            inputType: TextInputType.text,
-            keyboardAppearance: Brightness.dark,
-            inputAction: TextInputAction.done,
-            textCapitalization: TextCapitalization.none,
           ),
-        )
-      ],
-    );
+        ],
+        category: 'alle',
+        options: _findUnits,
+        items: () => _templates,
+        onChanged: (templates) => updateUnitsTemplate(templates));
+  }
+
+  void updateUnitsTemplate(List<String> templates) {
+    _templates.clear();
+    _templates.addAll(templates);
+    _bloc.updateWith(units: List<String>.from(templates));
+  }
+
+  List<String> _findUnits(String type, String query) {
+    var lowercaseQuery = query.toLowerCase();
+    final templates = asUnitTemplates(query, 15);
+    return templates
+        .where((template) => (template.toLowerCase().contains(type.toLowerCase())) || type.contains('alle'))
+        .where((template) => template.toLowerCase().contains(lowercaseQuery))
+        .toList(growable: false);
   }
 }
