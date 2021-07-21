@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:meta/meta.dart';
 

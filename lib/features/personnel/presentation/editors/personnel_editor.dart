@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/domain/entities/FleetMap.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';

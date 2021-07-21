@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'dart:convert';
 
 import 'package:SarSys/features/settings/data/models/app_config_model.dart';

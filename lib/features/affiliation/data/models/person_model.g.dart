@@ -1,3 +1,5 @@
+// @dart=2.11
+
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'person_model.dart';

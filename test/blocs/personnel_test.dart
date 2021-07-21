@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:uuid/uuid.dart';
 import 'package:async/async.dart';
 import 'package:mockito/mockito.dart';

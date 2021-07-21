@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
 import 'package:SarSys/core/domain/models/core.dart';

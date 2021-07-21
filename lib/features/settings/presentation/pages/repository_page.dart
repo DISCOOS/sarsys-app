@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/domain/models/core.dart';

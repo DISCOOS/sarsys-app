@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';

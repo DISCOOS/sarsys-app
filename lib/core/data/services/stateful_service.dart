@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:meta/meta.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';

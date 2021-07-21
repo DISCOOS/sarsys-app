@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/domain/models/BaseMap.dart';
 import 'package:equatable/equatable.dart';

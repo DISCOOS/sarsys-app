@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';

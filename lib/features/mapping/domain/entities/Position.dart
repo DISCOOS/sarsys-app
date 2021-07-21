@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';

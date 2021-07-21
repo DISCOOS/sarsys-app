@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/presentation/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';

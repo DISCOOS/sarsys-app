@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/core/domain/models/AggregateRef.dart';

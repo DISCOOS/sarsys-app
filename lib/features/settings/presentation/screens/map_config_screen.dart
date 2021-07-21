@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'dart:io';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';

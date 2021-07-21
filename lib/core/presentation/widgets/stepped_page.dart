@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'dart:math';
 
 import 'package:SarSys/core/presentation/keyboard_avoider.dart';

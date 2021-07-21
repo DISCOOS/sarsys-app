@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:equatable/equatable.dart';

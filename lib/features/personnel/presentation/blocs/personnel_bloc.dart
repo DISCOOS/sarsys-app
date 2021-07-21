@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'dart:async';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';

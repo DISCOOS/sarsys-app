@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';

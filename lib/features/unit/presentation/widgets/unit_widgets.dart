@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/tracking/presentation/widgets/coordinate_widget.dart';

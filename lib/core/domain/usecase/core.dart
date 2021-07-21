@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';

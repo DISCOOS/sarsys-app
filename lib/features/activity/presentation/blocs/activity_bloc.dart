@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';

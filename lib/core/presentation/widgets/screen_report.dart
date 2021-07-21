@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:catcher/mode/page_report_mode.dart';

@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'dart:collection';
 
 import 'package:SarSys/core/domain/models/core.dart';

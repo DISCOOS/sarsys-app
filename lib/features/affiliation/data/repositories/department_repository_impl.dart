@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'dart:async';
 
 import 'package:SarSys/features/affiliation/data/services/department_service.dart';

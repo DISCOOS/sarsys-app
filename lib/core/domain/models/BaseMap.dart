@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:flutter/foundation.dart';

@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:flutter/material.dart';

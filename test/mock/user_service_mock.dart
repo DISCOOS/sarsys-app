@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';

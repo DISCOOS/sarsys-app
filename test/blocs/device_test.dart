@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:flutter/foundation.dart';

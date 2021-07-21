@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'dart:io';
 import 'dart:convert';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';

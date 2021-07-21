@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:flutter/widgets.dart';

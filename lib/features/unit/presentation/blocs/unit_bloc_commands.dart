@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';

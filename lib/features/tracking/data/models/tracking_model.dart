@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_source_model.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_track_model.dart';

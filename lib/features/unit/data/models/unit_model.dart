@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';

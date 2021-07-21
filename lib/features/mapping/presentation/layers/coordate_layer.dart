@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/mapping/presentation/widgets/coordinate_panel.dart';
 import 'package:SarSys/features/mapping/presentation/painters.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';

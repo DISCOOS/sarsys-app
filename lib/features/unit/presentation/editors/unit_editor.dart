@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/editors/personnel_editor.dart';
 import 'package:flutter/material.dart';

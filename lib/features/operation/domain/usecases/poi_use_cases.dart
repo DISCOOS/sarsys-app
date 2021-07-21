@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 

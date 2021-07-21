@@ -1,3 +1,5 @@
+// @dart=2.11
+
 extension StringX on String {
   String capitalize() {
     return "${this[0].toUpperCase()}${this.substring(1)}";

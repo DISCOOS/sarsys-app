@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/data/models/message_model.dart';
 import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';

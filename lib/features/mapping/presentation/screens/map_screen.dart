@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'dart:async';
 
 import 'package:SarSys/features/user/domain/entities/User.dart';

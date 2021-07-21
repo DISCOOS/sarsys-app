@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/mapping/data/services/background_geolocation_service.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';

@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:json_annotation/json_annotation.dart';
 import 'package:random_string/random_string.dart';
 import 'package:meta/meta.dart';

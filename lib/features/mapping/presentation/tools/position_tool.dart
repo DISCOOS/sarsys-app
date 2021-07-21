@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/mapping/presentation/layers/poi_layer.dart';
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';

@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:equatable/equatable.dart';
 import 'package:json_patch/json_patch.dart';
 import 'package:collection/collection.dart';

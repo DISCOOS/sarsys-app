@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/domain/models/Address.dart';

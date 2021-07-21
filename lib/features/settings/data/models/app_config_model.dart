@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
