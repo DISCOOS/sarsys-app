@@ -23,7 +23,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:xml/xml.dart' as xml;
 
-import 'package:geocoder/geocoder.dart';
+import 'package:flutter_geocoder/geocoder.dart';
 import 'package:xml/xml.dart';
 
 abstract class GeocodeService extends Service {
