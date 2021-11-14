@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -11,12 +11,12 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 
 abstract class UnitState<T> extends PushableBlocEvent<T> {
   UnitState(
-    Object data, {
-    StackTrace stackTrace,
+    Object? data, {
+    StackTrace? stackTrace,
     props = const [],
     bool isRemote = false,
   }) : super(
-          data,
+          data as T,
           isRemote: isRemote,
           stackTrace: stackTrace,
         );
@@ -43,7 +43,7 @@ class UnitsEmpty extends UnitState<Null> {
 
 class UnitsLoaded extends UnitState<List<String>> {
   UnitsLoaded(
-    List<String> data, {
+    List<String?> data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -52,10 +52,10 @@ class UnitsLoaded extends UnitState<List<String>> {
 }
 
 class UnitCreated extends UnitState<Unit> {
-  final Position position;
-  final List<Device> devices;
+  final Position? position;
+  final List<Device>? devices;
   UnitCreated(
-    Unit data, {
+    Unit? data, {
     this.position,
     this.devices,
     bool isRemote = false,
@@ -75,15 +75,15 @@ class UnitCreated extends UnitState<Unit> {
 }
 
 class UnitUpdated extends UnitState<Unit> {
-  final Unit previous;
+  final Unit? previous;
   UnitUpdated(
-    Unit data,
+    Unit? data,
     this.previous, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote, props: [previous]);
 
   @override
-  bool isStatusChanged() => data.status != previous.status;
+  bool isStatusChanged() => data!.status != previous!.status;
 
   @override
   String toString() => '$runtimeType {unit: $data, previous: $previous, isRemote: $isRemote}';
@@ -91,7 +91,7 @@ class UnitUpdated extends UnitState<Unit> {
 
 class UnitDeleted extends UnitState<Unit> {
   UnitDeleted(
-    Unit data, {
+    Unit? data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -101,7 +101,7 @@ class UnitDeleted extends UnitState<Unit> {
 
 class UnitsUnloaded extends UnitState<List<Unit>> {
   UnitsUnloaded(
-    List<Unit> units, {
+    List<Unit?> units, {
     bool isRemote = false,
   }) : super(units, isRemote: isRemote);
 
@@ -116,7 +116,7 @@ class UnitsUnloaded extends UnitState<List<Unit>> {
 class UnitBlocError extends UnitState<Object> {
   UnitBlocError(
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) : super(error, stackTrace: stackTrace);
 
   @override
@@ -131,8 +131,8 @@ class UnitBlocException implements Exception {
   UnitBlocException(this.error, this.state, {this.command, this.stackTrace});
   final Object error;
   final UnitState state;
-  final StackTrace stackTrace;
-  final Object command;
+  final StackTrace? stackTrace;
+  final Object? command;
 
   @override
   String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';

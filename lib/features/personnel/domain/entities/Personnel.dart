@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -13,32 +13,34 @@ import 'package:SarSys/core/utils/data.dart';
 
 abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate {
   Personnel({
-    @required String uuid,
+    required String uuid,
     this.unit,
     this.status,
     this.function,
     this.operation,
-    this.affiliation,
-    AggregateRef<Tracking> tracking,
+    required this.affiliation,
+    required AggregateRef<Tracking> tracking,
   }) : super(uuid, tracking, fields: [
           unit,
           status,
           function,
           affiliation,
-        ]);
+        ]) {
+    assert(affiliation.person !=null, "Person can not be null");
+  }
 
-  String get fname => person?.fname;
-  String get lname => person?.lname;
-  String get phone => person?.phone;
-  String get email => person?.email;
-  String get userId => person?.userId;
-  Person get person => affiliation.person;
+  String? get fname => person.fname;
+  String? get lname => person.lname;
+  String? get phone => person.phone;
+  String? get email => person.email;
+  String? get userId => person.userId;
+  Person get person => affiliation.person!;
 
-  final PersonnelStatus status;
+  final PersonnelStatus? status;
   final Affiliation affiliation;
-  final AggregateRef<Unit> unit;
-  final OperationalFunctionType function;
-  final AggregateRef<Operation> operation;
+  final AggregateRef<Unit>? unit;
+  final OperationalFunctionType? function;
+  final AggregateRef<Operation>? operation;
 
   String get name => emptyAsNull("${fname ?? ''} ${lname ?? ''}".trim()) ?? 'Mannskap';
   String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
@@ -63,19 +65,19 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
   Personnel mergeWith(Map<String, dynamic> json);
 
   Personnel copyWith({
-    String uuid,
-    String fname,
-    String lname,
-    String phone,
-    String email,
-    String userId,
-    bool temporary,
-    PersonnelStatus status,
-    AggregateRef<Unit> unit,
+    String? uuid,
+    String? fname,
+    String? lname,
+    String? phone,
+    String? email,
+    String? userId,
+    bool? temporary,
+    PersonnelStatus? status,
+    AggregateRef<Unit>? unit,
     Affiliation affiliation,
-    OperationalFunctionType function,
-    AggregateRef<Tracking> tracking,
-    AggregateRef<Operation> operation,
+    OperationalFunctionType? function,
+    AggregateRef<Tracking>? tracking,
+    AggregateRef<Operation>? operation,
   });
 
   Personnel withPerson(Person person, {bool keep = true});
@@ -83,7 +85,7 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
 
 enum PersonnelStatus { alerted, enroute, onscene, leaving, retired }
 
-String translatePersonnelStatus(PersonnelStatus status) {
+String translatePersonnelStatus(PersonnelStatus? status) {
   switch (status) {
     case PersonnelStatus.alerted:
       return "Varslet";
@@ -102,7 +104,7 @@ String translatePersonnelStatus(PersonnelStatus status) {
 
 enum OperationalFunctionType { personnel, unit_leader, commander }
 
-String translateOperationalFunction(OperationalFunctionType function) {
+String translateOperationalFunction(OperationalFunctionType? function) {
   switch (function ?? OperationalFunctionType.personnel) {
     case OperationalFunctionType.commander:
       return "Aksjonsleder";
@@ -115,7 +117,7 @@ String translateOperationalFunction(OperationalFunctionType function) {
   }
 }
 
-IconData toPersonnelStatusIcon(PersonnelStatus status) {
+IconData toPersonnelStatusIcon(PersonnelStatus? status) {
   switch (status) {
     case PersonnelStatus.alerted:
       return Icons.warning;

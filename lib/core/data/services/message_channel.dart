@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -49,24 +49,24 @@ class MessageChannel extends Service {
     closeApiUnreachable: 'closeApiUnreachable',
   };
 
-  IOWebSocketChannel _channel;
+  IOWebSocketChannel? _channel;
   List<StreamSubscription> _subscriptions = [];
   MessageChannelState _stats = MessageChannelState();
   StreamController<MessageChannelState> _statsController = StreamController.broadcast();
 
   /// Get web-service url
-  String get url => _url;
-  String _url;
+  String? get url => _url;
+  String? _url;
 
   /// Get current app id
-  String get appId => _appId;
-  String _appId;
+  String? get appId => _appId;
+  String? _appId;
 
-  SubscriptionModel get config => _config;
-  SubscriptionModel _config;
+  SubscriptionModel? get config => _config;
+  SubscriptionModel? _config;
 
   /// Get current [AuthToken]
-  AuthToken get token => _users.token;
+  AuthToken? get token => _users.token;
 
   /// Check if [AuthToken] is valid
   bool get isTokenValid => _users.isTokenValid;
@@ -137,7 +137,7 @@ class MessageChannel extends Service {
     try {
       final data = json.decode(message);
       if (data is Map) {
-        final type = data.elementAt<String>('type').toLowerCase();
+        final type = data.elementAt<String>('type')!.toLowerCase();
         debugPrint('MessageChannel >> received $data');
         switch (type) {
           case 'changes':
@@ -178,7 +178,7 @@ class MessageChannel extends Service {
 
   void _onChanges(Map changes) {
     try {
-      for (var state in changes.listAt<Map>('entries', defaultList: <Map>[])) {
+      for (var state in changes.listAt<Map>('entries', defaultList: <Map>[])!) {
         final type = state.elementAt('event/type');
         final event = state.mapAt<String, dynamic>('event');
         _toHandlers(type).forEach((handler) {
@@ -191,7 +191,7 @@ class MessageChannel extends Service {
   }
 
   /// Get all handlers for given type
-  Iterable<Function> _toHandlers(String type) => _routes[type] ?? [];
+  Iterable<Function> _toHandlers(String? type) => _routes[type!] ?? [];
 
   void _onError(Object error, StackTrace stackTrace) {
     if (_users.isOffline) {
@@ -208,8 +208,8 @@ class MessageChannel extends Service {
       debugPrint('MessageChannel >> Error: $error');
       debugPrint('MessageChannel >> Stacktrace: $stackTrace');
       _close(
-        reason: _channel.closeReason ?? '$error',
-        code: _channel.closeCode ?? WebSocketStatus.abnormalClosure,
+        reason: _channel!.closeReason ?? '$error',
+        code: _channel!.closeCode ?? WebSocketStatus.abnormalClosure,
       );
     }
   }
@@ -218,16 +218,16 @@ class MessageChannel extends Service {
     debugPrint('MessageChannel >> Subscription is DONE');
     if (!_isClosed) {
       _close(
-        reason: _channel.closeReason ?? 'Done event received',
-        code: _channel.closeCode ?? WebSocketStatus.goingAway,
+        reason: _channel!.closeReason ?? 'Done event received',
+        code: _channel!.closeCode ?? WebSocketStatus.goingAway,
       );
     }
   }
 
   void open({
-    @required String url,
-    @required String appId,
-    SubscriptionModel config,
+    required String url,
+    required String? appId,
+    SubscriptionModel? config,
   }) {
     _assertState();
     _close(
@@ -244,7 +244,7 @@ class MessageChannel extends Service {
       url,
       headers: {
         'x-app-id': '$appId',
-        'Authorization': 'Bearer ${token.accessToken}',
+        'Authorization': 'Bearer ${token!.accessToken}',
       },
       pingInterval: Duration(seconds: 60),
     );
@@ -257,7 +257,7 @@ class MessageChannel extends Service {
 
     debugPrint('MessageChannel >> Opened message channel');
 
-    _sendConfig(_config);
+    _sendConfig(_config!);
   }
 
   bool configure(SubscriptionModel config) {
@@ -271,7 +271,7 @@ class MessageChannel extends Service {
 
   void _sendConfig(SubscriptionModel config) {
     try {
-      _channel.sink.add(
+      _channel!.sink.add(
         json.encode({
           'uuid': Uuid().v4(),
           'type': 'Subscribe',
@@ -290,7 +290,7 @@ class MessageChannel extends Service {
   }
 
   void _subscribeToMessages() {
-    return _subscriptions.add(_channel.stream.listen(
+    return _subscriptions.add(_channel!.stream.listen(
       _onMessage,
       onDone: _onDone,
       onError: _onError,
@@ -298,12 +298,12 @@ class MessageChannel extends Service {
   }
 
   void _subscribeToConnectivityChanges() {
-    return _subscriptions.add(_users.connectivity.changes.listen(
+    return _subscriptions.add(_users.connectivity!.changes.listen(
       _onConnectivityChange,
     ));
   }
 
-  int _lastCode;
+  int? _lastCode;
   bool _isClosed = false;
   bool get isClosedByApp => _lastCode == closedByApp;
 
@@ -315,7 +315,7 @@ class MessageChannel extends Service {
     );
   }
 
-  void _close({int code, String reason}) {
+  void _close({int? code, String? reason}) {
     if (_channel != null) {
       _isClosed = true;
       _lastCode = code;
@@ -327,7 +327,7 @@ class MessageChannel extends Service {
       _channel = null;
       _stats = _stats.update(
         code: code,
-        reason: emptyAsNull(reason) ?? 'None',
+        reason: emptyAsNull(reason!) ?? 'None',
       );
       _statsController.add(_stats);
       debugPrint('MessageChannel >> Closed message channel');
@@ -371,7 +371,7 @@ class MessageChannel extends Service {
           }
           if (isTokenValid) {
             open(
-              url: _url,
+              url: _url!,
               appId: _appId,
               config: _config,
             );
@@ -397,9 +397,9 @@ class MessageChannel extends Service {
 class MessageChannelState {
   MessageChannelState({
     int opened = 0,
-    DateTime started,
+    DateTime? started,
     int inboundCount = 0,
-    Map<int, Map<String, int>> codes = const {},
+    Map<int, Map<String?, int>> codes = const {},
   })  : _codes = codes ?? {},
         _opened = opened ?? 0,
         _inboundCount = inboundCount ?? 0,
@@ -408,7 +408,7 @@ class MessageChannelState {
   final int _opened;
   final int _inboundCount;
   final DateTime _fromDate;
-  final Map<int, Map<String, int>> _codes;
+  final Map<int, Map<String?, int>> _codes;
 
   int get opened => _opened;
 
@@ -419,16 +419,16 @@ class MessageChannelState {
   double get inboundRate => _inboundCount / min(DateTime.now().difference(_fromDate).inSeconds, 1);
 
   MessageChannelState update({
-    int code,
-    int inbound,
-    String reason,
+    int? code,
+    int? inbound,
+    String? reason,
     bool opened = false,
   }) {
     assert(
       (code == null && reason == null) || (code != null && reason != null),
       "arguments 'code' and 'reason' must both be null or set",
     );
-    final codes = Map<int, Map<String, int>>.from(_codes ?? {});
+    final Map<int, Map<String?, int>> codes = Map<int, Map<String, int>>.from(_codes ?? {});
     if (code != null) {
       codes.update(
         code,

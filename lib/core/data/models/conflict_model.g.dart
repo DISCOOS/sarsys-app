@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'conflict_model.dart';
@@ -11,22 +9,18 @@ part of 'conflict_model.dart';
 ConflictModel _$ConflictModelFromJson(Map json) {
   return ConflictModel(
     type: _$enumDecodeNullable(_$ConflictTypeEnumMap, json['type']),
-    code: json['code'] as String,
-    base: (json['base'] as Map)?.map(
+    code: json['code'] as String?,
+    base: (json['base'] as Map?)?.map(
       (k, e) => MapEntry(k as String, e),
     ),
-    mine: (json['mine'] as List)
-        ?.map((e) => (e as Map)?.map(
-              (k, e) => MapEntry(k as String, e),
-            ))
-        ?.toList(),
-    yours: (json['yours'] as List)
-        ?.map((e) => (e as Map)?.map(
-              (k, e) => MapEntry(k as String, e),
-            ))
-        ?.toList(),
-    error: json['error'] as String,
-    paths: (json['paths'] as List)?.map((e) => e as String)?.toList(),
+    mine: (json['mine'] as List<dynamic>?)
+        ?.map((e) => Map<String, dynamic>.from(e as Map))
+        .toList(),
+    yours: (json['yours'] as List<dynamic>?)
+        ?.map((e) => Map<String, dynamic>.from(e as Map))
+        .toList(),
+    error: json['error'] as String?,
+    paths: (json['paths'] as List<dynamic>?)?.map((e) => e as String?).toList(),
   );
 }
 
@@ -49,36 +43,41 @@ Map<String, dynamic> _$ConflictModelToJson(ConflictModel instance) {
   return val;
 }
 
-T _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
-T _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
+K? _$enumDecodeNullable<K, V>(
+  Map<K, V> enumValues,
   dynamic source, {
-  T unknownValue,
+  K? unknownValue,
 }) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
 }
 
 const _$ConflictTypeEnumMap = {

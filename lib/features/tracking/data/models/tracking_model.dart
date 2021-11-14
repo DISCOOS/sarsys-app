@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_source_model.dart';
@@ -15,31 +15,31 @@ part 'tracking_model.g.dart';
 class TrackingModel extends Tracking {
   TrackingModel({
     /// Tracking id
-    @required String uuid,
+    required String uuid,
 
     /// Tracking status
-    @required TrackingStatus status,
+    required TrackingStatus? status,
 
     /// Last known position
-    Position position,
+    Position? position,
 
     /// Total distance in meter
-    double distance,
+    double? distance,
 
     /// Average speed in m/s
-    double speed,
+    double? speed,
 
     /// Total effort in milliseconds
-    Duration effort,
+    Duration? effort,
 
     /// Map from track id to list of positions
-    List<TrackingTrackModel> tracks = const [],
+    List<TrackingTrackModel>? tracks = const [],
 
     /// List of tracked sources
-    List<TrackingSourceModel> sources = const [],
+    List<TrackingSourceModel>? sources = const [],
 
     /// List of historical positions aggregated from temporally and spatially related positions in tracks
-    List<Position> history = const [],
+    List<Position?>? history = const [],
   })  : tracks = tracks ?? [],
         sources = sources ?? [],
         super(
@@ -68,14 +68,14 @@ class TrackingModel extends Tracking {
 
   /// Clone with given devices and state
   Tracking copyWith({
-    double speed,
-    double distance,
-    Duration effort,
-    Position position,
-    List<TrackingSource> sources,
-    List<Position> history,
-    TrackingStatus status,
-    List<TrackingTrack> tracks,
+    double? speed,
+    double? distance,
+    Duration? effort,
+    Position? position,
+    List<TrackingSource?>? sources,
+    List<Position?>? history,
+    TrackingStatus? status,
+    List<TrackingTrack>? tracks,
   }) {
     return TrackingModel(
       uuid: this.uuid,

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -9,7 +9,7 @@ import 'package:SarSys/features/device/domain/entities/Device.dart';
 abstract class DeviceState<T> extends PushableBlocEvent<T> {
   DeviceState(
     T data, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
     props = const [],
     bool isRemote = false,
   }) : super(
@@ -41,9 +41,9 @@ class DevicesEmpty extends DeviceState<Null> {
   String toString() => '$runtimeType';
 }
 
-class DevicesLoaded extends DeviceState<List<String>> {
+class DevicesLoaded extends DeviceState<List<String?>> {
   DevicesLoaded(
-    List<String> data, {
+    List<String?> data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -74,8 +74,8 @@ class DeviceUpdated extends DeviceState<Device> {
   final Device previous;
 
   bool isChanged() => data != previous;
-  bool isStatusChanged() => data.status != previous?.status;
-  bool isLocationChanged() => data.position != previous?.position;
+  bool isStatusChanged() => data!.status != previous?.status;
+  bool isLocationChanged() => data!.position != previous?.position;
 
   @override
   String toString() => '$runtimeType {device: $data, previous: $previous, isRemote: $isRemote}';
@@ -105,7 +105,7 @@ class DevicesUnloaded extends DeviceState<Iterable<Device>> {
 class DeviceBlocError extends DeviceState<Object> {
   DeviceBlocError(
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) : super(error, stackTrace: stackTrace);
 
   @override
@@ -119,9 +119,9 @@ class DeviceBlocError extends DeviceState<Object> {
 class DeviceBlocException implements Exception {
   DeviceBlocException(this.error, this.state, {this.command, this.stackTrace});
   final Object error;
-  final Object command;
+  final Object? command;
   final DeviceState state;
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
 
   @override
   String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';

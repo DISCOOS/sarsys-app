@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:math';
 
@@ -13,8 +13,8 @@ part 'position_list_model.g.dart';
 @JsonSerializable()
 class PositionListModel extends PositionList {
   PositionListModel({
-    @required String id,
-    @required List<Position> features,
+    required String? id,
+    required List<Position?>? features,
   }) : super(
           id: id,
           features: features,
@@ -27,8 +27,8 @@ class PositionListModel extends PositionList {
   Map<String, dynamic> toJson() => _$PositionListModelToJson(this);
 
   PositionList cloneWith({
-    String id,
-    List<Position> features,
+    String? id,
+    List<Position>? features,
   }) =>
       PositionListModel(
         id: id ?? this.id,
@@ -38,6 +38,6 @@ class PositionListModel extends PositionList {
   /// Truncate to number of points and return new [PositionListModel] instance
   PositionListModel truncate(int count) => PositionListModel(
         id: id,
-        features: features.skip(max(0, features.length - count)).toList(),
+        features: features!.skip(max(0, features!.length - count)).toList(),
       );
 }

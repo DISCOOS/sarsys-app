@@ -1,5 +1,3 @@
-// @dart=2.11
-
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -9,7 +7,7 @@ part 'subscription_event_model.g.dart';
 @JsonSerializable(explicitToJson: true)
 class SubscriptionEventModel extends Equatable {
   const SubscriptionEventModel({
-    @required this.name,
+    required this.name,
     this.statePatches,
     this.changedState,
     this.previousState,
@@ -32,19 +30,19 @@ class SubscriptionEventModel extends Equatable {
   /// Factory constructor for creating a new `SubscriptionEventModel`  instance
   factory SubscriptionEventModel.fromJson(Map<String, dynamic> json) => _$SubscriptionEventModelFromJson(json);
 
-  final String name;
+  final String? name;
 
-  final bool changedState;
+  final bool? changedState;
 
-  final bool statePatches;
+  final bool? statePatches;
 
-  final bool previousState;
+  final bool? previousState;
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$SubscriptionEventModelToJson(this);
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         name,
         changedState,
         statePatches,

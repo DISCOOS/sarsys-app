@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -28,28 +28,28 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
     implements PersonnelRepository {
   PersonnelRepositoryImpl(
     PersonnelService service, {
-    @required this.units,
-    @required this.affiliations,
-    @required ConnectivityService connectivity,
+    required this.units,
+    required this.affiliations,
+    required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
           dependencies: [units, affiliations],
           // Keep person in sync with local copy
-          onGet: (StorageState<Personnel> state) {
+          onGet: (StorageState<Personnel>? state) {
             if (affiliations.isReady) {
-              final value = state.value;
-              final auuid = value.affiliation.uuid;
-              return state.replace(state.value.copyWith(
+              final value = state!.value!;
+              final auuid = value.affiliation!.uuid;
+              return state.replace(state.value!.copyWith(
                   affiliation: affiliations.get(
                 auuid,
               )));
             }
             return state;
           },
-          onPut: (StorageState<Personnel> state, bool isDeleted) {
+          onPut: (StorageState<Personnel?> state, bool isDeleted) {
             if (!isDeleted && affiliations.isReady) {
-              final affiliation = state.value.affiliation;
+              final affiliation = state.value!.affiliation!;
               if (affiliation.isAffiliate) {
                 affiliations.replace(
                   affiliation,
@@ -65,8 +65,8 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   }
 
   /// Get [Operation.uuid]
-  String get ouuid => _ouuid;
-  String _ouuid;
+  String? get ouuid => _ouuid;
+  String? _ouuid;
 
   /// Get [Unit] repository
   final UnitRepository units;
@@ -83,15 +83,15 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
 
   /// Get [Personnel.uuid] from [value]
   @override
-  String toKey(Personnel value) {
-    return value?.uuid;
+  String toKey(Personnel? value) {
+    return value!.uuid!;
   }
 
   /// Create [Personnel] from json
-  Personnel fromJson(Map<String, dynamic> json) => PersonnelModel.fromJson(json);
+  Personnel fromJson(Map<String, dynamic>? json) => PersonnelModel.fromJson(json!);
 
   /// Open repository for given [Incident.uuid]
-  Future<Iterable<Personnel>> open(String ouuid) async {
+  Future<Iterable<Personnel?>> open(String? ouuid) async {
     if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Operation uuid can not be empty or null');
     }
@@ -113,32 +113,32 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
           ? length
           : values
               .where(
-                (personnel) => !exclude.contains(personnel.status),
+                (personnel) => !exclude.contains(personnel!.status),
               )
               .length;
 
   /// Find personnel from user
-  Iterable<Personnel> findUser(
-    String userId, {
-    bool Function(Personnel personnel) where,
+  Iterable<Personnel?> findUser(
+    String? userId, {
+    bool Function(Personnel? personnel)? where,
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       values
-          .where((personnel) => !exclude.contains(personnel.status))
+          .where((personnel) => !exclude.contains(personnel!.status))
           .where((personnel) => where == null || where(personnel))
-          .where((personnel) => personnel.userId == userId);
+          .where((personnel) => personnel!.userId == userId);
 
   /// GET ../personnels
-  Future<List<Personnel>> load(
-    String ouuid, {
-    Completer<Iterable<Personnel>> onRemote,
+  Future<List<Personnel?>> load(
+    String? ouuid, {
+    Completer<Iterable<Personnel>>? onRemote,
   }) async {
     await open(ouuid);
-    return requestQueue.load(
+    return requestQueue!.load(
       () => service.getListFromId(ouuid),
       shouldEvict: true,
       onResult: onRemote,
-    );
+    ) as FutureOr<List<Personnel?>>;
   }
 
   /// Unload all devices for given [ouuid]
@@ -148,15 +148,15 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   }
 
   @override
-  Future<Iterable<Personnel>> onReset({Iterable<Personnel> previous}) =>
-      _ouuid != null ? load(_ouuid) : Future.value(previous);
+  Future<Iterable<Personnel>> onReset({Iterable<Personnel>? previous}) =>
+      _ouuid != null ? load(_ouuid!)! as Future<Iterable<Personnel>> : Future.value(previous!);
 
   @override
   Future<StorageState<Personnel>> onCreate(StorageState<Personnel> state) async {
-    assert(state.value.operation.uuid == _ouuid);
+    assert(state.value!.operation!.uuid == _ouuid);
     final response = await service.create(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
     throw PersonnelServiceException(
       'Failed to create Personnel ${state.value}',
@@ -169,7 +169,7 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   Future<StorageState<Personnel>> onUpdate(StorageState<Personnel> state) async {
     var response = await service.update(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
     throw PersonnelServiceException(
       'Failed to update Personnel ${state.value}',
@@ -180,9 +180,9 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
 
   @override
   Future<StorageState<Personnel>> onDelete(StorageState<Personnel> state) async {
-    var response = await service.delete(state);
+    ServiceResponse<StorageState<Personnel>> response = await service.delete!(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
     throw PersonnelServiceException(
       'Failed to delete Personnel ${state.value}',
@@ -192,61 +192,61 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   }
 
   @override
-  Future<StorageState<Personnel>> onResolve(StorageState<Personnel> state, ServiceResponse response) {
+  Future<StorageState<Personnel>>? onResolve(StorageState<Personnel?> state, ServiceResponse response) {
     return MergePersonnelStrategy(this)(
       state,
-      response.conflict,
-    );
+      response.conflict!,
+    ).then((value) => value as StorageState<Personnel>);
   }
 }
 
-class MergePersonnelStrategy extends StatefulMergeStrategy<String, Personnel, PersonnelService> {
+class MergePersonnelStrategy extends StatefulMergeStrategy<String?, Personnel?, PersonnelService> {
   MergePersonnelStrategy(PersonnelRepository repository) : super(repository);
 
   @override
-  PersonnelRepository get repository => super.repository;
+  PersonnelRepository get repository => super.repository as PersonnelRepository;
   PersonRepository get persons => affiliations.persons;
   AffiliationRepository get affiliations => repository.affiliations;
 
   @override
-  Future<StorageState<Personnel>> onExists(ConflictModel conflict, StorageState<Personnel> state) async {
+  Future<StorageState<Personnel?>?> onExists(ConflictModel conflict, StorageState<Personnel?> state) async {
     switch (conflict.code) {
       case 'duplicate_user_id':
       case 'duplicate_affiliations':
-        if (conflict.mine.isNotEmpty) {
+        if (conflict.mine!.isNotEmpty) {
           // Duplicates was found, reuse first duplicate
           final existing = AffiliationModel.fromJson(
-            conflict.mine.first,
+            conflict.mine!.first,
           );
 
           repository.apply(
-            state.value.copyWith(
+            state.value!.copyWith(
               affiliation: existing,
             ),
           );
 
           // Delete duplicate affiliation
           affiliations.remove(
-            state.value.affiliation,
+            state.value!.affiliation!,
           );
         }
 
         if (conflict.isCode('duplicate_user_id')) {
           // Replace duplicate person with existing person
           repository.apply(
-            state.value.withPerson(
-              PersonModel.fromJson(conflict.base),
+            state.value!.withPerson(
+              PersonModel.fromJson(conflict.base!),
             ),
           );
 
           // Delete duplicate person
           persons.remove(
-            state.value.person,
+            state!.value!.person!,
           );
         }
 
         return repository.getState(
-          repository.toKey(state.value),
+          repository.toKey(state!.value!),
         );
     }
     return super.onExists(conflict, state);

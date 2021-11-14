@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -25,7 +25,7 @@ void main() async {
     expect(added, isTrue, reason: "should add");
     expect(queue.isHead(request.key), isTrue, reason: "should be head");
     expect(queue.contains(request.key), isTrue, reason: "should contain");
-    expect(await request.onResult.future, isNull, reason: "should execute");
+    expect(await request.onResult!.future, isNull, reason: "should execute");
     expect(queue.length, 0, reason: "should be empty");
     expect(queue.isEmpty, isTrue, reason: "should be empty");
     expect(queue.isIdle, isFalse, reason: "should be not idle");
@@ -79,7 +79,7 @@ void main() async {
     );
     requests.forEach(queue.add);
     final first = requests.first;
-    expect(await first.onResult.future, isNull, reason: "should execute");
+    expect(await first.onResult!.future, isNull, reason: "should execute");
 
     // Act
     final removed = queue.clear();
@@ -119,7 +119,7 @@ void main() async {
     requests.forEach(queue.add);
 
     // Wait for first delayed command (index == 1)
-    while (queue.current == null || queue.current.key != '1') {
+    while (queue.current == null || queue.current!.key != '1') {
       await Future.delayed(Duration(milliseconds: 100));
     }
 
@@ -161,12 +161,12 @@ void main() async {
     requests.forEach(queue.add);
 
     // Wait for first delayed command (index == 1)
-    while (queue.current == null || queue.current.key != '1') {
+    while (queue.current == null || queue.current!.key != '1') {
       await Future.delayed(Duration(milliseconds: 100));
     }
 
     // Stop processing commands
-    await queue.stop();
+    queue.stop();
 
     // Assert
     expect(queue.length, 9, reason: "should be 9 left");
@@ -196,8 +196,8 @@ void main() async {
 
     // Wait for first command to be processed before stopping
     final first = requests.first;
-    expect(await first.onResult.future, isNull, reason: "should execute");
-    await queue.stop();
+    expect(await first.onResult!.future, isNull, reason: "should execute");
+    queue.stop();
 
     // Act
     final started = queue.start();

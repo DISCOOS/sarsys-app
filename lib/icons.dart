@@ -34,7 +34,7 @@ class SarSysIcons {
   static const IconData google = const IconData(0xe807, fontFamily: _kFontFam);
 
   static Icon of(
-    String prefix, {
+    String? prefix, {
     double size = 8.0,
     bool withColor = true,
   }) {

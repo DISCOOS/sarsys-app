@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,13 +15,14 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
     with StatefulCatchup<Unit, UnitService>
     implements UnitRepository {
   UnitRepositoryImpl(
     UnitService service, {
-    @required ConnectivityService connectivity,
+    required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
@@ -32,8 +33,8 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
   }
 
   /// Get [Operation.uuid]
-  String get ouuid => _ouuid;
-  String _ouuid;
+  String? get ouuid => _ouuid;
+  String? _ouuid;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with
@@ -45,14 +46,14 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
   /// Get [Unit.uuid] from [value]
   @override
   String toKey(Unit value) {
-    return value?.uuid;
+    return value.uuid;
   }
 
   /// Create [Unit] from json
-  Unit fromJson(Map<String, dynamic> json) => UnitModel.fromJson(json);
+  Unit fromJson(Map<String, dynamic>? json) => UnitModel.fromJson(json!);
 
   /// Open repository for given [Operation.uuid] is open
-  Future<Iterable<Unit>> open(String ouuid) async {
+  Future<Iterable<Unit?>> open(String? ouuid) async {
     if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Operation uuid can not be empty or null');
     }
@@ -68,31 +69,31 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
 
   /// Get [Unit] count
   int count({
-    UnitType type,
+    UnitType? type,
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
       exclude?.isNotEmpty == false
           ? length
           : values
               .where(
-                (unit) => type == null || type == unit.type,
+                (unit) => type == null || type == unit!.type,
               )
               .where(
-                (unit) => !exclude.contains(unit.status),
+                (unit) => !exclude.contains(unit!.status),
               )
               .length;
 
   /// Find unit from personnel
-  Iterable<Unit> findPersonnel(
-    String puuid, {
+  Iterable<Unit?> findPersonnel(
+    String? puuid, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
       values
           .where(
-            (unit) => !exclude.contains(unit.status),
+            (unit) => !exclude.contains(unit!.status),
           )
           .where(
-            (unit) => unit.personnels.any((uuid) => puuid == uuid),
+            (unit) => unit!.personnels.any((uuid) => puuid == uuid),
           );
 
   /// Get next available [Unit.number]
@@ -101,31 +102,31 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
       var prev = 0;
       final numbers = values
           .where(
-            (unit) => UnitStatus.retired != unit.status,
+            (unit) => UnitStatus.retired != unit!.status,
           )
           .where(
-            (unit) => type == unit.type,
+            (unit) => type == unit!.type,
           )
-          .map((unit) => unit.number)
+          .map((unit) => unit!.number)
           .toList();
-      numbers.sort((n1, n2) => n1.compareTo(n2));
-      final candidates = numbers.takeWhile((next) => (next - prev++) == 1).toList();
-      return (candidates.length == 0 ? numbers.length : candidates.last) + 1;
+      numbers.sort((n1, n2) => n1!.compareTo(n2!));
+      final candidates = numbers.takeWhile((next) => (next! - prev++) == 1).toList();
+      return (candidates.length == 0 ? numbers.length : candidates.last)! + 1;
     }
     return count(exclude: [], type: type) + 1;
   }
 
   @override
-  Future<List<Unit>> load(
-    String ouuid, {
-    Completer<Iterable<Unit>> onRemote,
+  Future<List<Unit?>> load(
+    String? ouuid, {
+    Completer<Iterable<Unit>>? onRemote,
   }) async {
     await open(ouuid);
-    return requestQueue.load(
+    return requestQueue!.load(
       () => service.getListFromId(ouuid),
       shouldEvict: true,
       onResult: onRemote,
-    );
+    ) as FutureOr<List<Unit?>>;
   }
 
   /// Unload all devices for given [ouuid]
@@ -135,14 +136,14 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
   }
 
   @override
-  Future<Iterable<Unit>> onReset({Iterable<Unit> previous}) => _ouuid != null ? load(_ouuid) : Future.value(previous);
+  Future<Iterable<Unit>> onReset({Iterable<Unit>? previous}) => _ouuid != null ? load(_ouuid) as Future<Iterable<Unit>> : Future.value(previous);
 
   @override
   Future<StorageState<Unit>> onCreate(StorageState<Unit> state) async {
-    assert(state.value.operation.uuid == _ouuid);
+    assert(state.value!.operation!.uuid == _ouuid);
     var response = await service.create(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
 
     throw UnitServiceException(
@@ -153,7 +154,7 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
   }
 
   @override
-  Future<StorageState<Unit>> onUpdate(StorageState<Unit> state) async {
+  Future<StorageState<Unit>?> onUpdate(StorageState<Unit> state) async {
     var response = await service.update(state);
     if (response.isOK) {
       return response.body;
@@ -167,8 +168,8 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
   }
 
   @override
-  Future<StorageState<Unit>> onDelete(StorageState<Unit> state) async {
-    var response = await service.delete(state);
+  Future<StorageState<Unit>?> onDelete(StorageState<Unit> state) async {
+    ServiceResponse<StorageState<Unit>> response = await service.delete(state);
     if (response.isOK) {
       return response.body;
     }

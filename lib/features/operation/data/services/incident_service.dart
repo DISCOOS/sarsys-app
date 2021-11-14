@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,6 +15,7 @@ import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'incident_service.chopper.dart';
 
 /// Service for consuming the incidents endpoint
@@ -51,7 +52,7 @@ class IncidentService extends StatefulServiceDelegate<Incident, IncidentModel>
   void dispose() {
     _controller.close();
     IncidentMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -78,9 +79,9 @@ enum IncidentMessageType {
 class IncidentMessage extends MessageModel {
   IncidentMessage(Map<String, dynamic> data) : super(data);
 
-  IncidentMessageType get type {
+  IncidentMessageType? get type {
     final type = data.elementAt('type');
-    return IncidentMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return IncidentMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -89,7 +90,7 @@ abstract class IncidentServiceImpl extends StatefulService<Incident, IncidentMod
   IncidentServiceImpl()
       : super(
           decoder: (json) => IncidentModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<IncidentModel>(value, remove: const [
+          reducer: (value) => JsonUtils.toJson<IncidentModel?>(value, remove: const [
             'clues',
             'subjects',
             'messages',
@@ -97,7 +98,7 @@ abstract class IncidentServiceImpl extends StatefulService<Incident, IncidentMod
             'transitions',
           ]),
         );
-  static IncidentServiceImpl newInstance([ChopperClient client]) => _$IncidentServiceImpl(client);
+  static IncidentServiceImpl newInstance([ChopperClient? client]) => _$IncidentServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Incident> state) => create(
@@ -107,7 +108,7 @@ abstract class IncidentServiceImpl extends StatefulService<Incident, IncidentMod
 
   @Post()
   Future<Response<String>> create(
-    @Path() String uuid,
+    @Path() String? uuid,
     @Body() Incident body,
   );
 
@@ -119,26 +120,26 @@ abstract class IncidentServiceImpl extends StatefulService<Incident, IncidentMod
 
   @Patch(path: '{uuid}')
   Future<Response<StorageState<Incident>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Incident body,
   );
 
   @override
   Future<Response<StorageState<Incident>>> onDelete(StorageState<Incident> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Incident>>);
 
   @Delete(path: '{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
-  Future<Response<PagedList<StorageState<Incident>>>> onGetPage(int offset, int limit, List<String> options) =>
+  Future<Response<PagedList<StorageState<Incident>>>> onGetPage(int? offset, int? limit, List<String> options) =>
       fetch(offset, limit);
 
   @Get()
   Future<Response<PagedList<StorageState<Incident>>>> fetch(
-    @Query('offset') int offset,
-    @Query('limit') int limit,
+    @Query('offset') int? offset,
+    @Query('limit') int? limit,
   );
 }

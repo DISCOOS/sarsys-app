@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -13,13 +13,13 @@ part 'person_model.g.dart';
 @JsonSerializable()
 class PersonModel extends Person {
   PersonModel({
-    @required String uuid,
-    String fname,
-    String lname,
-    String phone,
-    String email,
-    String userId,
-    bool temporary,
+    required String uuid,
+    String? fname,
+    String? lname,
+    String? phone,
+    String? email,
+    String? userId,
+    bool? temporary,
   }) : super(
           uuid: uuid,
           fname: fname,
@@ -58,13 +58,13 @@ class PersonModel extends Person {
 
   @override
   Person copyWith({
-    String uuid,
-    String fname,
-    String lname,
-    String phone,
-    String email,
-    String userId,
-    bool temporary,
+    String? uuid,
+    String? fname,
+    String? lname,
+    String? phone,
+    String? email,
+    String? userId,
+    bool? temporary,
   }) =>
       PersonModel(
         uuid: uuid ?? this.uuid,
@@ -77,7 +77,7 @@ class PersonModel extends Person {
       );
 
   @override
-  AggregateRef<Person> toRef() => uuid != null ? AggregateRef.fromType<PersonModel>(uuid) : null;
+  AggregateRef<Person>? toRef() => uuid != null ? AggregateRef.fromType<PersonModel>(uuid) : null;
 }
 
 enum PersonConflictCode { duplicate_user_id }

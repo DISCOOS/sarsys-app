@@ -1,5 +1,3 @@
-// @dart=2.11
-
 import 'dart:async';
 import 'dart:io';
 
@@ -29,18 +27,18 @@ import 'stateful_request_queue.dart';
 /// should cache all changes locally before
 /// attempting to [commit] them to a backend API.
 ///
-abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulServiceDelegate<V, V>>
-    extends Repository<K, V> {
+abstract class StatefulRepository<K, V extends JsonObject?, S extends StatefulServiceDelegate<V, V>>
+    extends Repository<K, V?> {
   StatefulRepository({
-    @required this.service,
-    @required this.connectivity,
+    required this.service,
+    required this.connectivity,
     this.dependencies = const [],
-    StorageState<V> Function(StorageState<V> state) onGet,
-    void Function(StorageState<V> state, bool isDeleted) onPut,
+    StorageState<V>? Function(StorageState<V>? state)? onGet,
+    void Function(StorageState<V> state, bool isDeleted)? onPut,
   })  : _onGet = onGet,
         _onPut = onPut {
     _requestQueue = StatefulRequestQueue(
-      this,
+      this as StatefulRepository<K, Never, Never>,
       connectivity,
     );
   }
@@ -51,15 +49,15 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
 
   final S service;
   final ConnectivityService connectivity;
-  final Iterable<StatefulRepository> dependencies;
-  final StorageState<V> Function(StorageState<V> state) _onGet;
-  final void Function(StorageState<V> state, bool isDeleted) _onPut;
+  final Iterable<StatefulRepository?> dependencies;
+  final StorageState<V>? Function(StorageState<V>? state)? _onGet;
+  final void Function(StorageState<V> state, bool isDeleted)? _onPut;
   final StreamController<bool> _onReady = StreamController.broadcast();
-  final StreamController<StorageTransition<V>> _onTransition = StreamController.broadcast();
+  final StreamController<StorageTransition<V?>?> _onTransition = StreamController.broadcast();
 
   /// Box request queue instance
-  StatefulRequestQueue<K, V, S> get requestQueue => _requestQueue;
-  StatefulRequestQueue<K, V, S> _requestQueue;
+  StatefulRequestQueue<K, V, S>? get requestQueue => _requestQueue;
+  StatefulRequestQueue<K, V, S>? _requestQueue;
 
   /// Get aggregate type
   Type get aggregateType => typeOf<V>();
@@ -79,7 +77,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   Future<bool> get onNotReady => !isReady ? Future.value(false) : onReadyChanged.where((state) => !state).first;
 
   /// Get stream of state changes
-  Stream<StorageTransition<V>> get onChanged => _onTransition.stream;
+  Stream<StorageTransition<V?>?> get onChanged => _onTransition.stream;
 
   /// Check if repository is empty
   ///
@@ -89,81 +87,81 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// Check if repository is empty.
   ///
   /// If [isReady] is [true], then [isEmpty] is always [true]
-  bool get isEmpty => !isReady || _box.isEmpty;
+  bool get isEmpty => !isReady || _box!.isEmpty;
 
   /// Get value from [key]
-  V operator [](K key) => get(key);
+  V? operator [](K? key) => get(key);
 
   /// Get number of states
-  int get length => isReady ? _box.length : 0;
+  int get length => isReady ? _box!.length : 0;
 
   /// Check if repository is online
-  bool get isOnline => connectivity.isOnline;
+  bool get isOnline => connectivity!.isOnline;
 
   /// Check if repository is offline
-  bool get isOffline => connectivity.isOffline;
+  bool get isOffline => connectivity!.isOffline;
 
   /// Find [V]s matching given query
-  Iterable<V> find({bool where(V value)}) => isReady ? values.where(where) : [];
+  Iterable<V> find({required bool where(V value)}) => isReady ? values.where(where) : [];
 
   /// Get value from [key]
-  V get(K key) => getState(key)?.value;
+  V get(K? key) => getState(key)!.value;
 
   /// Get state from [key]
-  StorageState<V> getState(K key) {
-    var state;
+  StorageState<V>? getState(K? key) {
+    StorageState<V>? state;
     if (isReady && _isNotNull(key) && containsKey(key)) {
       state = _box?.get(key);
       if (_onGet != null) {
-        state = _onGet(state);
+        state = _onGet!(state);
       }
     }
     return state;
   }
 
-  bool _isNotNull(K key) => key != null;
+  bool _isNotNull(K? key) => key != null;
 
   /// Get backlog of states pending push to a backend API
-  Iterable<K> get backlog => _requestQueue.backlog;
+  Iterable<K> get backlog => _requestQueue!.backlog;
 
   /// Get [StorageState] with errors
   ///
   /// removed on next successful
   /// [commit] for given state.
-  Iterable<StorageState<V>> get errors => isReady ? _box.values.where((state) => state.isError) : [];
+  Iterable<StorageState<V>> get errors => isReady ? _box!.values.where((state) => state.isError) : [];
 
   /// Get all states as unmodifiable map
-  Map<K, StorageState<V>> get states => Map.unmodifiable(isReady ? _box.toMap() : <K, StorageState<V>>{});
+  Map<K, StorageState<V>> get states => Map.unmodifiable(isReady ? _box!.toMap() : <K, StorageState<V>>{});
 
   /// Local state storage [Box]
-  Box<StorageState<V>> _box;
+  Box<StorageState<V>>? _box;
 
   /// Get all (key,value)-pairs as unmodifiable map
   Map<K, V> get map => Map.unmodifiable(isReady ? Map.fromIterables(keys, values) : <K, V>{});
 
   /// Get all keys as unmodifiable list
-  Iterable<K> get keys => List.unmodifiable(isReady ? _box?.keys : []);
+  Iterable<K> get keys => List.unmodifiable((isReady ? _box?.keys : [])!);
 
   /// Get all values as unmodifiable list
-  Iterable<V> get values => List.unmodifiable(keys.map((key) => getState(key).value));
+  Iterable<V> get values => List.unmodifiable(keys.map((key) => getState(key)!.value));
 
   /// Check if key exists
-  bool containsKey(K key) => isReady ? _box.keys.contains(key) : false;
+  bool containsKey(K? key) => isReady ? _box!.keys.contains(key) : false;
 
   /// Check if value exists
-  bool containsValue(V value) => isReady ? _box.keys.any((key) => getState(toKey(value)).value == value) : false;
+  bool containsValue(V value) => isReady ? _box!.keys.any((key) => getState(toKey(value))!.value == value) : false;
 
   /// Get key [K] from value [V]
   K toKey(V value);
 
   /// Create value of type [V] from json
-  V fromJson(Map<String, dynamic> json);
+  V fromJson(Map<String, dynamic>? json);
 
   /// Get [StateVersion] for key [K]
-  StateVersion getVersion(K key) => containsKey(key) ? getState(key).version : StateVersion.none;
+  StateVersion? getVersion(K key) => containsKey(key) ? getState(key)!.version : StateVersion.none;
 
   /// Get next expected version
-  StateVersion nextVersion(K key) => containsKey(key) ? getState(key).version + 1 : StateVersion.first;
+  StateVersion nextVersion(K key) => containsKey(key) ? getState(key)!.version! + 1 : StateVersion.first;
 
   /// Get references to dependent aggregates
   ///
@@ -188,12 +186,12 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// Reads [states] from storage
   @visibleForOverriding
   Future<Iterable<StorageState<V>>> prepare({
-    String postfix,
+    String? postfix,
     bool force = false,
     bool compact = false,
   }) async {
     if (force || _box == null) {
-      await _requestQueue.cancel();
+      await _requestQueue!.cancel();
 
       if (compact) {
         await _box?.compact();
@@ -215,8 +213,8 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
       _onReady.add(true);
 
       // Build queue from states
-      _requestQueue.build(
-        _box.values,
+      _requestQueue!.build(
+        _box!.values,
       );
     }
     // Get mapped states
@@ -224,7 +222,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   }
 
   @visibleForOverriding
-  Future<Box<StorageState<V>>> openBox(String postfix) async {
+  Future<Box<StorageState<V>>> openBox(String? postfix) async {
     return Hive.openBox(
       toBoxName(
         postfix: postfix,
@@ -253,7 +251,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// return current state to prevent
   /// buildup of waiting futures.
   ///
-  Future<StorageState<V>> onRemote(
+  Future<StorageState<V?>?> onRemote(
     K key, {
     bool fail = false,
     bool require = true,
@@ -266,10 +264,10 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     }
     try {
       final transition = await onChanged
-          .where((transition) => transition.isRemote || transition.isError || transition.isDeleted)
-          .where((transition) => toKey(transition.to.value) == key)
+          .where((transition) => transition!.isRemote || transition.isError || transition.isDeleted)
+          .where((transition) => toKey(transition!.to!.value!) == key)
           .firstWhere(
-            (transition) => transition.isError || transition.to != null || transition.isDeleted,
+            (transition) => transition!.isError || transition.to != null || transition.isDeleted,
             orElse: () => null,
           )
           .timeout(waitFor);
@@ -277,7 +275,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
         final state = transition.to;
         if (fail && transition.isError) {
           throw RepositoryRemoteException(
-            'Failed to change state with error ${state.isConflict ? state.conflict.error : state.error}',
+            'Failed to change state with error ${state!.isConflict ? state.conflict!.error : state.error}',
             this,
             state: state,
             stackTrace: StackTrace.current,
@@ -297,15 +295,15 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// Is called before create, update and delete to
   /// prevent '404 Not Found' returned by service
   /// because dependency was not found in backend.
-  bool shouldWait(K key) => _requestQueue.shouldWait(key);
+  bool shouldWait(K key) => _requestQueue!.shouldWait(key);
 
   /// Get boc
-  static String toBoxName<V>({String postfix, Type runtimeType}) =>
+  static String toBoxName<V>({String? postfix, Type? runtimeType}) =>
       ['${runtimeType ?? typeOf<V>()}', postfix].where((part) => !isEmptyOrNull(part)).join('_');
 
   /// Check if repository is
   /// loading data from [service].
-  bool get isLoading => _requestQueue.isLoading;
+  bool get isLoading => _requestQueue!.isLoading;
 
   /// Wait on future completed when
   /// loading is finished. If offline
@@ -329,12 +327,12 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// loading does not complete with
   /// duration given by [waitFor].
   ///
-  Future<Iterable<V>> onLoadedAsync({
-    Duration waitFor,
+  Future<Iterable<V?>> onLoadedAsync({
+    Duration? waitFor,
     bool fail = false,
     bool waitForOnline = false,
   }) {
-    return _requestQueue.onLoadedAsync(
+    return _requestQueue!.onLoadedAsync(
       waitFor: waitFor,
       fail: fail,
       waitForOnline: waitForOnline,
@@ -344,10 +342,10 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// Patch [value] with existing in repository
   /// and replace current state. This method
   /// does not push changes to [service].
-  StorageState<V> patch(
+  StorageState<V?>? patch(
     V value, {
-    bool isRemote = false,
-    StateVersion version,
+    bool? isRemote = false,
+    StateVersion? version,
   }) {
     checkState();
     var next = _toState(
@@ -360,18 +358,18 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     return put(_patch(next)) ? next : null;
   }
 
-  StorageState<V> _toState(
+  StorageState<V?> _toState(
     V value, {
-    @required bool replace,
-    @required bool isRemote,
-    Object error,
-    StateVersion version,
+    required bool replace,
+    required bool? isRemote,
+    Object? error,
+    StateVersion? version,
   }) {
     final key = toKey(value);
     final state = getState(key);
     assert(key != null, "Key can not be null");
     final next = containsKey(key)
-        ? state.apply(
+        ? state!.apply(
             value,
             error: error,
             replace: replace,
@@ -389,19 +387,19 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// Replace [value] with existing in repository
   /// and replace current state. This method
   /// does not push changes to [service].
-  StorageState<V> replace(V value, {bool isRemote = false}) {
+  StorageState<V?>? replace(V value, {bool? isRemote = false}) {
     checkState();
     StorageState next = _toState(
       value,
       replace: true,
       isRemote: isRemote,
     );
-    return put(next) ? next : null;
+    return put(next as StorageState<V>) ? next : null;
   }
 
   /// Remove [value] from repository. This
   /// method does not push changes to [service].
-  StorageState<V> remove(V value, {bool isRemote = false, V previous}) {
+  StorageState<V>? remove(V value, {bool isRemote = false, V? previous}) {
     checkState();
     final key = toKey(value);
     final next = StorageState<V>(
@@ -418,7 +416,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   StorageState<V> _patch(StorageState next) {
     final key = toKey(next.value);
     final current = getState(key);
-    return current == null ? next : current.patch<V>(next, fromJson);
+    return current == null ? next as StorageState<V> : current.patch<V>(next as StorageState<V>, fromJson);
   }
 
   /// Wait for these on close
@@ -444,21 +442,21 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
       );
       if (delete) {
         _onWrite(
-          _box.delete(key),
+          _box!.delete(key),
         );
         // Can not logically exist
         // anymore, remove it!
-        _requestQueue.remove(key);
+        _requestQueue!.remove(key);
       } else {
         _onWrite(
-          _box.put(key, state),
+          _box!.put(key, state),
         );
       }
       if (_onPut != null) {
-        _onPut(state, delete);
+        _onPut!(state, delete);
       }
       if (!_isDisposed) {
-        _onTransition.add(StorageTransition<V>(
+        _onTransition.add(StorageTransition<V?>(
           from: current,
           to: state,
         ));
@@ -508,8 +506,8 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   ///
   /// Returns false if current state does not exists
   ///
-  bool isStateEqual(StorageState<V> state) {
-    final current = getState(toKey(state.value));
+  bool isStateEqual(StorageState<V?> state) {
+    final current = getState(toKey(state.value!));
     return current != null &&
         current.value == state.value &&
         current.error == state.error &&
@@ -521,10 +519,10 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// Apply [value] an push to [service]
   V apply(
     V value, {
-    Completer<V> onResult,
+    Completer<V>? onResult,
   }) {
     checkState();
-    StorageState<V> next = _toState(
+    StorageState<V?> next = _toState(
       value,
       replace: false,
       isRemote: false,
@@ -536,14 +534,14 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   }
 
   /// Delete current value an push to [service]
-  V delete(
+  V? delete(
     K key, {
-    Completer<V> onResult,
+    Completer<V>? onResult,
   }) {
     checkState();
     return push(
       StorageState.deleted(
-        this[key],
+        this[key]!,
         nextVersion(key),
       ),
       onResult: onResult,
@@ -556,7 +554,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   @visibleForOverriding
   V push(
     StorageState<V> state, {
-    Completer<V> onResult,
+    Completer<V>? onResult,
   }) {
     checkState();
     final next = validate(state);
@@ -568,19 +566,19 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     // therefore not be scheduled!
     if (exists && hasChanged) {
       // Replace current if not executed yet
-      return _requestQueue.push(
-        toKey(next.value),
+      return _requestQueue!.push(
+        toKey(next.value!),
         onResult: onResult,
-      );
+      )!;
     }
-    return next.value;
+    return next.value!;
   }
 
   /// Should reset to remote states in [service]
   ///
   /// Any [Exception] will be forwarded to [onError]
   @visibleForOverriding
-  Future<Iterable<V>> onReset({Iterable<V> previous});
+  Future<Iterable<V>> onReset({Iterable<V>? previous});
 
   /// Should create state in [service]
   ///
@@ -594,24 +592,24 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// [SocketException] will push the state to [backlog]
   /// Any other [Exception] will be forwarded to [onError]
   @visibleForOverriding
-  Future<StorageState<V>> onUpdate(StorageState<V> state) => Future.value(state);
+  Future<StorageState<V>?> onUpdate(StorageState<V> state) => Future.value(state);
 
   /// Should delete state in [service]
   ///
   /// [SocketException] will push the state to [backlog]
   /// Any other [Exception] will be forwarded to [onError]
   @visibleForOverriding
-  Future<StorageState<V>> onDelete(StorageState<V> state) => Future.value(state);
+  Future<StorageState<V>?> onDelete(StorageState<V> state) => Future.value(state);
 
   /// Should resolve conflict
   ///
   /// Any [Exception] will be forwarded to [onError]
   @visibleForOverriding
-  Future<StorageState<V>> onResolve(StorageState<V> state, ServiceResponse response) {
+  Future<StorageState<V>>? onResolve(StorageState<V> state, ServiceResponse response) {
     return StatefulMergeStrategy(this)(
       state,
-      response.conflict,
-    );
+      response.conflict!,
+    ).then((value) => value as StorageState<V>);
   }
 
   /// Should handle missing dependency.
@@ -620,7 +618,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   ///
   /// Any [Exception] will be forwarded to [onError]
   @visibleForOverriding
-  Future<StorageState<V>> onNotFound(StorageState<V> state, ServiceResponse response) => Future.value(state);
+  Future<StorageState<V>> onNotFound(StorageState<V> state, ServiceResponse? response) => Future.value(state);
 
   /// Should handle errors
   @mustCallSuper
@@ -651,23 +649,23 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   ///
   Future<List<K>> commit() async {
     states.forEach((key, state) {
-      _requestQueue.stash(
+      _requestQueue!.stash(
         state,
       );
     });
     _inTransaction = false;
-    return _requestQueue.pop();
+    return _requestQueue!.pop();
   }
 
   bool _isReady() => _box?.isOpen == true && _isDisposed == false;
 
   /// Current number of retries.
   /// Is reset on each offline -> online transition
-  int get retries => _requestQueue.retries;
+  int get retries => _requestQueue!.retries;
 
   @protected
   StorageState<V> validate(StorageState<V> state) {
-    final key = toKey(state.value);
+    final key = toKey(state.value!);
     final previous = isReady ? getState(key) : null;
     switch (state.status) {
       case StorageStatus.created:
@@ -679,7 +677,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
       case StorageStatus.updated:
         if (previous != null) {
           if (!previous.isDeleted) {
-            return previous.isRemote ? state : previous.replace(state.value);
+            return previous.isRemote! ? state : previous.replace(state.value);
           }
           // Not allowed to update deleted state
           throw RepositoryIllegalStateException(previous, state, this);
@@ -701,11 +699,11 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// 1) current state origin is remote
   /// 2) current state is created with origin local
   bool shouldDelete({
-    StorageState next,
-    StorageState current,
+    StorageState? next,
+    StorageState? current,
   }) =>
       current != null
-          ? current.isDeleted && next.isRemote || current.isCreated && current.isLocal && next.isDeleted
+          ? current.isDeleted && next!.isRemote! || current.isCreated && current.isLocal && next!.isDeleted
           : false;
 
   /// Reset all states to remote state
@@ -719,7 +717,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     final Iterable<V> elements = values.toList();
     if (_isReady()) {
       _onWrite(
-        _box.clear(),
+        _box!.clear(),
       );
     }
     return List.unmodifiable(elements);
@@ -734,21 +732,21 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     if (remote && local) {
       return clear();
     }
-    final List<V> evicted = [];
+    final List<V?> evicted = [];
     if (_isReady()) {
       final keys = [];
-      _box.keys.where((key) => !retainKeys.contains(key)).forEach((key) {
+      _box!.keys.where((key) => !retainKeys.contains(key)).forEach((key) {
         final state = getState(key);
-        if (remote && state.isRemote) {
+        if (remote && state!.isRemote!) {
           keys.add(key);
           evicted.add(state.value);
-        } else if (local && state.isLocal) {
+        } else if (local && state!.isLocal) {
           keys.add(key);
           evicted.add(state.value);
         }
       });
       _onWrite(
-        _box.deleteAll(keys),
+        _box!.deleteAll(keys),
       );
     }
     return List.unmodifiable(evicted);
@@ -763,7 +761,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   Future<List<V>> close() async {
     final Iterable<V> elements = values.toList();
     if (_isReady()) {
-      await _requestQueue.cancel();
+      await _requestQueue!.cancel();
       await _closeBox();
       if (!_isDisposed) {
         _onReady.add(false);
@@ -777,7 +775,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     if (_box?.isOpen == true) {
       // Prevents box corruption
       await Future.wait(_writes);
-      await _box.close();
+      await _box!.close();
       _writes.clear();
     }
   }

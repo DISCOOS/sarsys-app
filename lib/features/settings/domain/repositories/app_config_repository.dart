@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -14,14 +14,14 @@ abstract class AppConfigRepository implements StatefulRepository<String, AppConf
   AppConfigService get service;
 
   /// Get current [AppConfig] instance
-  AppConfig get config => this['$version'];
+  AppConfig get config => this['$version']!;
 
   /// Get current state
-  StorageState<AppConfig> get state => getState('$version');
+  StorageState<AppConfig>? get state => getState('$version');
 
   /// Initialize from [assets] and push to remote
   Future<AppConfig> init({
-    Completer<Iterable<AppConfig>> onRemote,
+    Completer<Iterable<AppConfig>>? onRemote,
   });
 
   /// Create local instance from [assets]
@@ -31,15 +31,15 @@ abstract class AppConfigRepository implements StatefulRepository<String, AppConf
 
   /// Load from [AppConfig] from [service].
   Future<AppConfig> load({
-    Completer<Iterable<AppConfig>> onRemote,
+    Completer<Iterable<AppConfig>>? onRemote,
   });
 }
 
 class AppConfigServiceException extends ServiceException {
   AppConfigServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(
           error,
           response: response,

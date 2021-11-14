@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -31,7 +31,7 @@ class UnitScreen extends Screen<_UnitScreenState> {
 
   final Unit unit;
 
-  const UnitScreen({Key key, @required this.unit}) : super(key: key);
+  const UnitScreen({Key? key, required this.unit}) : super(key: key);
 
   @override
   _UnitScreenState createState() => _UnitScreenState(unit);
@@ -42,19 +42,19 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
 
   final MapWidgetController _controller = MapWidgetController();
 
-  Unit _unit;
-  StreamGroup<dynamic> _group;
-  StreamSubscription<Tracking> _onMoved;
+  Unit? _unit;
+  StreamGroup<dynamic>? _group;
+  StreamSubscription<Tracking?>? _onMoved;
 
   /// Use current unit name
-  String get title => _unit?.name;
+  String? get title => _unit?.name;
 
   @override
   void initState() {
     super.initState();
     routeWriter = false;
     _unit = widget.unit;
-    routeData = widget?.unit?.uuid;
+    routeData = widget.unit.uuid;
   }
 
   @override
@@ -62,17 +62,17 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     super.didChangeDependencies();
     _group?.close();
     _group = StreamGroup.broadcast()
-      ..add(context.read<UnitBloc>().onChanged(widget.unit?.uuid))
-      ..add(context.read<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid, skipPosition: true));
-    if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.read<TrackingBloc>().onMoved(widget?.unit?.tracking?.uuid).listen(_onMove);
+      ..add(context.read<UnitBloc>().onChanged(widget.unit.uuid))
+      ..add(context.read<TrackingBloc>().onChanged(widget.unit.tracking?.uuid, skipPosition: true));
+    if (_onMoved != null) _onMoved!.cancel();
+    _onMoved = context.read<TrackingBloc>().onMoved(widget.unit.tracking?.uuid).listen(_onMove);
   }
 
   @override
   void dispose() {
     _group?.close();
     _onMoved?.cancel();
-    _controller?.cancel();
+    _controller.cancel();
     _group = null;
     _onMoved = null;
     super.dispose();
@@ -107,13 +107,13 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
         children: [
           StreamBuilder(
             initialData: _unit,
-            stream: _group.stream,
+            stream: _group!.stream,
             builder: (context, snapshot) {
               if (!snapshot.hasData) return Center(child: Text("Ingen data"));
               if (snapshot.data is Unit) {
-                _unit = snapshot.data;
+                _unit = snapshot.data as Unit?;
               }
-              final tracking = context.read<TrackingBloc>().trackings[_unit.tracking.uuid];
+              final tracking = context.read<TrackingBloc>().trackings[_unit!.tracking!.uuid];
               return _build(context, tracking);
             },
           ),
@@ -124,7 +124,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
 
   UnitWidget _build(
     BuildContext context,
-    Tracking tracking,
+    Tracking? tracking,
   ) =>
       UnitWidget(
         unit: _unit,
@@ -140,12 +140,12 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
         devices: context.read<TrackingBloc>().devices(tracking?.uuid),
       );
 
-  LatLng toCenter(Tracking event) {
+  LatLng? toCenter(Tracking event) {
     final point = event?.position?.geometry;
     return point != null ? toLatLng(point) : null;
   }
 
-  void _onMove(Tracking tracking) {
+  void _onMove(Tracking? tracking) {
     if (mounted) {
       final center = tracking?.position?.toLatLng();
       if (center != null) {

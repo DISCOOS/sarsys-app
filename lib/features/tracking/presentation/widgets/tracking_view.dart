@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
@@ -12,15 +12,15 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 class TrackingView extends StatelessWidget {
   const TrackingView({
-    Key key,
+    Key? key,
     this.tuuid,
     this.onMessage,
     this.onComplete,
   }) : super(key: key);
 
-  final String tuuid;
-  final VoidCallback onComplete;
-  final MessageCallback onMessage;
+  final String? tuuid;
+  final VoidCallback? onComplete;
+  final MessageCallback? onMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -62,11 +62,11 @@ class TrackingView extends StatelessWidget {
   }
 
   String _toDeviceNumbers(Iterable<Device> devices) {
-    final numbers = devices?.map((device) => device.number);
-    return numbers?.isNotEmpty == true ? numbers.join(', ') : 'Ingen';
+    final numbers = devices?.map((device) => device!.number);
+    return numbers?.isNotEmpty == true ? numbers!.join(', ') : 'Ingen';
   }
 
-  Row _buildEffortInfo(BuildContext context, Tracking tracking) {
+  Row _buildEffortInfo(BuildContext context, Tracking? tracking) {
     return Row(
       children: <Widget>[
         Expanded(

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/mapping/presentation/widgets/coordinate_panel.dart';
 import 'package:SarSys/features/mapping/presentation/painters.dart';
@@ -13,7 +13,7 @@ class CoordinateLayerOptions extends LayerOptions {
 
   CoordinateLayerOptions({
     this.align = Alignment.bottomLeft,
-    Stream<Null> rebuild,
+    Stream<Null>? rebuild,
   }) : super(rebuild: rebuild);
 }
 
@@ -23,7 +23,7 @@ class CoordinateLayer extends MapPlugin {
     final params = options as CoordinateLayerOptions;
 
     return StreamBuilder<Object>(
-        stream: stream,
+        stream: stream as Stream<Object>?,
         builder: (context, snapshot) {
           final Point center = toPoint(map.center);
           var origin = map.project(map.center);

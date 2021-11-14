@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
@@ -12,13 +12,13 @@ part 'subscription_type_model.g.dart';
 @JsonSerializable(explicitToJson: true)
 class SubscriptionTypeModel extends Equatable {
   const SubscriptionTypeModel({
-    @required this.name,
+    required this.name,
     this.statePatches,
     this.changedState,
     this.previousState,
     FilterMatch match = FilterMatch.any,
-    List<SubscriptionEventModel> events = const <SubscriptionEventModel>[],
-    List<SubscriptionFilterModel> filters = const <SubscriptionFilterModel>[],
+    List<SubscriptionEventModel>? events = const <SubscriptionEventModel>[],
+    List<SubscriptionFilterModel>? filters = const <SubscriptionFilterModel>[],
   })  : match = match ?? FilterMatch.any,
         events = events ?? const <SubscriptionEventModel>[],
         filters = filters ?? const <SubscriptionFilterModel>[],
@@ -27,7 +27,7 @@ class SubscriptionTypeModel extends Equatable {
   /// Factory constructor for creating a new `SubscriptionTypeModel`  instance
   factory SubscriptionTypeModel.fromJson(Map<String, dynamic> json) => _$SubscriptionTypeModelFromJson(json);
 
-  final String name;
+  final String? name;
 
   @JsonKey(defaultValue: FilterMatch.any)
   final FilterMatch match;
@@ -36,17 +36,17 @@ class SubscriptionTypeModel extends Equatable {
 
   final List<SubscriptionFilterModel> filters;
 
-  final bool changedState;
+  final bool? changedState;
 
-  final bool statePatches;
+  final bool? statePatches;
 
-  final bool previousState;
+  final bool? previousState;
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$SubscriptionTypeModelToJson(this);
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         name,
         events,
         filters,

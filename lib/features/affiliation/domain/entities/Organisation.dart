@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
@@ -9,12 +9,12 @@ import 'FleetMap.dart';
 
 abstract class Organisation extends Aggregate<Map<String, dynamic>> {
   Organisation({
-    @required String uuid,
-    @required this.name,
-    @required this.prefix,
-    @required this.fleetMap,
-    @required this.divisions,
-    @required this.active,
+    required String uuid,
+    required this.name,
+    required this.prefix,
+    required this.fleetMap,
+    required this.divisions,
+    required this.active,
   }) : super(uuid, fields: [
           name,
           prefix,
@@ -24,23 +24,23 @@ abstract class Organisation extends Aggregate<Map<String, dynamic>> {
         ]);
 
   /// Organisation name
-  final String name;
+  final String? name;
 
   /// FleetMap prefix number
-  final String prefix;
+  final String? prefix;
 
   /// Organisation FleetMap
-  final FleetMap fleetMap;
+  final FleetMap? fleetMap;
 
   /// List of [Division.uuid]s
-  final List<String> divisions;
+  final List<String>? divisions;
 
   /// Organisation status
-  final bool active;
+  final bool? active;
 
   /// Get [Organisation] reference
-  AggregateRef<Organisation> toRef();
+  AggregateRef<Organisation>? toRef();
 
   /// Copy organisation with [fleetMap]
-  Organisation copyWith({FleetMap fleetMap});
+  Organisation copyWith({FleetMap? fleetMap});
 }

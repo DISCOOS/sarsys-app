@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 extension StringX on String {
   String capitalize() {
@@ -10,7 +10,7 @@ extension StringX on String {
   }
 }
 
-extension MapX on Map {
+extension MapX on Map? {
   /// Check if map contains data at given path
   bool hasPath(String ref) => elementAt(ref) != null;
 
@@ -18,9 +18,9 @@ extension MapX on Map {
   /// equivalent to map['name1']['name2']['name3'].
   ///
   /// Returns [null] if not found
-  T elementAt<T>(String path, {T defaultValue}) {
+  T? elementAt<T>(String path, {T? defaultValue}) {
     final parts = path.split('/');
-    dynamic found = parts.skip(parts.first.isEmpty ? 1 : 0).fold(this, (parent, name) {
+    dynamic found = parts.skip(parts.first.isEmpty ? 1 : 0).fold(this, (dynamic parent, name) {
       if (parent is Map<String, dynamic>) {
         if (parent.containsKey(name)) {
           return parent[name];
@@ -33,25 +33,25 @@ extension MapX on Map {
               ? element[int.parse(name)]
               : defaultValue;
     });
-    return (found ?? defaultValue) as T;
+    return (found ?? defaultValue) as T?;
   }
 
   /// Get [List] of type [T] at given path
-  List<T> listAt<T>(String path, {List<T> defaultList}) {
+  List<T>? listAt<T>(String path, {List<T>? defaultList}) {
     final list = elementAt(path);
     return list == null ? defaultList : List<T>.from(list);
   }
 
   /// Get [Map] with keys of type [S] and values of type [T] at given path
-  Map<S, T> mapAt<S, T>(String path, {Map<S, T> defaultMap}) {
+  Map<S, T>? mapAt<S, T>(String path, {Map<S, T>? defaultMap}) {
     final map = elementAt(path);
     return map == null ? defaultMap : Map<S, T>.from(map);
   }
 }
 
 extension IterableX<T> on Iterable<T> {
-  T get firstOrNull => this.isNotEmpty ? this.first : null;
-  Iterable<T> whereNotNull([dynamic map(T element)]) =>
+  T? get firstOrNull => this.isNotEmpty ? this.first : null;
+  Iterable<T> whereNotNull([dynamic map(T element)?]) =>
       where((element) => map == null ? element != null : map(element) != null);
 
   Iterable<T> toPage({int offset = 0, int limit = 20}) {

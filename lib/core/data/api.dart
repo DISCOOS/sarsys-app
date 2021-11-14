@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -21,11 +21,11 @@ import 'package:random_string/random_string.dart';
 
 class Api {
   Api({
-    @required this.users,
-    @required this.manager,
-    @required this.httpClient,
-    @required this.baseRestUrl,
-    @required Iterable<JsonService> services,
+    required this.users,
+    required this.manager,
+    required this.httpClient,
+    required this.baseRestUrl,
+    required Iterable<JsonService> services,
   }) : chopperClient = ChopperClient(
           services: services,
           baseUrl: baseRestUrl,
@@ -61,14 +61,14 @@ class Api {
 
   static ServiceResponse<T> from<S, T>(
     Response<S> response, {
-    T body,
-    ConflictModel conflict,
-    StackTrace stackTrace,
+    T? body,
+    ConflictModel? conflict,
+    StackTrace? stackTrace,
   }) {
     final resolved = body ?? response.body;
     final conflict = response.statusCode == HttpStatus.conflict
         // Chopper will return body with conflict json in response.error
-        ? ConflictModel.fromJson(jsonDecode(response.error))
+        ? ConflictModel.fromJson(jsonDecode(response.error as String))
         : null;
     return ServiceResponse<T>(
       conflict: conflict,
@@ -76,18 +76,18 @@ class Api {
       statusCode: response.statusCode,
       reasonPhrase: '${response.base.reasonPhrase}',
       page: resolved is PagedList ? resolved.page : null,
-      body: resolved is PagedList ? resolved.items : resolved,
-      error: response.statusCode == HttpStatus.conflict ? conflict.error : response.error,
+      body: resolved is PagedList ? resolved.items as T? : resolved as T?,
+      error: response.statusCode == HttpStatus.conflict ? conflict!.error : response.error,
     );
   }
 }
 
-typedef JsonDecoder<T> = T Function(dynamic json);
-typedef JsonReducer<T> = dynamic Function(T value);
+typedef JsonDecoder<T> = T? Function(dynamic json);
+typedef JsonReducer<T> = dynamic Function(T? value);
 
 class JsonSerializableConverter extends JsonConverter {
-  final Map<Type, JsonDecoder> decoders;
-  final Map<Type, JsonReducer> reducers;
+  final Map<Type, JsonDecoder>? decoders;
+  final Map<Type, JsonReducer>? reducers;
 
   JsonSerializableConverter({this.decoders, this.reducers});
 
@@ -104,7 +104,7 @@ class JsonSerializableConverter extends JsonConverter {
     final value = request.body;
 
     /// Get reducer factory from runtime type
-    final encoder = reducers[value.runtimeType];
+    final encoder = reducers![value.runtimeType];
     if (encoder == null || encoder is! JsonReducer) {
       return request.copyWith(body: json.encode(value));
     }
@@ -129,10 +129,10 @@ class JsonSerializableConverter extends JsonConverter {
     );
   }
 
-  T _decodeMap<T>(Map<String, dynamic> values) {
+  T? _decodeMap<T>(Map<String, dynamic> values) {
     /// Get json decoder factory using Type parameters
     /// if not found or invalid, throw error or return null
-    final decoder = decoders[T];
+    final decoder = decoders![T];
     if (decoder == null || decoder is! JsonDecoder<T>) {
       /// throw serializer not found error
       throw StateError('JsonDecoder factory not found for type $T');
@@ -141,13 +141,13 @@ class JsonSerializableConverter extends JsonConverter {
     return decoder(values);
   }
 
-  List<T> _decodeList<T>(List values) => values.where((v) => v != null).map<T>((v) => _decode<T>(v)).toList();
+  List<T?> _decodeList<T>(List values) => values.where((v) => v != null).map<T?>((v) => _decode<T>(v)).toList();
 
   dynamic _decode<T>(entity) {
     if (entity is Iterable) {
-      return _decodeList<T>(entity);
+      return _decodeList<T>(entity as List<dynamic>);
     } else if (entity is Map) {
-      return _decodeMap<T>(entity);
+      return _decodeMap<T>(entity as Map<String, dynamic>);
     }
     return entity;
   }
@@ -181,7 +181,7 @@ class BearerTokenInterceptor implements RequestInterceptor {
       return applyHeader(
         request,
         'Authorization',
-        'Bearer ${users.token.accessToken}',
+        'Bearer ${users.token!.accessToken}',
       );
     }
     return request;
@@ -206,8 +206,8 @@ const String X_CORRELATION_ID = 'x-correlation-id';
 const String X_TRANSACTION_ID = 'x-transaction-id';
 
 class TransactionManager {
-  String id;
-  String instance;
+  String? id;
+  String? instance;
   String begin() {
     return id ??= randomAlphaNumeric(8);
   }
@@ -250,7 +250,7 @@ class SpeedAnalyserRequestInterceptor implements RequestInterceptor, ResponseInt
   String toKeyFromRequest(Request request) => '${request.method} '
       '${buildUri(request.baseUrl, request.url, request.parameters)}';
 
-  String toKeyFromResponse(Response response) => '${response.base.request.method} ${response.base.request.url}';
+  String toKeyFromResponse(Response response) => '${response.base.request!.method} ${response.base.request!.url}';
 
   @override
   FutureOr<Request> onRequest(Request request) async {
@@ -264,11 +264,11 @@ class SpeedAnalyserRequestInterceptor implements RequestInterceptor, ResponseInt
   FutureOr<Response> onResponse(Response response) {
     final tic = _requests.remove(toKeyFromResponse(response));
     if (tic != null) {
-      final request = response.base.request;
+      final request = response.base.request!;
       final method = request.method.toLowerCase();
       final duration = DateTime.now().difference(tic);
       final both = method == 'get';
-      final size = (both ? request.contentLength : 0) + response.base.contentLength;
+      final size = (both ? request.contentLength : 0)! + response.base.contentLength!;
       final speed = size / duration.inMilliseconds * (both ? 2 : 1);
       ConnectivityService().onSpeedResult(
         SpeedResult(

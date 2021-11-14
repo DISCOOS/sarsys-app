@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/error_handler.dart';
@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class NetworkSensitive extends StatelessWidget {
-  final Widget child;
+  final Widget? child;
   final service = ConnectivityService();
   NetworkSensitive({
     this.child,

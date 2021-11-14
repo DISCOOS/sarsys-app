@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -16,6 +16,7 @@ import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/extensions.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'affiliation_service.chopper.dart';
 
 /// Service for consuming the affiliations endpoint
@@ -52,7 +53,7 @@ class AffiliationService extends StatefulServiceDelegate<Affiliation, Affiliatio
   void dispose() {
     _controller.close();
     AffiliationMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -66,9 +67,9 @@ enum AffiliationMessageType {
 class AffiliationMessage extends MessageModel {
   AffiliationMessage(Map<String, dynamic> data) : super(data);
 
-  AffiliationMessageType get type {
+  AffiliationMessageType? get type {
     final type = data.elementAt('type');
-    return AffiliationMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return AffiliationMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -77,10 +78,10 @@ abstract class AffiliationServiceImpl extends StatefulService<Affiliation, Affil
   AffiliationServiceImpl()
       : super(
           decoder: (json) => AffiliationModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<AffiliationModel>(value),
+          reducer: (value) => JsonUtils.toJson<AffiliationModel?>(value),
         );
 
-  static AffiliationServiceImpl newInstance([ChopperClient client]) => _$AffiliationServiceImpl(client);
+  static AffiliationServiceImpl newInstance([ChopperClient? client]) => _$AffiliationServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Affiliation> state) => create(state.value);
@@ -98,25 +99,25 @@ abstract class AffiliationServiceImpl extends StatefulService<Affiliation, Affil
 
   @Patch(path: '{uuid}')
   Future<Response<StorageState<Affiliation>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Affiliation body,
   );
 
   @override
   Future<Response<StorageState<Affiliation>>> onDelete(StorageState<Affiliation> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Affiliation>>);
 
   @Delete(path: '{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
   @override
   Future<Response<PagedList<StorageState<Affiliation>>>> onSearch(
     String filter,
-    int offset,
-    int limit,
+    int? offset,
+    int? limit,
     List<String> options,
   ) =>
       search(filter, limit, offset, 'person');
@@ -124,19 +125,19 @@ abstract class AffiliationServiceImpl extends StatefulService<Affiliation, Affil
   @Get()
   Future<Response<PagedList<StorageState<Affiliation>>>> search(
     @Query('filter') String filter,
-    @Query('limit') int limit,
-    @Query('offset') int offset,
+    @Query('limit') int? limit,
+    @Query('offset') int? offset,
     @Query('expand') String expand,
   );
 
   Future<Response<PagedList<StorageState<Affiliation>>>> onGetPageFromIds(
     List<String> ids,
-    int offset,
-    int limit,
+    int? offset,
+    int? limit,
     List<String> options,
   ) async {
     return getAll(
-      ids?.join(','),
+      ids.join(','),
       expand: 'person',
       offset: 0,
       limit: limit,
@@ -146,8 +147,8 @@ abstract class AffiliationServiceImpl extends StatefulService<Affiliation, Affil
   @Get()
   Future<Response<PagedList<StorageState<Affiliation>>>> getAll(
     @Query('uuids') String uuids, {
-    @Query('expand') String expand,
-    @Query('limit') int limit = 20,
+    @Query('expand') String? expand,
+    @Query('limit') int? limit = 20,
     @Query('offset') int offset = 0,
   });
 }

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -14,11 +14,11 @@ import 'package:path_provider/path_provider.dart';
 class BaseMapService extends Service {
   static const ASSET = "assets/config/base_map.json";
 
-  static BaseMapService _instance;
+  static BaseMapService? _instance;
 
   final List<BaseMap> _baseMaps = [Defaults.baseMap];
 
-  List<dynamic> _assets = [];
+  List<dynamic>? _assets = [];
 
   bool get isReady => _baseMaps.isNotEmpty;
 
@@ -28,13 +28,13 @@ class BaseMapService extends Service {
     if (_instance == null) {
       _instance = new BaseMapService._internal();
     }
-    return _instance;
+    return _instance!;
   }
 
   BaseMapService._internal();
 
   Future init() async {
-    if (_assets.isEmpty) {
+    if (_assets!.isEmpty) {
       _assets = json.decode(await rootBundle.loadString(ASSET));
     }
     _baseMaps.clear();
@@ -44,7 +44,7 @@ class BaseMapService extends Service {
 
   Future<List<BaseMap>> fetchOnlineMaps() async {
     // TODO: Get online maps from server instead
-    return _assets.map((value) => BaseMap.fromJson(value)).toList();
+    return _assets!.map((value) => BaseMap.fromJson(value)).toList();
   }
 
   // Find folder on SDCard and installed maps
@@ -62,9 +62,9 @@ class BaseMapService extends Service {
       // Skip "emulated" and "self" directories
       for (FileSystemEntity root in _search(baseDir, (e) => _isRoot(e) && _isSearchable(e), recursive: false)) {
         // Search for "maps" directories
-        for (FileSystemEntity maps in _search(root, (e) => _isMaps(e), recursive: false)) {
+        for (FileSystemEntity maps in _search(root as Directory, (e) => _isMaps(e), recursive: false)) {
           // Search for map tiles metadata
-          for (FileSystemEntity metadata in _search(maps, (e) => _isMetaData(e), recursive: true)) {
+          for (FileSystemEntity metadata in _search(maps as Directory, (e) => _isMetaData(e), recursive: true)) {
             try {
               final map = BaseMap.fromJson(
                 json.decode(File(metadata.path).readAsStringSync()),
@@ -105,7 +105,7 @@ class BaseMapService extends Service {
     return matches;
   }
 
-  String _toSafe(Directory entity, BaseMap _baseMap) {
+  String? _toSafe(Directory entity, BaseMap _baseMap) {
     final file = File("${entity.path}/${_baseMap.previewFile}");
     return file.existsSync() ? file.path : null;
   }
@@ -113,10 +113,10 @@ class BaseMapService extends Service {
   Future<List<Directory>> _resolveDirs() async {
     return [
       await getApplicationDocumentsDirectory(),
-      if (Platform.isAndroid) ...await getExternalStorageDirectories(),
-      if (Platform.isAndroid) ...await getExternalStorageDirectories(type: StorageDirectory.pictures),
-      if (Platform.isAndroid) ...await getExternalStorageDirectories(type: StorageDirectory.documents),
-      if (Platform.isAndroid) ...await getExternalStorageDirectories(type: StorageDirectory.downloads),
+      if (Platform.isAndroid) ...await (getExternalStorageDirectories() as FutureOr<Iterable<Directory>>),
+      if (Platform.isAndroid) ...await (getExternalStorageDirectories(type: StorageDirectory.pictures) as FutureOr<Iterable<Directory>>),
+      if (Platform.isAndroid) ...await (getExternalStorageDirectories(type: StorageDirectory.documents) as FutureOr<Iterable<Directory>>),
+      if (Platform.isAndroid) ...await (getExternalStorageDirectories(type: StorageDirectory.downloads) as FutureOr<Iterable<Directory>>),
     ];
   }
 }

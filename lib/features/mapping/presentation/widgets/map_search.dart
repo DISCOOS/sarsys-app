@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -19,17 +19,17 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 typedef ErrorCallback = void Function(String message);
-typedef MatchCallback = void Function(LatLng point);
+typedef MatchCallback = void Function(LatLng? point);
 
 class MapSearchField extends StatefulWidget {
-  final double zoom;
-  final String hintText;
+  final double? zoom;
+  final String? hintText;
   final ErrorCallback onError;
-  final MatchCallback onMatch;
-  final VoidCallback onCleared;
-  final MapWidgetController mapController;
+  final MatchCallback? onMatch;
+  final VoidCallback? onCleared;
+  final MapWidgetController? mapController;
 
-  final Widget prefixIcon;
+  final Widget? prefixIcon;
 
   final bool withRetired;
 
@@ -38,9 +38,9 @@ class MapSearchField extends StatefulWidget {
   final double offset;
 
   const MapSearchField({
-    Key key,
-    @required this.onError,
-    @required this.mapController,
+    Key? key,
+    required this.onError,
+    required this.mapController,
     this.onMatch,
     this.onCleared,
     this.prefixIcon,
@@ -60,10 +60,10 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   final _focusNode = FocusNode();
   final _controller = TextEditingController();
 
-  LatLng _match;
-  MapSearchEngine engine;
-  OverlayEntry _overlayEntry;
-  Future<GeocodeResult> request;
+  LatLng? _match;
+  MapSearchEngine? engine;
+  OverlayEntry? _overlayEntry;
+  Future<GeocodeResult?>? request;
 
   bool get hasFocus => _focusNode?.hasFocus ?? false;
 
@@ -161,7 +161,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
           )
         : Icon(
             Icons.search,
-            color: theme.color.withOpacity(0.4),
+            color: theme.color!.withOpacity(0.4),
           );
   }
 
@@ -170,14 +170,14 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     _match = null;
     _controller.clear();
     request = null;
-    if (widget.onCleared != null) widget.onCleared();
+    if (widget.onCleared != null) widget.onCleared!();
     FocusScope.of(context).requestFocus(FocusNode());
     setState(() {});
   }
 
-  Future<GeocodeResult> _search(String query) {
+  Future<GeocodeResult?>? _search(String query) {
     try {
-      final request = showSearch<GeocodeResult>(
+      final request = showSearch<GeocodeResult?>(
         context: context,
         query: query,
         delegate: MapSearchDelegate(
@@ -187,13 +187,13 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
       ).then((result) async {
         if (result?.hasLocation == true) {
           _goto(
-            result.title,
-            result.latitude,
-            result.longitude,
+            result!.title!,
+            result.latitude!,
+            result.longitude!,
           );
         } else {
           if (result?.hasLocation == false && widget.onError != null) {
-            widget.onError('${result.title} har ingen posisjon');
+            widget.onError('${result!.title} har ingen posisjon');
           }
           clear();
         }
@@ -209,30 +209,30 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   void _goto(String query, double lat, double lon) {
     _match = LatLng(lat, lon);
     if (!kReleaseMode) print("Goto: $_match");
-    widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
-    if (widget.onMatch != null) widget.onMatch(_match);
+    widget.mapController!.animatedMove(_match, widget.zoom ?? widget.mapController!.zoom, this);
+    if (widget.onMatch != null) widget.onMatch!(_match);
     _controller.text = query;
     FocusScope.of(context).requestFocus(FocusNode());
   }
 }
 
-class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
+class MapSearchDelegate extends SearchDelegate<GeocodeResult?> {
   static final _storage = Storage.secure;
   static const RECENT_KEY = "search/map/recent";
 
-  final LatLng center;
-  final MapSearchEngine engine;
+  final LatLng? center;
+  final MapSearchEngine? engine;
   final int defaultSuggestionCount = 2;
-  final MapWidgetController controller;
+  final MapWidgetController? controller;
 
-  Debouncer<String> _debouncer;
-  Completer<List<GeocodeResult>> _results;
+  late Debouncer<String> _debouncer;
+  Completer<List<GeocodeResult>>? _results;
 
-  final ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+  final ValueNotifier<Set<String>?> _recent = ValueNotifier(null);
 
   MapSearchDelegate({
-    @required this.engine,
-    @required this.controller,
+    required this.engine,
+    required this.controller,
     this.center,
   }) {
     _init();
@@ -250,8 +250,8 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
       const Duration(milliseconds: 100),
       initialValue: '',
       onChanged: (query) async {
-        if (_results != null && _results.isCompleted != true) {
-          _results.complete(engine.search(query));
+        if (_results != null && _results!.isCompleted != true) {
+          _results!.complete(engine!.search(query));
         }
       },
     );
@@ -284,9 +284,9 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
   @override
   Widget buildSuggestions(BuildContext context) {
     return query.isEmpty
-        ? ValueListenableBuilder<Set<String>>(
+        ? ValueListenableBuilder<Set<String>?>(
             valueListenable: _recent,
-            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+            builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
               return _buildSuggestionList(
                 context,
                 suggestions
@@ -307,7 +307,7 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
@@ -334,7 +334,7 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     buildSuggestions(context);
   }
 
@@ -345,16 +345,16 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
 
   FutureBuilder<List<GeocodeResult>> _buildResults(BuildContext context, {bool store = false}) {
     if (store) {
-      final recent = _recent.value.toSet()..add(query);
+      final recent = _recent.value!.toSet()..add(query);
       _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-      _recent.value = recent.toSet() ?? [];
+      _recent.value = (recent.toSet() ?? []) as Set<String>?;
     }
-    if (_results == null || _results.isCompleted) {
+    if (_results == null || _results!.isCompleted) {
       _results = Completer();
     }
     _debouncer.value = query;
     return FutureBuilder<List<GeocodeResult>>(
-        future: _results.future,
+        future: _results!.future,
         initialData: [],
         builder: (context, snapshot) {
           final items = _buildItems(
@@ -374,9 +374,9 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
   List<Widget> _buildItems(
     BuildContext context,
     AsyncSnapshot<List<GeocodeResult>> snapshot, {
-    LatLng center,
+    LatLng? center,
   }) {
-    final results = snapshot.hasData ? snapshot.data : [];
+    final results = snapshot.hasData ? snapshot.data! : [];
     return results.isNotEmpty
         ? results
             .map((result) => result is AddressLookup
@@ -405,21 +405,21 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
         )
       ];
 
-  Widget _buildListTileFromLookup(AddressLookup lookup, {LatLng center}) {
+  Widget _buildListTileFromLookup(AddressLookup lookup, {LatLng? center}) {
     return FutureBuilder<GeocodeResult>(
       initialData: lookup,
       future: lookup.search,
       builder: (BuildContext context, AsyncSnapshot<GeocodeResult> snapshot) {
         return _buildListTile(
           context,
-          snapshot.hasData ? snapshot.data : lookup,
+          snapshot.hasData ? snapshot.data! : lookup,
           center: center,
         );
       },
     );
   }
 
-  ListTile _buildListTile(BuildContext context, GeocodeResult data, {LatLng center}) {
+  ListTile _buildListTile(BuildContext context, GeocodeResult data, {LatLng? center}) {
     final backgroundColor = Theme.of(context).canvasColor;
     return ListTile(
       leading: CircleAvatar(
@@ -427,7 +427,7 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
         backgroundColor: backgroundColor,
       ),
       title: Text(_toTitle(data)),
-      subtitle: Text(center == null ? _toLocation(data) : data.address),
+      subtitle: Text(center == null ? _toLocation(data)! : data.address!),
       contentPadding: _toPadding(data),
       trailing: _toSource(data, context, center: center),
       onTap: () => close(context, data),
@@ -436,10 +436,10 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
 
   String _toTitle(GeocodeResult data) => "${data.title ?? ''}".trim();
 
-  double _distance(GeocodeResult data, LatLng origo, {double defaultValue}) => data.hasLocation && origo != null
+  double? _distance(GeocodeResult data, LatLng origo, {double? defaultValue}) => data.hasLocation && origo != null
       ? ProjMath.eucledianDistance(
-          data.latitude,
-          data.longitude,
+          data.latitude!,
+          data.longitude!,
           origo.latitude,
           origo.longitude,
         )
@@ -448,16 +448,16 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
   EdgeInsets _toPadding(GeocodeResult data) =>
       data.address == null ? EdgeInsets.only(left: 16.0, right: 16.0) : EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0);
 
-  String _toLocation(GeocodeResult data) {
+  String? _toLocation(GeocodeResult data) {
     final positionOrDistance = data.distance ?? data.position;
     return data.address == null
-        ? positionOrDistance
+        ? positionOrDistance as String?
         : [data.address, positionOrDistance].where((test) => test != null).join(", ");
   }
 
-  Padding _toSource(GeocodeResult data, BuildContext context, {LatLng center}) {
+  Padding _toSource(GeocodeResult data, BuildContext context, {LatLng? center}) {
     final caption = Theme.of(context).textTheme.caption;
-    final origo = center ?? controller.center;
+    final origo = center ?? controller!.center;
     final distance = formatDistance(data.distance ?? _distance(data, origo));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -466,7 +466,7 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Text(
-            data.source,
+            data.source!,
             style: caption,
           ),
           Text(
@@ -489,7 +489,7 @@ class MapSearchEngine {
   MapSearchEngine(
     this.client,
     AppController controller, {
-    bool withRetired,
+    bool? withRetired,
   })  : this._placeGeocoderService = PlaceGeocoderService(client),
         this._addressGeocoderService = AddressGeocoderService(client),
         this._objectGeocoderService = ObjectGeocoderService(
@@ -503,7 +503,7 @@ class MapSearchEngine {
     final coords = CoordinateFormat.toLatLng(query);
     if (coords?.isValidLatLng == true) {
       return lookup(Point.fromCoords(
-        lat: coords.x,
+        lat: coords!.x,
         lon: coords.y,
       ));
     }

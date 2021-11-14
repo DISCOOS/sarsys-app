@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -26,30 +26,30 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/domain/usecase/core.dart';
 import 'package:SarSys/core/utils/ui.dart';
 
-class OperationParams extends BlocParams<OperationBloc, Operation> {
+class OperationParams extends BlocParams<OperationBloc, Operation?> {
   OperationParams({
-    Operation operation,
+    Operation? operation,
     this.ipp,
     this.uuid,
   }) : super(operation);
-  final Point ipp;
-  final String uuid;
+  final Point? ipp;
+  final String? uuid;
 }
 
 /// Create operation
-Future<dartz.Either<bool, Operation>> createOperation({
-  Point ipp,
+Future<dartz.Either<bool, Operation>>? createOperation({
+  Point? ipp,
 }) =>
-    CreateOperation()(OperationParams(ipp: ipp));
+    CreateOperation()(OperationParams(ipp: ipp))!.then((value) => value as dartz.Either<bool, Operation>);
 
-class CreateOperation extends UseCase<bool, Operation, OperationParams> {
+class CreateOperation extends UseCase<bool, Operation?, OperationParams> {
   @override
-  Future<dartz.Either<bool, Operation>> execute(params) async {
+  Future<dartz.Either<bool, Operation?>> execute(params) async {
     assert(params.data == null, "Operation should not be supplied");
     _assertUser(params);
 
     var result = await showDialog<OperationEditorResult>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => OperationEditor(
         ipp: params.ipp,
       ),
@@ -73,23 +73,23 @@ class CreateOperation extends UseCase<bool, Operation, OperationParams> {
   }
 }
 
-Future<dartz.Either<bool, Operation>> editOperation(
+Future<dartz.Either<bool, Operation>>? editOperation(
   Operation operation,
 ) =>
-    EditOperation()(OperationParams(operation: operation));
+    EditOperation()(OperationParams(operation: operation))!.then((value) => value as dartz.Either<bool, Operation>);
 
-class EditOperation extends UseCase<bool, Operation, OperationParams> {
+class EditOperation extends UseCase<bool, Operation?, OperationParams> {
   @override
-  Future<dartz.Either<bool, Operation>> execute(params) async {
+  Future<dartz.Either<bool, Operation?>> execute(params) async {
     assert(params.data != null, "Operation is required");
 
     var result = await showDialog<OperationEditorResult>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       useRootNavigator: false,
       builder: (context) => OperationEditor(
         ipp: params.ipp,
         operation: params.data,
-        incident: params.bloc.incidents[params.data.incident.uuid],
+        incident: params.bloc.incidents[params.data!.incident!.uuid!],
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -102,19 +102,19 @@ class EditOperation extends UseCase<bool, Operation, OperationParams> {
 }
 
 User _assertUser(OperationParams params) {
-  final user = params.bloc.userBloc.user;
+  final user = params.bloc.userBloc!.user!;
   assert(user != null, "User must bed authenticated");
   return user;
 }
 
-Future<dartz.Either<bool, Operation>> openOperation(
+Future<dartz.Either<bool, Operation>>? openOperation(
   String uuid,
 ) =>
-    OpenOperation()(OperationParams(uuid: uuid));
+    OpenOperation()(OperationParams(uuid: uuid))!.then((value) => value as dartz.Either<bool, Operation>);
 
-class OpenOperation extends UseCase<bool, Operation, OperationParams> {
+class OpenOperation extends UseCase<bool, Operation?, OperationParams> {
   @override
-  Future<dartz.Either<bool, Operation>> execute(params) async {
+  Future<dartz.Either<bool, Operation?>> execute(params) async {
     final user = _assertUser(params);
     // Read from storage if not set in params
     final ouuid = params.uuid ??
@@ -138,16 +138,16 @@ class OpenOperation extends UseCase<bool, Operation, OperationParams> {
   }
 }
 
-Future<dartz.Either<bool, Personnel>> joinOperation(
-  Operation operation,
+Future<dartz.Either<bool, Personnel>>? joinOperation(
+  Operation? operation,
 ) =>
-    JoinOperation()(OperationParams(operation: operation));
+    JoinOperation()(OperationParams(operation: operation))!.then((value) => value as dartz.Either<bool, Personnel>);
 
 class JoinOperation extends UseCase<bool, Personnel, OperationParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data != null, "Operation is required");
-    final user = params.bloc.userBloc.user;
+    final user = params.bloc.userBloc!.user!;
     assert(user != null, "User must be authenticated");
 
     if (_shouldJoin(params)) {
@@ -163,9 +163,9 @@ class JoinOperation extends UseCase<bool, Personnel, OperationParams> {
   }
 }
 
-Future<dartz.Either<bool, bool>> escalateToCommand() => EscalateToCommand()(
+Future<dartz.Either<bool, bool>>? escalateToCommand() => EscalateToCommand()(
       OperationParams(),
-    );
+    )!.then((value) => value as dartz.Either<bool, bool>);
 
 class EscalateToCommand extends UseCase<bool, bool, OperationParams> {
   @override
@@ -173,8 +173,8 @@ class EscalateToCommand extends UseCase<bool, bool, OperationParams> {
     assert(params.data == null, "Operation should not be given");
 
     final operation = params.bloc.selected;
-    final leave = await showDialog<bool>(
-      context: params.overlay.context,
+    final leave = await (showDialog<bool>(
+      context: params.overlay!.context,
       builder: (context) => Scaffold(
         body: KeyboardAvoider(
           child: PasscodePage(
@@ -182,19 +182,19 @@ class EscalateToCommand extends UseCase<bool, bool, OperationParams> {
             operation: operation,
             onComplete: (result) => Navigator.pop(context, result),
             onAuthorize: (operation, passcode) async {
-              final authorized = await params.bloc.userBloc.authorize(
-                operation,
-                passcode,
-              );
+              final authorized = await (params.bloc.userBloc!.authorize(
+                operation!,
+                passcode!,
+              ) as FutureOr<bool>);
               if (authorized) {
-                return params.bloc.userBloc.getAuthorization(operation).withCommanderCode;
+                return params.bloc.userBloc!.getAuthorization(operation)!.withCommanderCode;
               }
               return authorized;
             },
           ),
         ),
       ),
-    );
+    ) as FutureOr<bool>);
 
     if (leave) {
       return dartz.Right(leave);
@@ -203,23 +203,23 @@ class EscalateToCommand extends UseCase<bool, bool, OperationParams> {
   }
 }
 
-Future<dartz.Either<bool, Personnel>> leaveOperation() => LeaveOperation()(
+Future<dartz.Either<bool, Personnel>>? leaveOperation() => LeaveOperation()(
       OperationParams(),
-    );
+    )!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class LeaveOperation extends UseCase<bool, Personnel, OperationParams> {
+class LeaveOperation extends UseCase<bool, Personnel?, OperationParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
+  Future<dartz.Either<bool, Personnel?>> execute(params) async {
     assert(params.data == null, "Operation should not be given");
 
     final leave = await prompt(
-      params.overlay.context,
+      params.overlay!.context,
       'Bekreftelse',
       'Du dimitteres nå fra aksjonen. Vil du fortsette?',
     );
 
     if (leave) {
-      Personnel personnel = await _leave(params);
+      Personnel? personnel = await _leave(params);
       return dartz.Right(personnel);
     }
     return dartz.Left(false);
@@ -229,25 +229,25 @@ class LeaveOperation extends UseCase<bool, Personnel, OperationParams> {
 bool _shouldJoin(
   OperationParams params,
 ) =>
-    params.bloc.isUnselected || params.data.uuid != params.bloc.selected?.uuid;
+    params.bloc.isUnselected || params.data!.uuid != params.bloc.selected?.uuid;
 
 Future<dartz.Either<bool, Personnel>> _join(
   OperationParams params,
 ) async {
   final join = await prompt(
-    params.overlay.context,
+    params.overlay!.context,
     'Bekreftelse',
     'Du legges nå til aksjonen som mannskap. Vil du fortsette?',
   );
 
-  if (join == true && !params.bloc.userBloc.isAuthorized(params.data)) {
+  if (join == true && !params.bloc.userBloc!.isAuthorized(params.data)) {
     final personnel = await showDialog<Personnel>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => OpenOperationScreen(
         operation: params.data,
-        onAuthorize: (operation, passcode) => params.bloc.userBloc.authorize(
-          operation,
-          passcode,
+        onAuthorize: (operation, passcode) => params.bloc.userBloc!.authorize(
+          operation!,
+          passcode!,
         ),
         requirePasscode: 0,
         onCancel: (step) {
@@ -261,7 +261,7 @@ Future<dartz.Either<bool, Personnel>> _join(
             100,
           );
           // PersonnelBloc will mobilize user
-          await params.bloc.select(operation.uuid);
+          await params.bloc.select(operation!.uuid);
           // Wait for blocs to download all data
           await _onLoadedAsync<UnitBloc>(params);
           await _onLoadedAsync<PersonnelBloc>(params);
@@ -275,14 +275,14 @@ Future<dartz.Either<bool, Personnel>> _join(
       return dartz.right(personnel);
     }
   }
-  if (join == true && params.bloc.userBloc.isAuthorized(params.data)) {
+  if (join == true && params.bloc.userBloc!.isAuthorized(params.data)) {
     final personnel = await showDialog<Personnel>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => OpenOperationScreen(
         operation: params.data,
-        onAuthorize: (operation, passcode) => params.bloc.userBloc.authorize(
-          operation,
-          passcode,
+        onAuthorize: (operation, passcode) => params.bloc.userBloc!.authorize(
+          operation!,
+          passcode!,
         ),
         requirePasscode: 1,
         onCancel: (step) {
@@ -296,7 +296,7 @@ Future<dartz.Either<bool, Personnel>> _join(
             100,
           );
           // PersonnelBloc will mobilize user
-          await params.bloc.select(operation.uuid);
+          await params.bloc.select(operation!.uuid);
           // Wait for blocs to download all data
           await _onLoadedAsync<UnitBloc>(params);
           await _onLoadedAsync<PersonnelBloc>(params);
@@ -314,7 +314,7 @@ Future<dartz.Either<bool, Personnel>> _join(
 }
 
 Future _onLoadedAsync<B extends BaseBloc<dynamic, dynamic, dynamic>>(OperationParams params) {
-  final bloc = params.context.read<B>();
+  final bloc = params.context!.read<B>();
   if (bloc is ConnectionAwareBloc) {
     return (bloc as ConnectionAwareBloc).onLoadedAsync();
   }
@@ -322,26 +322,26 @@ Future _onLoadedAsync<B extends BaseBloc<dynamic, dynamic, dynamic>>(OperationPa
 }
 
 Future<Personnel> _mobilize(OperationParams params) async {
-  final personnels = params.context.read<PersonnelBloc>();
+  final personnels = params.context!.read<PersonnelBloc>();
   var personnel = personnels.findMobilizedUserOrReuse();
   personnel ??= await personnels.mobilizeUser();
   assert(
     personnel != null,
-    'User ${params.bloc.userBloc.user} not mobilized',
+    'User ${params.bloc.userBloc!.user} not mobilized',
   );
-  return personnel;
+  return personnel!;
 }
 
 // TODO: Move to new use-case RetireUser in PersonnelBloc
-Future<Personnel> _retire(OperationParams params) async {
-  final personnels = params.context.read<PersonnelBloc>();
+Future<Personnel?> _retire(OperationParams params) async {
+  final personnels = params.context!.read<PersonnelBloc>();
   var personnel = personnels.findMobilizedUserOrReuse();
   if (personnel != null) {
-    personnel = await personnels.update(
+    personnel = await (personnels.update(
       personnel.copyWith(
         status: PersonnelStatus.retired,
       ),
-    );
+    ) as FutureOr<Personnel>);
     // // Ensure state is pushed if online
     // if (bloc.isOnline) {
     //   await bloc.repo.onRemote(personnel.uuid).timeout(
@@ -352,8 +352,8 @@ Future<Personnel> _retire(OperationParams params) async {
   return personnel;
 }
 
-Future<Personnel> _leave(OperationParams params) async {
-  Personnel personnel = await _retire(params);
+Future<Personnel?> _leave(OperationParams params) async {
+  Personnel? personnel = await _retire(params);
   await params.bloc.unselect();
   params.pushReplacementNamed(OperationsScreen.ROUTE);
   return personnel;

@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'Passcodes.dart';
@@ -10,8 +8,8 @@ part of 'Passcodes.dart';
 
 Passcodes _$PasscodesFromJson(Map json) {
   return Passcodes(
-    commander: json['commander'] as String,
-    personnel: json['personnel'] as String,
+    commander: json['commander'] as String?,
+    personnel: json['personnel'] as String?,
   );
 }
 

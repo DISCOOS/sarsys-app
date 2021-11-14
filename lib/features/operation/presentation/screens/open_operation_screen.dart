@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,7 +15,7 @@ import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'dart:math';
 
-typedef OpenCallback = Future<Personnel> Function(Operation operation, StreamSink<DownloadProgress> onProgress);
+typedef OpenCallback = Future<Personnel> Function(Operation? operation, StreamSink<DownloadProgress> onProgress);
 
 class OpenOperationScreen extends StatefulWidget {
   static const String ROUTE = 'open_operation';
@@ -23,17 +23,17 @@ class OpenOperationScreen extends StatefulWidget {
   static const int DOWNLOAD = 2;
 
   OpenOperationScreen(
-      {Key key,
-      @required this.onCancel,
-      @required this.operation,
-      @required this.onDownload,
-      @required this.onAuthorize,
-      @required this.requirePasscode})
+      {Key? key,
+      required this.onCancel,
+      required this.operation,
+      required this.onDownload,
+      required this.onAuthorize,
+      required this.requirePasscode})
       : super(key: key) {
     assert(operation != null, 'Operation is required');
   }
 
-  final Operation operation;
+  final Operation? operation;
   final OpenCallback onDownload;
   final ValueSetter<int> onCancel;
   final PasscodeCallback onAuthorize;
@@ -44,7 +44,7 @@ class OpenOperationScreen extends StatefulWidget {
 }
 
 class _OpenOperationScreenState extends State<OpenOperationScreen> {
-  List<Widget> views;
+  List<Widget>? views;
 
   int _index = 0;
 
@@ -112,7 +112,7 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
     super.didChangeDependencies();
     views = [
       PasscodePage(
-        onVerify: _onVerify,
+        onVerify: _onVerify as ValueNotifier<bool>?,
         operation: widget.operation,
         onComplete: _onPasscodeChange,
         onAuthorize: widget.onAuthorize,
@@ -161,7 +161,7 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
     _onComplete(step);
   }
 
-  void _onComplete(int step, {Personnel personnel}) {
+  void _onComplete(int step, {Personnel? personnel}) {
     Navigator.pop(context, personnel);
   }
 }

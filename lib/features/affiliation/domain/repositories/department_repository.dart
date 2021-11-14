@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -7,25 +7,25 @@ import 'package:SarSys/features/affiliation/data/services/department_service.dar
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
-abstract class DepartmentRepository implements StatefulRepository<String, Department, DepartmentService> {
+abstract class DepartmentRepository implements StatefulRepository<String?, Department, DepartmentService> {
   /// Get [Department.uuid] from [value]
   @override
-  String toKey(Department value) {
+  String? toKey(Department? value) {
     return value?.uuid;
   }
 
   /// Load incidents
-  Future<List<Department>> load({
+  Future<List<Department?>> load({
     bool force = true,
-    Completer<Iterable<Department>> onRemote,
+    Completer<Iterable<Department>>? onRemote,
   });
 }
 
 class DepartmentServiceException extends ServiceException {
   DepartmentServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(
           error,
           response: response,

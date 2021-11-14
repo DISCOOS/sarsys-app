@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/domain/models/converters.dart';
@@ -12,23 +12,23 @@ part 'BaseMap.g.dart';
 
 @JsonSerializable()
 class BaseMap extends ValueObject<Map<String, dynamic>> {
-  final String name;
-  final String description;
-  final String url;
-  final double maxZoom;
-  final double minZoom;
-  final String attribution;
-  final bool offline;
-  final bool tms;
-  final String previewFile;
+  final String? name;
+  final String? description;
+  final String? url;
+  final double? maxZoom;
+  final double? minZoom;
+  final String? attribution;
+  final bool? offline;
+  final bool? tms;
+  final String? previewFile;
   final List<String> subdomains;
 
   @LatLngBoundsConverter()
-  final LatLngBounds bounds;
+  final LatLngBounds? bounds;
 
   BaseMap({
-    @required this.url,
-    @required this.name,
+    required this.url,
+    required this.name,
     this.description,
     this.maxZoom = Defaults.minZoom,
     this.minZoom = Defaults.maxZoom,
@@ -37,7 +37,7 @@ class BaseMap extends ValueObject<Map<String, dynamic>> {
     this.offline = false,
     this.previewFile,
     this.tms = false,
-    List<String> subdomains = const [],
+    List<String>? subdomains = const [],
   })  : this.subdomains = subdomains ?? const [],
         super([
           name,
@@ -59,7 +59,7 @@ class BaseMap extends ValueObject<Map<String, dynamic>> {
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$BaseMapToJson(this);
 
-  BaseMap cloneWith({String url, String previewFile}) => BaseMap(
+  BaseMap cloneWith({String? url, String? previewFile}) => BaseMap(
         name: this.name,
         url: url ?? this.url,
         description: this.description,

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:io';
 
@@ -21,14 +21,14 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
   final _ttl = TextEditingController();
   final _capacity = TextEditingController();
 
-  AppConfigBloc _bloc;
+  late AppConfigBloc _bloc;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _bloc = context.read<AppConfigBloc>();
-    _ttl.text = '${_bloc.config.mapCacheTTL}';
-    _capacity.text = '${_bloc.config.mapCacheCapacity}';
+    _ttl.text = '${_bloc.config!.mapCacheTTL}';
+    _capacity.text = '${_bloc.config!.mapCacheCapacity}';
   }
 
   @override
@@ -93,7 +93,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ''),
               onChanged: (value) {
-                _bloc.updateWith(mapCacheTTL: int.parse(value ?? 0));
+                _bloc.updateWith(mapCacheTTL: int.parse(value ?? 0 as String));
               },
             ),
           ),
@@ -128,7 +128,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ''),
               onChanged: (value) {
-                _bloc.updateWith(mapCacheCapacity: int.parse(value ?? 0));
+                _bloc.updateWith(mapCacheCapacity: int.parse(value ?? 0 as String));
               },
             ),
           ),
@@ -144,9 +144,9 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
         future: path,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            final root = new Directory(snapshot.data);
+            final root = new Directory(snapshot.data as String);
             final files = root.listSync(recursive: true);
-            final size = files.fold(0, (sum, file) => sum + file.statSync().size);
+            final size = files.fold(0, (dynamic sum, file) => sum + file.statSync().size);
             return ListTile(
               title: Text('Slett kartbuffer'),
               subtitle: Text('Inneholder totalt ${files.length} kartfliser (${filesize(size)})'),
@@ -157,7 +157,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
                   'Slette kart-fliser',
                   'Dette vil slette alle kartfliser lastet ned lokalt. Vil du fortsette?',
                 )) {
-                  imageCache.clear();
+                  imageCache!.clear();
                   await cache.emptyCache();
                   setState(() {});
                 }
@@ -191,7 +191,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           ),
           Flexible(
             child: Switch(
-              value: _bloc.config.keepScreenOn,
+              value: _bloc.config!.keepScreenOn,
               onChanged: (value) => setState(() {
                 _bloc.updateWith(keepScreenOn: value);
               }),
@@ -204,7 +204,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
 
   Widget _buildUseRetinaModeField() {
     return SwitchListTile(
-      value: context.read<AppConfigBloc>().config.mapRetinaMode,
+      value: context.read<AppConfigBloc>().config!.mapRetinaMode,
       title: Text('Vis høy oppløsning'),
       subtitle: Text('Krever skjerm med stor oppløsning (retina)'),
       onChanged: (value) {

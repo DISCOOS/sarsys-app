@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
@@ -24,8 +24,8 @@ import 'package:SarSys/core/presentation/widgets/action_group.dart';
 
 class UnitTemplateChip extends StatelessWidget {
   const UnitTemplateChip({
-    Key key,
-    @required this.unit,
+    Key? key,
+    required this.unit,
   }) : super(key: key);
 
   final String unit;
@@ -60,11 +60,11 @@ class UnitTemplateChip extends StatelessWidget {
 
 class UnitWidget extends StatelessWidget {
   UnitWidget({
-    Key key,
-    @required this.unit,
-    @required this.tracking,
-    @required this.devices,
-    @required this.onMessage,
+    Key? key,
+    required this.unit,
+    required this.tracking,
+    required this.devices,
+    required this.onMessage,
     this.onGoto,
     this.onChanged,
     this.onCompleted,
@@ -72,7 +72,7 @@ class UnitWidget extends StatelessWidget {
     this.withMap = false,
     this.withHeader = true,
     this.withActions = true,
-    MapWidgetController controller,
+    MapWidgetController? controller,
   })  : this.controller = controller ?? MapWidgetController(),
         super(key: key);
 
@@ -81,17 +81,17 @@ class UnitWidget extends StatelessWidget {
   static const SPACING = 8.0;
   static const ELEVATION = 2.0;
 
-  final Unit unit;
-  final Tracking tracking;
+  final Unit? unit;
+  final Tracking? tracking;
   final Iterable<Device> devices;
   final bool withMap;
   final bool withHeader;
   final bool withActions;
-  final ValueChanged<Point> onGoto;
-  final ValueChanged<Unit> onChanged;
-  final ValueChanged<Unit> onCompleted;
-  final VoidCallback onDeleted;
-  final ActionCallback onMessage;
+  final ValueChanged<Point>? onGoto;
+  final ValueChanged<Unit>? onChanged;
+  final ValueChanged<Unit?>? onCompleted;
+  final VoidCallback? onDeleted;
+  final ActionCallback? onMessage;
   final MapWidgetController controller;
 
   @override
@@ -183,7 +183,7 @@ class UnitWidget extends StatelessWidget {
   ListTile _buildHeader(BuildContext context, TextTheme theme) => ListTile(
       selected: true,
       title: Text('Enhet', style: theme.headline6),
-      subtitle: Text('${unit.name}'),
+      subtitle: Text('${unit!.name}'),
       trailing: IconButton(
         icon: Icon(Icons.close),
         onPressed: () => _onComplete(unit),
@@ -202,7 +202,7 @@ class UnitWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(CORNER),
             child: GestureDetector(
               child: MapWidget(
-                key: ObjectKey(unit.uuid),
+                key: ObjectKey(unit!.uuid),
                 center: center,
                 zoom: 16.0,
                 withRead: true,
@@ -217,7 +217,7 @@ class UnitWidget extends StatelessWidget {
                 withControlsLayer: true,
                 withControlsBaseMap: true,
                 withControlsOffset: 16.0,
-                showRetired: UnitStatus.retired == unit.status,
+                showRetired: UnitStatus.retired == unit!.status,
                 showLayers: [
                   MapWidgetState.LAYER_POI,
                   MapWidgetState.LAYER_PERSONNEL,
@@ -250,10 +250,10 @@ class UnitWidget extends StatelessWidget {
 
   Widget buildCopyableLocation(
     BuildContext context, {
-    Tracking tracking,
-    String label,
-    IconData icon,
-    String formatter(Point location),
+    Tracking? tracking,
+    String? label,
+    IconData? icon,
+    required String formatter(Point? location),
   }) =>
       buildCopyableText(
         context: context,
@@ -272,7 +272,7 @@ class UnitWidget extends StatelessWidget {
               context: context,
               label: "Navn",
               icon: Icon(Icons.people),
-              value: unit.name,
+              value: unit!.name,
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -282,7 +282,7 @@ class UnitWidget extends StatelessWidget {
               context: context,
               label: "Status",
               icon: Icon(Icons.people_outline),
-              value: translateUnitStatus(unit.status),
+              value: translateUnitStatus(unit!.status),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -290,8 +290,8 @@ class UnitWidget extends StatelessWidget {
         ],
       );
 
-  void _onGoto(Point location) {
-    if (onGoto != null && location != null) onGoto(location);
+  void _onGoto(Point? location) {
+    if (onGoto != null && location != null) onGoto!(location);
   }
 
   Row _buildContactInfo(BuildContext context) {
@@ -303,7 +303,7 @@ class UnitWidget extends StatelessWidget {
             context: context,
             label: "Kallesignal",
             icon: Icon(Icons.headset_mic),
-            value: unit.callsign,
+            value: unit!.callsign,
             onMessage: onMessage,
             onComplete: _onComplete,
           ),
@@ -343,10 +343,10 @@ class UnitWidget extends StatelessWidget {
         ],
       );
 
-  String _toPersonnel(PersonnelRepository repo) {
+  String? _toPersonnel(PersonnelRepository repo) {
     final personnel = unit?.personnels
-        ?.map((puuid) => repo[puuid])
-        ?.where((p) => p.isAvailable)
+        ?.map((puuid) => repo[puuid!])
+        ?.where((p) => p!.isAvailable)
         ?.map((p) => p?.formal ?? 'Mannskap')
         ?.join(', ');
     return personnel?.isEmpty == true ? 'Ingen' : personnel;
@@ -378,8 +378,8 @@ class UnitWidget extends StatelessWidget {
       );
 
   String _toDeviceNumbers() {
-    final numbers = devices?.map((device) => device.number ?? device.alias);
-    return numbers?.isNotEmpty == true ? numbers.join(', ') : 'Ingen';
+    final numbers = devices?.map((device) => device!.number ?? device.alias);
+    return numbers?.isNotEmpty == true ? numbers!.join(', ') : 'Ingen';
   }
 
   Row _buildEffortInfo(BuildContext context) => Row(
@@ -408,25 +408,25 @@ class UnitWidget extends StatelessWidget {
       );
 
   void _onComplete([unit]) {
-    if (onCompleted != null) onCompleted(unit ?? this.unit);
+    if (onCompleted != null) onCompleted!(unit ?? this.unit);
   }
 }
 
 class UnitActionGroup extends StatelessWidget {
   UnitActionGroup({
-    @required this.unit,
-    @required this.type,
+    required this.unit,
+    required this.type,
     this.onDeleted,
     this.onMessage,
     this.onChanged,
     this.onCompleted,
   });
-  final Unit unit;
-  final VoidCallback onDeleted;
+  final Unit? unit;
+  final VoidCallback? onDeleted;
   final ActionGroupType type;
-  final MessageCallback onMessage;
-  final ValueChanged<Unit> onChanged;
-  final ValueChanged<Unit> onCompleted;
+  final MessageCallback? onMessage;
+  final ValueChanged<Unit>? onChanged;
+  final ValueChanged<Unit?>? onCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -443,7 +443,7 @@ class UnitActionGroup extends StatelessWidget {
         onPressed: _onEdit,
       ),
       _buildTransitionActionItem(context),
-      if (context.read<UserBloc>().user.isAdmin)
+      if (context.read<UserBloc>().user!.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,
@@ -452,7 +452,7 @@ class UnitActionGroup extends StatelessWidget {
   }
 
   ActionMenuItem _buildTransitionActionItem(BuildContext context) {
-    switch (unit.status) {
+    switch (unit!.status) {
       case UnitStatus.retired:
         return ActionMenuItem(
           child: _buildMobilizeAction(context),
@@ -491,7 +491,7 @@ class UnitActionGroup extends StatelessWidget {
       );
 
   void _onEdit() async {
-    final result = await editUnit(unit);
+    final result = await editUnit(unit)!;
     if (result.isRight()) {
       final actual = result.toIterable().first;
       if (actual != unit) {
@@ -503,7 +503,7 @@ class UnitActionGroup extends StatelessWidget {
   }
 
   Widget _buildMobilizeAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     final color = toUnitStatusColor(UnitStatus.mobilized);
     return Tooltip(
       message: "Registrer som mobilisert",
@@ -527,7 +527,7 @@ class UnitActionGroup extends StatelessWidget {
   }
 
   Widget _buildDeployedAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     final color = toUnitStatusColor(UnitStatus.deployed);
     return Tooltip(
       message: "Registrer som deployert",
@@ -553,7 +553,7 @@ class UnitActionGroup extends StatelessWidget {
   void _onTransition(UnitStatus status) async {
     switch (status) {
       case UnitStatus.mobilized:
-        final result = await mobilizeUnit(unit);
+        final result = await mobilizeUnit(unit)!;
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage("${actual.name} er registert mobilisert");
@@ -562,7 +562,7 @@ class UnitActionGroup extends StatelessWidget {
         }
         break;
       case UnitStatus.deployed:
-        final result = await deployUnit(unit);
+        final result = await deployUnit(unit)!;
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage("${actual.name} er registert ankommet");
@@ -571,7 +571,7 @@ class UnitActionGroup extends StatelessWidget {
         }
         break;
       case UnitStatus.retired:
-        final result = await retireUnit(unit);
+        final result = await retireUnit(unit)!;
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage("${actual.name} er dimmitert");
@@ -583,7 +583,7 @@ class UnitActionGroup extends StatelessWidget {
   }
 
   Widget _buildRetireAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     final color = toUnitStatusColor(UnitStatus.retired);
     return Tooltip(
       message: "Dimitter og avslutt sporing",
@@ -605,7 +605,7 @@ class UnitActionGroup extends StatelessWidget {
   }
 
   Widget _buildDeleteAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     return Tooltip(
       message: "Slett mannskap",
       child: TextButton.icon(
@@ -624,27 +624,27 @@ class UnitActionGroup extends StatelessWidget {
   }
 
   void _onDelete() async {
-    final result = await deleteUnit(unit);
+    final result = await deleteUnit(unit)!;
     if (result.isRight()) {
-      _onMessage("${unit.name} er slettet");
+      _onMessage("${unit!.name} er slettet");
       _onDeleted();
       _onCompleted();
     }
   }
 
   void _onMessage(String message) {
-    if (onMessage != null) onMessage(message);
+    if (onMessage != null) onMessage!(message);
   }
 
   void _onChanged([personnel]) {
-    if (onChanged != null) onChanged(personnel);
+    if (onChanged != null) onChanged!(personnel);
   }
 
   void _onCompleted([personnel]) {
-    if (onCompleted != null) onCompleted(personnel ?? this.unit);
+    if (onCompleted != null) onCompleted!(personnel ?? this.unit);
   }
 
   void _onDeleted() {
-    if (onDeleted != null) onDeleted();
+    if (onDeleted != null) onDeleted!();
   }
 }

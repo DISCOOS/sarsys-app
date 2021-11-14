@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -15,6 +15,7 @@ import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 const int APP_CONFIG_VERSION = 1;
 
@@ -22,9 +23,9 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     implements AppConfigRepository {
   AppConfigRepositoryImpl(
     this.version, {
-    @required AppConfigService service,
-    @required this.assets,
-    @required ConnectivityService connectivity,
+    required AppConfigService service,
+    required this.assets,
+    required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
@@ -34,28 +35,28 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
   final String assets;
 
   /// Get current [AppConfig] instance
-  AppConfig get config => this['$version'];
+  AppConfig get config => this['$version']!;
 
   /// Get current state
-  StorageState<AppConfig> get state => getState('$version');
+  StorageState<AppConfig>? get state => getState('$version');
 
   @override
   String toKey(AppConfig value) => '$version';
 
   /// Create [AppConfig] from json
-  AppConfig fromJson(Map<String, dynamic> json) => AppConfigModel.fromJson(json);
+  AppConfig fromJson(Map<String, dynamic>? json) => AppConfigModel.fromJson(json!);
 
   @override
   Future<AppConfig> local() async {
     beginTransaction();
     return push(
-      await _open(force: true),
+      await (_open(force: true) as FutureOr<StorageState<AppConfig>>),
     );
   }
 
   @override
   Future<AppConfig> init({
-    Completer<Iterable<AppConfig>> onRemote,
+    Completer<Iterable<AppConfig>>? onRemote,
   }) async {
     var onPush;
     if (onRemote != null) {
@@ -65,7 +66,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
         onError: onRemote.completeError,
       );
     }
-    final state = await _open(force: true);
+    final state = await (_open(force: true) as FutureOr<StorageState<AppConfig>>);
     return push(
       state,
       onResult: onPush,
@@ -74,17 +75,17 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
 
   @override
   Future<AppConfig> load({
-    Completer<Iterable<AppConfig>> onRemote,
+    Completer<Iterable<AppConfig>>? onRemote,
   }) async {
-    final state = await _open();
+    final state = await (_open() as FutureOr<StorageState<AppConfig>>);
     if (state.isLocal) {
       final onPush = Completer<AppConfig>();
       onPush.future.then(
-        (value) => onRemote.complete([value]),
-        onError: onRemote.completeError,
+        (value) => onRemote!.complete([value]),
+        onError: onRemote!.completeError,
       );
       return containsKey('$version')
-          ? requestQueue.push(
+          ? requestQueue!.push(
               toKey(state.value),
               onResult: onPush,
             )
@@ -99,21 +100,21 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
   }
 
   /// Ensure that [config] exists
-  Future<StorageState<AppConfig>> _open({bool force = false}) async {
+  Future<StorageState<AppConfig>?> _open({bool force = false}) async {
     if (force || !isReady) {
       await prepare(force: force);
     }
     var current = getState('$version');
     if (force || current == null) {
       current = await _initFromAssets(current);
-    } else if ((current.value.version ?? 0) < version) {
+    } else if ((current.value!.version ?? 0) < version) {
       current = await _upgrade(current);
     }
     return current;
   }
 
   /// Initialize from assets
-  Future<StorageState<AppConfig>> _initFromAssets(StorageState<AppConfig> current) async {
+  Future<StorageState<AppConfig>> _initFromAssets(StorageState<AppConfig>? current) async {
     var assetData = await rootBundle.loadString(assets);
     final newJson = jsonDecode(assetData) as Map<String, dynamic>;
     var init = AppConfigModel.fromJson(newJson);
@@ -127,7 +128,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     return current?.isRemote == true
         ? StorageState.updated(
             next,
-            getVersion('$version') + 1,
+            getVersion('$version')! + 1,
           )
         : StorageState.created(
             next,
@@ -140,7 +141,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     var assetData = await rootBundle.loadString(assets);
     final newJson = jsonDecode(assetData) as Map<String, dynamic>;
     // Overwrite current configuration
-    final next = state.value.toJson();
+    final next = state.value!.toJson();
     next.addAll(newJson);
     return state.replace(AppConfigModel.fromJson(next
       ..addAll({
@@ -149,13 +150,13 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
   }
 
   Future<AppConfig> _load({
-    Completer<Iterable<AppConfig>> onRemote,
+    Completer<Iterable<AppConfig>>? onRemote,
   }) async {
-    final state = getState('$version');
-    requestQueue.load(
+    final state = getState('$version')!;
+    requestQueue!.load(
       () async {
-        final response = await service.getFromId(state.value.uuid);
-        return response.copyWith<List<StorageState<AppConfig>>>(
+        final ServiceResponse<StorageState<AppConfig>> response = await service.getFromId(state.value!.uuid);
+        return response.copyWith<List<StorageState<AppConfig>?>>(
           body: [response.body],
         );
       },
@@ -166,13 +167,13 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
   }
 
   @override
-  Future<Iterable<AppConfig>> onReset({Iterable<AppConfig> previous}) async => [await _load()];
+  Future<Iterable<AppConfig>> onReset({Iterable<AppConfig>? previous}) async => [await _load()];
 
   @override
   Future<StorageState<AppConfig>> onCreate(StorageState<AppConfig> state) async {
     var response = await service.create(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
     throw AppConfigServiceException(
       'Failed to create AppConfig ${state.value}',
@@ -183,7 +184,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
   Future<StorageState<AppConfig>> onUpdate(StorageState<AppConfig> state) async {
     var response = await service.update(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     } else if (response.is404) {
       return onCreate(state);
     }
@@ -193,8 +194,8 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     );
   }
 
-  Future<StorageState<AppConfig>> onDelete(StorageState<AppConfig> state) async {
-    var response = await service.delete(state);
+  Future<StorageState<AppConfig>?> onDelete(StorageState<AppConfig> state) async {
+    ServiceResponse<StorageState<AppConfig>> response = await service.delete(state);
     if (response.isOK) {
       return response.body;
     }

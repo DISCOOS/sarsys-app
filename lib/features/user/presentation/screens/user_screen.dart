@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,7 +22,7 @@ import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
 import 'package:SarSys/core/extensions.dart';
 
 class UserScreen extends StatefulWidget {
-  UserScreen({Key key, @required this.tabIndex}) : super(key: key);
+  UserScreen({Key? key, required this.tabIndex}) : super(key: key);
 
   static const TAB_PROFILE = 0;
   static const TAB_UNIT = 1;
@@ -53,22 +53,22 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   final _statusKey = GlobalKey<UserStatusPageState>();
   final _historyKey = GlobalKey<UserHistoryPageState>();
 
-  User _user;
-  Unit _unit;
-  Personnel _personnel;
+  late User _user;
+  Unit? _unit;
+  Personnel? _personnel;
 
   @override
   void initState() {
     super.initState();
     routeData = widget.tabIndex;
-    routeName = UserScreen.ROUTES[routeData];
+    routeName = UserScreen.ROUTES[routeData!];
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _user = context.read<UserBloc>().user;
-    _personnel = context.read<PersonnelBloc>().findUser(userId: _user.userId).firstOrNull;
+    _personnel = context.read<PersonnelBloc>().findUser(userId: _user!.userId).firstOrNull;
     _unit = context.read<UnitBloc>().findUnitsWithPersonnel(_personnel?.uuid).firstOrNull;
   }
 
@@ -116,10 +116,10 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
               actions: _buildActions(),
               title: Text(_toTitle(operation)),
             ),
-            body: tabs[routeData],
+            body: tabs[routeData!],
             bottomNavigationBar: Container(
               child: BottomNavigationBar(
-                currentIndex: routeData,
+                currentIndex: routeData!,
                 elevation: 16.0,
                 selectedItemColor: Theme.of(context).colorScheme.primary,
                 type: BottomNavigationBarType.fixed,
@@ -141,7 +141,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
         });
   }
 
-  _toTitle(Operation operation, {ifEmpty: "Aksjon"}) {
+  _toTitle(Operation? operation, {ifEmpty: "Aksjon"}) {
     switch (routeData) {
       case UserScreen.TAB_OPERATION:
         String name = operation?.name ?? "Aksjon";
@@ -161,11 +161,11 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
         return [
           if (_personnel != null)
             PersonnelActionGroup(
-              personnel: _personnel,
+              personnel: _personnel!,
               onMessage: _showMessage,
               type: ActionGroupType.popupMenuButton,
               onChanged: (personnel) => setState(() => _personnel = personnel),
-              unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+              unit: context.read<UnitBloc>().repo.findPersonnel(_personnel!.uuid).firstOrNull,
             )
         ];
       case UserScreen.TAB_UNIT:
@@ -204,7 +204,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   void _showMessage(
     String message, {
     String action = "OK",
-    VoidCallback onPressed,
+    VoidCallback? onPressed,
     dynamic data,
   }) {
     final snackbar = SnackBar(
@@ -216,7 +216,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
       action: _buildSnackBarAction(action, () {
         if (onPressed != null) onPressed();
         ScaffoldMessenger.of(context).hideCurrentSnackBar(reason: SnackBarClosedReason.action);
-      }),
+      }) as SnackBarAction?,
     );
     ScaffoldMessenger.of(context).showSnackBar(snackbar);
   }

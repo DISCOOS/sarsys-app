@@ -1,9 +1,10 @@
-// @dart=2.11
+
 
 import 'dart:collection';
 
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
@@ -13,20 +14,20 @@ import 'tracking_bloc.dart';
 /// -------------------------------------------------
 /// Helper class for querying [Trackable] aggregates
 /// -------------------------------------------------
-class TrackableQuery<T extends Trackable> {
+class TrackableQuery<T extends Trackable?> {
   final TrackingBloc bloc;
   final Map<String, T> _data;
 
   TrackableQuery({
     /// [TrackingBloc] managing tracking objects
-    @required this.bloc,
+    required this.bloc,
 
     /// Mapping from [Aggregate.uuid] to Aggregate of type [T]
-    @required Map<String, T> data,
-  }) : this._data = UnmodifiableMapView(_toTracked(data, bloc.repo));
+    required Map<String, T> data,
+  }) : this._data = UnmodifiableMapView(_toTracked(data as Map<String, Never>, bloc.repo));
 
-  static Map<String, T> _toTracked<String, T extends Trackable>(Map<String, T> data, TrackingRepository repo) {
-    return Map.from(data)..removeWhere((_, trackable) => !repo.containsKey(trackable.tracking?.uuid));
+  static Map<String, T> _toTracked<String, T extends Trackable?>(Map<String, T> data, TrackingRepository repo) {
+    return Map.from(data)..removeWhere((_, trackable) => !repo.containsKey(trackable!.tracking.uuid));
   }
 
   /// Get map of [Tracking.uuid] to aggregate of type [T]
@@ -40,22 +41,21 @@ class TrackableQuery<T extends Trackable> {
   Iterable<T> get trackables => _data.values;
 
   /// Get [Tracking] instances
-  Iterable<Tracking> get trackings => _data.keys.map((tuuid) => bloc.repo[tuuid]);
+  Iterable<Tracking?> get trackings => _data.keys.map((tuuid) => bloc.repo[tuuid]);
 
   /// Test if given [trackable] is a source in any [Tracking] in this [TrackableQuery]
-  bool contains(T trackable) => _data.containsKey(trackable.uuid);
+  bool contains(T trackable) => _data.containsKey(trackable!.uuid);
 
   /// Get [Tracking] from given [Trackable] of type [T]
-  Tracking elementAt(T trackable) => bloc.repo[trackable.tracking?.uuid];
+  Tracking? elementAt(T trackable) => bloc.repo[trackable!.tracking.uuid!];
 
   /// Get aggregate of type [T] tracked by given [Tracking.uuid]
   ///
   /// The 'only one active tracking for each source'
   /// rule guarantees a one-to-one mapping if found.
   ///
-  T trackedBy(String tuuid) => _data.values.firstWhere(
-        (trackable) => trackable.tracking?.uuid == tuuid,
-        orElse: () => null,
+  T? trackedBy(String? tuuid) => _data.values.firstWhereOrNull(
+        (trackable) => trackable!.tracking?.uuid == tuuid,
       );
 
   /// Find aggregate of type [T] tracking [tracked]
@@ -64,7 +64,7 @@ class TrackableQuery<T extends Trackable> {
   /// rule guarantees a one-to-one mapping.
   ///
   T find(
-    Aggregate tracked, {
+    Aggregate? tracked, {
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) {
     var found;
@@ -75,13 +75,12 @@ class TrackableQuery<T extends Trackable> {
     }
     // Search in sources?
     if (found == null) {
-      found = where(exclude: exclude).trackables.firstWhere(
+      found = where(exclude: exclude).trackables.firstWhereOrNull(
             (trackable) =>
-                bloc.repo[trackable.tracking?.uuid]?.sources?.any(
-                  (source) => source.uuid == tracked.uuid,
+                bloc.repo[trackable!.tracking.uuid!]?.sources?.any(
+                  (source) => source.uuid == tracked!.uuid,
                 ) ??
                 false,
-            orElse: () => null,
           );
     }
     return found;
@@ -101,7 +100,7 @@ class TrackableQuery<T extends Trackable> {
         data: Map.fromEntries(
           _data.entries.where(
             (entry) => !exclude.contains(elementAt(entry.value)?.status),
-          ),
+          ) as Iterable<MapEntry<String, Never>>,
         ),
       );
 
@@ -110,13 +109,13 @@ class TrackableQuery<T extends Trackable> {
   /// The 'only one active tracking for each source'
   /// rule guarantees a one-to-one mapping.
   ///
-  Map<String, T> devices({
+  Map<String?, T> devices({
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) {
-    final Map<String, T> map = {};
+    final Map<String?, T> map = {};
     trackables.forEach((trackable) {
-      bloc.devices(trackable.tracking?.uuid).forEach((device) {
-        map.update(device.uuid, (set) => trackable, ifAbsent: () => trackable);
+      bloc.devices(trackable!.tracking?.uuid).forEach((device) {
+        map.update(device!.uuid, (set) => trackable, ifAbsent: () => trackable);
       });
     });
     return UnmodifiableMapView(map);
@@ -132,15 +131,15 @@ class TrackableQuery<T extends Trackable> {
   /// append the [Tracking.position] of the [Tracking]
   /// referenced by [Personnel].
   ///
-  Map<String, T> personnels({
+  Map<String?, T> personnels({
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) {
-    final Map<String, T> map = {};
+    final Map<String?, T> map = {};
     final personnels = bloc.personnels.where(exclude: exclude);
     // For each Unit
     trackables.forEach((trackable) {
       // Find tracking of unit
-      final tracking = elementAt(trackable);
+      final tracking = elementAt(trackable)!;
       // Collect tracking of personnels
       tracking.sources
           // Only consider personnels that exists
@@ -150,7 +149,7 @@ class TrackableQuery<T extends Trackable> {
           // Update mapping between personnel and trackable T
           .forEach(
             (personnel) => map.update(
-              personnel.uuid,
+              personnel!.uuid,
               (set) => trackable,
               ifAbsent: () => trackable,
             ),

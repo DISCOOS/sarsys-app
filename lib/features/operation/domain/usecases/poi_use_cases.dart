@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
@@ -10,34 +10,34 @@ import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/core/domain/usecase/core.dart';
 
-class PoiParams extends BlocParams<OperationBloc, Point> {
-  final Operation operation;
+class PoiParams extends BlocParams<OperationBloc, Point?> {
+  final Operation? operation;
   PoiParams(
-    Point point,
+    Point? point,
     this.operation,
   ) : super(point);
 }
 
 /// Edit given IPP
-Future<dartz.Either<bool, Point>> editIPP(
-  Operation operation, {
-  Point point,
+Future<dartz.Either<bool, Point>>? editIPP(
+  Operation? operation, {
+  Point? point,
 }) =>
     EditPoi()(PoiParams(
       point,
       operation,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Point>);
 
-class EditPoi extends UseCase<bool, Point, PoiParams> {
+class EditPoi extends UseCase<bool, Point?, PoiParams> {
   @override
-  Future<dartz.Either<bool, Point>> execute(params) async {
+  Future<dartz.Either<bool, Point?>> execute(params) async {
     assert(params.operation != null, "Incident must be supplied");
     var result = await showDialog<Position>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => PositionEditor(
-        params.data ??
+        params.data as Position? ??
             Position.fromPoint(
-              params.operation.ipp.point,
+              params.operation!.ipp!.point!,
               source: PositionSource.manual,
             ),
         title: "Endre IPP",
@@ -47,8 +47,8 @@ class EditPoi extends UseCase<bool, Point, PoiParams> {
     if (result == null) return dartz.Left(false);
     final point = result.geometry;
     await params.bloc.update(
-      params.operation.copyWith(
-        ipp: params.operation.ipp.cloneWith(
+      params.operation!.copyWith(
+        ipp: params.operation!.ipp!.cloneWith(
           point: point,
         ),
       ),
@@ -58,25 +58,25 @@ class EditPoi extends UseCase<bool, Point, PoiParams> {
 }
 
 /// Edit given IPP
-Future<dartz.Either<bool, Point>> editMeetup(
-  Operation operation, {
-  Point point,
+Future<dartz.Either<bool, Point>>? editMeetup(
+  Operation? operation, {
+  Point? point,
 }) =>
     EditMeetup()(PoiParams(
       point,
       operation,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Point>);
 
-class EditMeetup extends UseCase<bool, Point, PoiParams> {
+class EditMeetup extends UseCase<bool, Point?, PoiParams> {
   @override
-  Future<dartz.Either<bool, Point>> execute(params) async {
+  Future<dartz.Either<bool, Point?>> execute(params) async {
     assert(params.operation != null, "Incident must be supplied");
     var result = await showDialog<Position>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => PositionEditor(
-        params.data ??
+        params.data as Position? ??
             Position.fromPoint(
-              params.operation.meetup.point,
+              params.operation!.meetup!.point!,
               source: PositionSource.manual,
             ),
         title: "Endre oppmøte",
@@ -86,8 +86,8 @@ class EditMeetup extends UseCase<bool, Point, PoiParams> {
     if (result == null) return dartz.Left(false);
     final point = result.geometry;
     await params.bloc.update(
-      params.operation.copyWith(
-        meetup: params.operation.meetup.cloneWith(
+      params.operation!.copyWith(
+        meetup: params.operation!.meetup!.cloneWith(
           point: point,
         ),
       ),

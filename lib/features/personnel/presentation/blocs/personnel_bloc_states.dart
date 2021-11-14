@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -11,9 +11,9 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 abstract class PersonnelState<T> extends PushableBlocEvent<T> {
   PersonnelState(
     T data, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
     props = const [],
-    bool isRemote = false,
+    bool? isRemote = false,
   }) : super(
           data,
           isRemote: isRemote,
@@ -42,9 +42,9 @@ class PersonnelsEmpty extends PersonnelState<Null> {
   String toString() => '$runtimeType';
 }
 
-class PersonnelsLoaded extends PersonnelState<List<String>> {
+class PersonnelsLoaded extends PersonnelState<List<String?>> {
   PersonnelsLoaded(
-    List<String> data, {
+    List<String?> data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -52,14 +52,14 @@ class PersonnelsLoaded extends PersonnelState<List<String>> {
   String toString() => '$runtimeType {personnels: $data, isRemote: $isRemote}';
 }
 
-class PersonnelCreated extends PersonnelState<Personnel> {
+class PersonnelCreated extends PersonnelState<Personnel?> {
   PersonnelCreated(
     Personnel data, {
-    bool isRemote = false,
+    bool? isRemote = false,
   }) : super(data, isRemote: isRemote);
 
   @override
-  bool isTracked() => data.tracking?.uuid != null;
+  bool isTracked() => data!.tracking?.uuid != null;
 
   @override
   String toString() => '$runtimeType {personnel: $data, isRemote: $isRemote}';
@@ -69,13 +69,13 @@ class UserMobilized extends PersonnelCreated {
   UserMobilized(
     this.user,
     Personnel data, {
-    bool isRemote = false,
+    bool? isRemote = false,
   }) : super(data, isRemote: isRemote);
 
   final User user;
 
   @override
-  bool isTracked() => data.tracking?.uuid != null;
+  bool isTracked() => data!.tracking?.uuid != null;
 
   @override
   String toString() => '$runtimeType {personnel: $data, user: $user, isRemote: $isRemote}';
@@ -99,9 +99,9 @@ class PersonnelUpdated extends PersonnelState<Personnel> {
   String toString() => '$runtimeType {data: $data, previous: $previous, isRemote: $isRemote}';
 }
 
-class PersonnelDeleted extends PersonnelState<Personnel> {
+class PersonnelDeleted extends PersonnelState<Personnel?> {
   PersonnelDeleted(
-    Personnel data, {
+    Personnel? data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -109,8 +109,8 @@ class PersonnelDeleted extends PersonnelState<Personnel> {
   String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
 }
 
-class PersonnelsUnloaded extends PersonnelState<List<Personnel>> {
-  PersonnelsUnloaded(List<Personnel> personnel) : super(personnel);
+class PersonnelsUnloaded extends PersonnelState<List<Personnel?>> {
+  PersonnelsUnloaded(List<Personnel?> personnel) : super(personnel);
 
   @override
   String toString() => '$runtimeType {data: $data}';
@@ -123,7 +123,7 @@ class PersonnelsUnloaded extends PersonnelState<List<Personnel>> {
 class PersonnelBlocError extends PersonnelState<Object> {
   PersonnelBlocError(
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) : super(error, stackTrace: stackTrace);
 
   @override
@@ -138,8 +138,8 @@ class PersonnelBlocException implements Exception {
   PersonnelBlocException(this.error, this.state, {this.command, this.stackTrace});
   final Object error;
   final PersonnelState state;
-  final StackTrace stackTrace;
-  final Object command;
+  final StackTrace? stackTrace;
+  final Object? command;
 
   @override
   String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';

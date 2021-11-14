@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/domain/entities/FleetMap.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
@@ -11,12 +11,12 @@ part 'organisation_model.g.dart';
 @JsonSerializable()
 class OrganisationModel extends Organisation {
   OrganisationModel({
-    @required String uuid,
-    @required String name,
-    @required String prefix,
-    @required FleetMap fleetMap,
-    @required List<String> divisions,
-    @required bool active,
+    required String uuid,
+    required String? name,
+    required String? prefix,
+    required FleetMap? fleetMap,
+    required List<String>? divisions,
+    required bool? active,
   }) : super(
           uuid: uuid,
           name: name,
@@ -43,10 +43,10 @@ class OrganisationModel extends Organisation {
   Map<String, dynamic> toJson() => _$OrganisationModelToJson(this);
 
   @override
-  AggregateRef<Organisation> toRef() => uuid != null ? AggregateRef.fromType<OrganisationModel>(uuid) : null;
+  AggregateRef<Organisation>? toRef() => uuid != null ? AggregateRef.fromType<OrganisationModel>(uuid) : null;
 
   @override
-  Organisation copyWith({FleetMap fleetMap}) {
+  Organisation copyWith({FleetMap? fleetMap}) {
     return OrganisationModel(
       uuid: uuid,
       name: name,

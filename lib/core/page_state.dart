@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:io';
 import 'dart:convert';
@@ -13,7 +13,7 @@ import 'package:flutter/widgets.dart';
 
 const String PAGE_STORAGE_BUCKET_FILE_PATH = "page_storage_bucket.json";
 
-T getPageState<T>(BuildContext context, String identifier, {T defaultValue}) {
+T? getPageState<T>(BuildContext context, String identifier, {T? defaultValue}) {
   var value;
   final bucket = PageStorage.of(context);
   if (bucket != null) {
@@ -27,16 +27,16 @@ T putPageState<T>(BuildContext context, String identifier, T value, {bool write 
   if (bucket != null) {
     bucket.writeState(context, value, identifier: identifier);
     if (write) {
-      writePageStorageBucket(bucket);
+      writePageStorageBucket(bucket, context: context);
     }
   }
   return value;
 }
 
-Future<PageStorageBucket> readPageStorageBucket(PageStorageBucket bucket, {BuildContext context}) async {
+Future<PageStorageBucket> readPageStorageBucket(PageStorageBucket bucket, {BuildContext? context}) async {
   final json = readFromFile(await getApplicationDocumentsDirectory(), PAGE_STORAGE_BUCKET_FILE_PATH);
   if (json != null) {
-    bucket.writeState(context, json[RouteWriter.STATE], identifier: RouteWriter.STATE);
+    bucket.writeState(context!, json[RouteWriter.STATE], identifier: RouteWriter.STATE);
     bucket.writeState(context, json[UnitsPageState.STATE], identifier: UnitsPageState.STATE);
     bucket.writeState(context, json[DevicesPageState.STATE], identifier: DevicesPageState.STATE);
     _writeTypedState(
@@ -48,7 +48,7 @@ Future<PageStorageBucket> readPageStorageBucket(PageStorageBucket bucket, {Build
       defaultValue: () => MapWidgetStateModel(),
     );
   } else {
-    bucket.writeState(context, null, identifier: RouteWriter.STATE);
+    bucket.writeState(context!, null, identifier: RouteWriter.STATE);
     bucket.writeState(context, null, identifier: UnitsPageState.STATE);
     bucket.writeState(context, null, identifier: DevicesPageState.STATE);
     bucket.writeState(context, null, identifier: MapWidgetState.STATE);
@@ -62,15 +62,15 @@ void _writeTypedState<T>(
   Object identifier,
   Map<String, dynamic> state,
   T fromJson(dynamic state), {
-  T defaultValue(),
+  T defaultValue()?,
 }) {
   final typed = state?.containsKey(identifier) == true && state[identifier] != null
       ? fromJson(state[identifier])
-      : defaultValue();
+      : defaultValue!();
   bucket.writeState(context, typed, identifier: identifier);
 }
 
-Map<String, dynamic> readFromFile(Directory dir, String fileName) {
+Map<String, dynamic>? readFromFile(Directory dir, String fileName) {
   var values;
   File file = File(dir.path + "/" + fileName);
   if (file.existsSync()) {
@@ -79,7 +79,7 @@ Map<String, dynamic> readFromFile(Directory dir, String fileName) {
   return values;
 }
 
-Future writePageStorageBucket(PageStorageBucket bucket, {BuildContext context}) async {
+Future writePageStorageBucket(PageStorageBucket bucket, {required BuildContext context}) async {
   final json = {
     RouteWriter.STATE: bucket.readState(context, identifier: RouteWriter.STATE),
     UnitsPageState.STATE: bucket.readState(context, identifier: UnitsPageState.STATE),
@@ -89,8 +89,8 @@ Future writePageStorageBucket(PageStorageBucket bucket, {BuildContext context}) 
   writeToFile(json, await getApplicationDocumentsDirectory(), PAGE_STORAGE_BUCKET_FILE_PATH);
 }
 
-T _readTypedState<T>(BuildContext context, PageStorageBucket bucket, Object identifier, {T defaultValue}) {
-  return (bucket.readState(context, identifier: identifier) ?? defaultValue) as T;
+T? _readTypedState<T>(BuildContext context, PageStorageBucket bucket, Object identifier, {T? defaultValue}) {
+  return (bucket.readState(context, identifier: identifier) ?? defaultValue) as T?;
 }
 
 void writeToFile(Map<String, dynamic> content, Directory dir, String fileName) {

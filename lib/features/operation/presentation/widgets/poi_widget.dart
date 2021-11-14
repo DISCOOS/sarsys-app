@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/mapping/presentation/layers/poi_layer.dart';
@@ -11,18 +11,18 @@ import 'package:flutter/material.dart';
 
 class POIWidget extends StatelessWidget {
   final POI poi;
-  final ActionCallback onMessage;
-  final VoidCallback onCancel;
-  final VoidCallback onComplete;
-  final ValueChanged<String> onCopy;
-  final ValueChanged<Point> onGoto;
-  final ValueChanged<Point> onChanged;
-  final AsyncValueGetter<Either<bool, Point>> onEdit;
+  final ActionCallback? onMessage;
+  final VoidCallback? onCancel;
+  final VoidCallback? onComplete;
+  final ValueChanged<String?>? onCopy;
+  final ValueChanged<Point>? onGoto;
+  final ValueChanged<Point>? onChanged;
+  final AsyncValueGetter<Either<bool, Point>>? onEdit;
 
   const POIWidget({
-    Key key,
-    @required this.poi,
-    @required this.onMessage,
+    Key? key,
+    required this.poi,
+    required this.onMessage,
     this.onEdit,
     this.onCopy,
     this.onGoto,
@@ -101,7 +101,7 @@ class POIWidget extends StatelessWidget {
                   IconButton(
                     icon: Icon(Icons.navigation, color: Colors.black45),
                     onPressed: () {
-                      if (onComplete != null) onComplete();
+                      if (onComplete != null) onComplete!();
                       navigateToLatLng(context, toLatLng(poi.point));
                     },
                   ),
@@ -143,10 +143,10 @@ class POIWidget extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         onPressed: () async {
-          final result = await onEdit();
+          final result = await onEdit!();
           if (result.isRight()) {
-            if (onChanged != null) onChanged(result.toIterable().first);
-            if (onComplete != null) onComplete();
+            if (onChanged != null) onChanged!(result.toIterable().first);
+            if (onComplete != null) onComplete!();
           }
         },
       ),
@@ -154,6 +154,6 @@ class POIWidget extends StatelessWidget {
   }
 
   _onGoto() {
-    if (onGoto != null) onGoto(poi.point);
+    if (onGoto != null) onGoto!(poi.point);
   }
 }

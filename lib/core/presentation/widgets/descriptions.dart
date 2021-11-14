@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
@@ -9,7 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SecurityModePersonalDescription extends StatelessWidget {
   const SecurityModePersonalDescription({
-    Key key,
+    Key? key,
     this.untrusted = false,
   }) : super(key: key);
 
@@ -71,7 +71,7 @@ class SecurityModePersonalDescription extends StatelessWidget {
 
 class SecurityModeSharedDescription extends StatelessWidget {
   const SecurityModeSharedDescription({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -129,7 +129,7 @@ class SecurityModeSharedDescription extends StatelessWidget {
 
 class UserRolesDescription extends StatelessWidget {
   const UserRolesDescription({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -289,11 +289,11 @@ class UserRolesDescription extends StatelessWidget {
 
 class ManagedProfileDescription extends StatelessWidget {
   const ManagedProfileDescription({
-    Key key,
+    Key? key,
     this.affiliation,
   }) : super(key: key);
 
-  final String affiliation;
+  final String? affiliation;
 
   @override
   Widget build(BuildContext context) {
@@ -329,7 +329,7 @@ class ManagedProfileDescription extends StatelessWidget {
 
 class TemporaryPersonnelDescription extends StatelessWidget {
   const TemporaryPersonnelDescription({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -357,7 +357,7 @@ class TemporaryPersonnelDescription extends StatelessWidget {
 
 class PasscodeDescription extends StatelessWidget {
   const PasscodeDescription({
-    Key key,
+    Key? key,
     this.requireCommand = false,
   }) : super(key: key);
 
@@ -384,8 +384,8 @@ class PasscodeDescription extends StatelessWidget {
 
 class NotLeaderPasscodeDescription extends StatelessWidget {
   const NotLeaderPasscodeDescription({
-    Key key,
-    @required this.user,
+    Key? key,
+    required this.user,
   }) : super(key: key);
 
   final User user;
@@ -405,7 +405,7 @@ class NotLeaderPasscodeDescription extends StatelessWidget {
             ),
           ),
         ),
-        for (var role in user.roles.map(translateUserRole))
+        for (var role in user!.roles.map(translateUserRole))
           Text.rich(
             TextSpan(
               text: '* $role',

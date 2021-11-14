@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'Location.dart';
@@ -12,15 +10,11 @@ Location _$LocationFromJson(Map json) {
   return Location(
     point: json['point'] == null
         ? null
-        : Point.fromJson((json['point'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    description: json['description'] as String,
+        : Point.fromJson(Map<String, dynamic>.from(json['point'] as Map)),
+    description: json['description'] as String?,
     address: json['address'] == null
         ? null
-        : Address.fromJson((json['address'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : Address.fromJson(Map<String, dynamic>.from(json['address'] as Map)),
   );
 }
 

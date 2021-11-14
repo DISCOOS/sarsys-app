@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -19,18 +19,18 @@ import 'package:SarSys/core/data/services/service.dart';
 
 class IncidentBuilder {
   static Incident create({
-    String uuid,
+    String? uuid,
     int since = 0,
   }) {
     return IncidentModel.fromJson(
       createIncidentAsJson(
         uuid ?? Uuid().v4(),
         since,
-      ),
+      )!,
     );
   }
 
-  static Map<String, dynamic> createIncidentAsJson(String uuid, int since) {
+  static Map<String, dynamic>? createIncidentAsJson(String uuid, int since) {
     return json.decode(
       '{'
       '"uuid": "$uuid",'
@@ -56,10 +56,10 @@ class IncidentBuilder {
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
-  static final Map<String, StorageState<Incident>> _incidentRepo = {};
+  static final Map<String?, StorageState<Incident>> _incidentRepo = {};
 
   Incident add({
-    String uuid,
+    String? uuid,
     int since = 0,
   }) {
     final incident = IncidentBuilder.create(
@@ -75,7 +75,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
     return incident;
   }
 
-  StorageState<Incident> remove(uuid) {
+  StorageState<Incident>? remove(uuid) {
     return _incidentRepo.remove(uuid);
   }
 
@@ -95,7 +95,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
             IncidentBuilder.createIncidentAsJson(
               uuid,
               since,
-            ),
+            )!,
           ),
           StateVersion.first,
           isRemote: true,
@@ -104,8 +104,8 @@ class IncidentServiceMock extends Mock implements IncidentService {
 
   static IncidentService build(
     UserRepository users, {
-    @required final UserRole role,
-    @required final String passcode,
+    required final UserRole role,
+    required final String passcode,
     final int count = 0,
   }) {
     _incidentRepo.clear();
@@ -129,13 +129,13 @@ class IncidentServiceMock extends Mock implements IncidentService {
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
 
-    when(mock.create(any)).thenAnswer((_) async {
+    when(mock.create(any!)).thenAnswer((_) async {
       final user = await users.load();
       if (user == null) {
         return ServiceResponse.unauthorized();
       }
       final state = _.positionalArguments[0] as StorageState<Incident>;
-      if (!state.version.isFirst) {
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Aggregate has not version 0: $state",
         );
@@ -150,15 +150,15 @@ class IncidentServiceMock extends Mock implements IncidentService {
       );
     });
 
-    when(mock.update(any)).thenAnswer((_) async {
+    when(mock.update(any!)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Incident>;
       final uuid = next.value.uuid;
       if (_incidentRepo.containsKey(uuid)) {
-        final state = _incidentRepo[uuid];
-        final delta = next.version.value - state.version.value;
+        final state = _incidentRepo[uuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         _incidentRepo[uuid] = state.apply(
@@ -175,7 +175,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
       );
     });
 
-    when(mock.delete(any)).thenAnswer((_) async {
+    when(mock.delete(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Incident>;
       final uuid = state.value.uuid;
       if (_incidentRepo.containsKey(uuid)) {

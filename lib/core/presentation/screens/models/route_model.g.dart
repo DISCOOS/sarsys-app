@@ -9,7 +9,7 @@ part of 'route_model.dart';
 RouteModel _$RouteModelFromJson(Map json) {
   return RouteModel(
     json['data'],
-    json['name'] as String,
+    json['name'] as String?,
   );
 }
 

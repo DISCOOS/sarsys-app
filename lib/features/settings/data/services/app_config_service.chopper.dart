@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'app_config_service.dart';
@@ -10,7 +8,7 @@ part of 'app_config_service.dart';
 
 // ignore_for_file: always_put_control_body_on_new_line, always_specify_types, prefer_const_declarations
 class _$AppConfigServiceImpl extends AppConfigServiceImpl {
-  _$AppConfigServiceImpl([ChopperClient client]) {
+  _$AppConfigServiceImpl([ChopperClient? client]) {
     if (client == null) return;
     this.client = client;
   }
@@ -19,7 +17,7 @@ class _$AppConfigServiceImpl extends AppConfigServiceImpl {
   final definitionType = AppConfigServiceImpl;
 
   @override
-  Future<Response<String>> create(String uuid, AppConfig body) {
+  Future<Response<String>> create(String? uuid, AppConfig body) {
     final $url = '/app-configs';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
@@ -28,7 +26,7 @@ class _$AppConfigServiceImpl extends AppConfigServiceImpl {
 
   @override
   Future<Response<StorageState<AppConfig>>> update(
-      String uuid, AppConfig body) {
+      String? uuid, AppConfig body) {
     final $url = '/app-configs/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
@@ -36,7 +34,7 @@ class _$AppConfigServiceImpl extends AppConfigServiceImpl {
   }
 
   @override
-  Future<Response<void>> delete(String uuid) {
+  Future<Response<void>> delete(String? uuid) {
     final $url = '/app-configs/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);

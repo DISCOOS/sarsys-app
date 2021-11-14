@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'map_widget_state_model.dart';
@@ -11,16 +9,15 @@ part of 'map_widget_state_model.dart';
 MapWidgetStateModel _$MapWidgetStateModelFromJson(Map json) {
   return MapWidgetStateModel(
     center:
-        MapWidgetStateModel._toLatLng(json['center'] as Map<String, dynamic>),
-    zoom: (json['zoom'] as num)?.toDouble(),
+        MapWidgetStateModel._toLatLng(json['center'] as Map<String, dynamic>?),
+    zoom: (json['zoom'] as num?)?.toDouble(),
     baseMap: json['baseMap'] == null
         ? null
-        : BaseMap.fromJson((json['baseMap'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    filters: (json['filters'] as List)?.map((e) => e as String)?.toList(),
-    ouuid: json['ouuid'] as String,
-    following: json['following'] as bool,
+        : BaseMap.fromJson(Map<String, dynamic>.from(json['baseMap'] as Map)),
+    filters:
+        (json['filters'] as List<dynamic>?)?.map((e) => e as String).toList(),
+    ouuid: json['ouuid'] as String?,
+    following: json['following'] as bool?,
   );
 }
 

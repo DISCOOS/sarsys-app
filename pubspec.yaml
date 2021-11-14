@@ -14,7 +14,7 @@ description: SarSys
 version: 0.1.1+86
 
 environment:
-  sdk: ">=2.13.4 <3.0.0"
+  sdk: '>=2.12.0 <3.0.0'
   flutter: ">=2.2.3"
 
 dependencies:
@@ -94,6 +94,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  collection: ^1.15.0-nullsafety.4
 
 dependency_overrides:
 
@@ -136,14 +137,14 @@ dependency_overrides:
 #      url: https://github.com/DISCOOS/pin_code_fields.git
 #      ref: master
 
-json_patch:
-  git:
-    url: https://github.com/justkawal/dart-json-patch.git
+  json_patch:
+    git:
+      url: https://github.com/justkawal/dart-json-patch.git
 
-data_connection_checker:
-  git:
-    url: https://github.com/chornthorn/data_connection_checker.git
-    ref: master
+  data_connection_checker:
+    git:
+      url: https://github.com/chornthorn/data_connection_checker.git
+      ref: master
 
 dev_dependencies:
   flutter_test:

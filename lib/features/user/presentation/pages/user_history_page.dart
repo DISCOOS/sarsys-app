@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -9,7 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UserHistoryPage extends StatefulWidget {
   const UserHistoryPage({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -17,7 +17,7 @@ class UserHistoryPage extends StatefulWidget {
 }
 
 class UserHistoryPageState extends State<UserHistoryPage> {
-  StreamGroup<dynamic> _group;
+  StreamGroup<dynamic>? _group;
 
   @override
   void didChangeDependencies() {
@@ -31,7 +31,7 @@ class UserHistoryPageState extends State<UserHistoryPage> {
 
   @override
   void dispose() {
-    _group.close();
+    _group!.close();
     _group = null;
     super.dispose();
   }

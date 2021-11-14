@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
@@ -13,13 +13,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:uuid/uuid.dart';
+import 'package:SarSys/core/extensions.dart';
+
 
 class DeviceEditor extends StatefulWidget {
-  final Device device;
+  final Device? device;
   final DeviceType type;
 
   const DeviceEditor({
-    Key key,
+    Key? key,
     this.device,
     this.type = DeviceType.tetra,
   }) : super(key: key);
@@ -37,12 +39,12 @@ class _DeviceEditorState extends State<DeviceEditor> {
   final TextEditingController _aliasController = TextEditingController();
   final TextEditingController _numberController = TextEditingController();
 
-  String _editedName;
-  String _editedOrgAlias;
-  String _editedAffiliation;
-  String _editedFunction;
+  String? _editedName;
+  String? _editedOrgAlias;
+  String? _editedAffiliation;
+  String? _editedFunction;
 
-  Organisation get organisation => context.read<AffiliationBloc>().findUserOrganisation();
+  Organisation? get organisation => context.read<AffiliationBloc>().findUserOrganisation();
 
   @override
   void initState() {
@@ -184,10 +186,9 @@ class _DeviceEditorState extends State<DeviceEditor> {
       validator: FormBuilderValidators.compose([
         FormBuilderValidators.required(context, errorText: 'Påkrevd'),
         (number) {
-          Device device = context.read<DeviceBloc>().values.firstWhere(
+          Device? device = context.read<DeviceBloc>().values.where(
                 (Device device) => isSameNumber(device, number),
-                orElse: () => null,
-              );
+              ).firstOrNull;
           return device != null ? "Finnes allerede" : null;
         },
       ]),
@@ -213,8 +214,8 @@ class _DeviceEditorState extends State<DeviceEditor> {
     return 'Nummer';
   }
 
-  bool isSameNumber(Device device, String number) =>
-      number?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device.number?.toString() == number;
+  bool isSameNumber(Device device, String? number) =>
+      number?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device!.number?.toString() == number;
 
   Widget _buildAffiliationInfo() => InputDecorator(
         decoration: InputDecoration(
@@ -295,31 +296,30 @@ class _DeviceEditorState extends State<DeviceEditor> {
       valueTransformer: (value) => emptyAsNull(value),
       validator: FormBuilderValidators.compose([
         (alias) {
-          Device device = context.read<DeviceBloc>().values.firstWhere(
+          final device = context.read<DeviceBloc>().values.where(
                 (Device device) => _isSameAlias(device, alias),
-                orElse: () => null,
-              );
+              ).firstOrNull;
           return device != null ? "Finnes allerede" : null;
         },
       ]),
     );
   }
 
-  bool _isSameAlias(Device device, String alias) =>
-      alias?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device.alias == alias;
+  bool _isSameAlias(Device device, String? alias) =>
+      alias?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device!.alias == alias;
 
-  void _setText(TextEditingController controller, String value) {
+  void _setText(TextEditingController controller, String? value) {
     setText(controller, value);
     _formKey?.currentState?.save();
   }
 
   void _onNumberOrAliasEdit(
-    String alias,
-    String number, {
+    String? alias,
+    String? number, {
     bool update = true,
   }) {
-    alias = emptyAsNull(alias);
-    number = emptyAsNull(number);
+    alias = emptyAsNull(alias!);
+    number = emptyAsNull(number!);
     _editedName = alias ?? number ?? _defaultName();
     _editedAffiliation = affiliations.findEntityName(number, empty: '-') ?? _editedAffiliation;
     _editedOrgAlias = affiliations.findOrganisation(number)?.fleetMap?.alias ?? _editedOrgAlias;
@@ -342,12 +342,12 @@ class _DeviceEditorState extends State<DeviceEditor> {
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
           .toList(),
       validator: FormBuilderValidators.required(context, errorText: 'Type må velges'),
-      onChanged: (_) {
+      onChanged: (dynamic _) {
         _onNumberOrAliasEdit(
           _getActualAlias(),
           _getActualNumber(),
         );
-        _formKey.currentState.save();
+        _formKey.currentState!.save();
       },
     );
   }
@@ -364,27 +364,27 @@ class _DeviceEditorState extends State<DeviceEditor> {
   DeviceType _getActualType(DeviceType defaultValue) {
     final values = _formKey?.currentState?.value;
     return values?.containsKey('type') == true
-        ? DeviceModel.fromJson(values).type ?? defaultValue
+        ? DeviceModel.fromJson(values!).type ?? defaultValue
         : widget?.device?.type ?? defaultValue;
   }
 
-  String _getActualAlias() {
+  String? _getActualAlias() {
     final values = _formKey?.currentState?.value;
     return values?.containsKey('alias') == true
-        ? DeviceModel.fromJson(values).alias ?? widget?.device?.alias
+        ? DeviceModel.fromJson(values!).alias ?? widget?.device?.alias
         : widget?.device?.alias;
   }
 
-  String _getActualNumber() {
+  String? _getActualNumber() {
     final values = _formKey?.currentState?.value;
     return values?.containsKey('number') == true
-        ? DeviceModel.fromJson(values).number ?? widget?.device?.number
+        ? DeviceModel.fromJson(values!).number ?? widget?.device?.number
         : widget?.device?.number;
   }
 
   void _submit(BuildContext context) async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
       final create = widget.device == null;
       var device = create ? _createDevice() : _updateDevice();
       Navigator.pop(context, device);
@@ -395,11 +395,11 @@ class _DeviceEditorState extends State<DeviceEditor> {
   }
 
   Device _createDevice() {
-    return DeviceModel.fromJson(_formKey.currentState.value).copyWith(
+    return DeviceModel.fromJson(_formKey.currentState!.value).copyWith(
       uuid: Uuid().v4(),
       status: DeviceStatus.available,
     );
   }
 
-  Device _updateDevice() => widget.device.mergeWith(_formKey.currentState.value);
+  Device _updateDevice() => widget.device!.mergeWith(_formKey.currentState!.value);
 }

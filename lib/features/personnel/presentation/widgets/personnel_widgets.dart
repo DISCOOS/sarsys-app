@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
@@ -27,10 +27,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 class PersonnelWidget extends StatelessWidget {
   PersonnelWidget({
-    Key key,
-    @required this.unit,
-    @required this.personnel,
-    @required this.onMessage,
+    Key? key,
+    required this.unit,
+    required this.personnel,
+    required this.onMessage,
     this.tracking,
     this.devices,
     this.onGoto,
@@ -42,7 +42,7 @@ class PersonnelWidget extends StatelessWidget {
     this.withHeader = true,
     this.withActions = true,
     this.withLocation = true,
-    MapWidgetController controller,
+    MapWidgetController? controller,
   })  : this.controller = controller ?? MapWidgetController(),
         super(key: key);
 
@@ -51,15 +51,15 @@ class PersonnelWidget extends StatelessWidget {
   final bool withHeader;
   final bool withActions;
   final bool withLocation;
-  final Unit unit;
-  final Tracking tracking;
+  final Unit? unit;
+  final Tracking? tracking;
   final Personnel personnel;
-  final Iterable<Device> devices;
-  final VoidCallback onDeleted;
-  final MessageCallback onMessage;
-  final ValueChanged<Point> onGoto;
-  final ValueChanged<Personnel> onChanged;
-  final ValueChanged<Personnel> onCompleted;
+  final Iterable<Device>? devices;
+  final VoidCallback? onDeleted;
+  final MessageCallback? onMessage;
+  final ValueChanged<Point>? onGoto;
+  final ValueChanged<Personnel>? onChanged;
+  final ValueChanged<Personnel?>? onCompleted;
   final MapWidgetController controller;
 
   static const HEIGHT = 82.0;
@@ -68,7 +68,7 @@ class PersonnelWidget extends StatelessWidget {
   static const ELEVATION = 2.0;
 
   bool isTemporary(BuildContext context) => context.read<AffiliationBloc>().isTemporary(
-        personnel.affiliation?.uuid,
+        personnel!.affiliation?.uuid,
       );
 
   @override
@@ -79,7 +79,7 @@ class PersonnelWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) _buildHeader(context, personnel, theme),
+        if (withHeader) _buildHeader(context, personnel!, theme),
         if (withMap) _buildMap(context),
         if (isTemporary(context)) _buildTemporaryPersonnelWarning(context),
         if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
@@ -158,7 +158,7 @@ class PersonnelWidget extends StatelessWidget {
         ],
       );
 
-  bool isAffiliated(BuildContext context) => context.read<AffiliationBloc>().repo[personnel.affiliation?.uuid] != null;
+  bool isAffiliated(BuildContext context) => context.read<AffiliationBloc>().repo[personnel!.affiliation!.uuid] != null;
 
   Widget _buildLandscape(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
@@ -219,7 +219,7 @@ class PersonnelWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(CORNER),
             child: GestureDetector(
               child: MapWidget(
-                key: ObjectKey(personnel.uuid),
+                key: ObjectKey(personnel!.uuid),
                 center: center,
                 zoom: 16.0,
                 readZoom: true,
@@ -235,7 +235,7 @@ class PersonnelWidget extends StatelessWidget {
                 withControlsLayer: true,
                 withControlsBaseMap: true,
                 withControlsOffset: 16.0,
-                showRetired: PersonnelStatus.retired == personnel.status,
+                showRetired: PersonnelStatus.retired == personnel!.status,
                 showLayers: [
                   MapWidgetState.LAYER_POI,
                   MapWidgetState.LAYER_PERSONNEL,
@@ -286,7 +286,7 @@ class PersonnelWidget extends StatelessWidget {
 
   Widget _buildAffiliationView(BuildContext context) => AffiliationView(
         onMessage: onMessage,
-        affiliation: context.read<AffiliationBloc>().repo[personnel.affiliation?.uuid],
+        affiliation: context.read<AffiliationBloc>().repo[personnel!.affiliation!.uuid]!,
         onComplete: () => _onComplete(personnel),
       );
 
@@ -297,31 +297,31 @@ class PersonnelWidget extends StatelessWidget {
       );
 
   void _onMessage(String message) {
-    if (onMessage != null) onMessage(message);
+    if (onMessage != null) onMessage!(message);
   }
 
   void _onComplete([personnel]) {
-    if (onCompleted != null) onCompleted(personnel ?? this.personnel);
+    if (onCompleted != null) onCompleted!(personnel ?? this.personnel);
   }
 }
 
 class PersonnelActionGroup extends StatelessWidget {
   PersonnelActionGroup({
-    @required this.personnel,
-    @required this.type,
+    required this.personnel,
+    required this.type,
     this.unit,
     this.onDeleted,
     this.onMessage,
     this.onChanged,
     this.onCompleted,
   });
-  final Unit unit;
+  final Unit? unit;
   final Personnel personnel;
-  final VoidCallback onDeleted;
+  final VoidCallback? onDeleted;
   final ActionGroupType type;
-  final MessageCallback onMessage;
-  final ValueChanged<Personnel> onChanged;
-  final ValueChanged<Personnel> onCompleted;
+  final MessageCallback? onMessage;
+  final ValueChanged<Personnel>? onChanged;
+  final ValueChanged<Personnel?>? onCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -348,7 +348,7 @@ class PersonnelActionGroup extends StatelessWidget {
           child: _buildAddToUnitAction(context),
           onPressed: _onAddToUnit,
         ),
-      if (context.read<UserBloc>().user.isAdmin)
+      if (context.read<UserBloc>().user!.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,
@@ -357,7 +357,7 @@ class PersonnelActionGroup extends StatelessWidget {
   }
 
   ActionMenuItem _buildTransitionActionItem(BuildContext context) {
-    switch (personnel.status) {
+    switch (personnel!.status) {
       case PersonnelStatus.retired:
         return ActionMenuItem(
           child: _buildMobilizeAction(context),
@@ -396,7 +396,7 @@ class PersonnelActionGroup extends StatelessWidget {
       );
 
   void _onEdit() async {
-    final result = await editPersonnel(personnel);
+    final result = await editPersonnel(personnel)!;
     if (result.isRight()) {
       final actual = result.toIterable().first;
       if (actual != personnel) {
@@ -420,10 +420,10 @@ class PersonnelActionGroup extends StatelessWidget {
       );
 
   void _onAddToUnit() async {
-    final result = await addToUnit(personnels: [personnel], unit: unit);
+    final result = await addToUnit(personnels: [personnel], unit: unit)!;
     if (result.isRight()) {
       var actual = result.toIterable().first;
-      _onMessage('${personnel.name} er tilknyttet ${actual.name}');
+      _onMessage('${personnel!.name} er tilknyttet ${actual.name}');
       _onChanged(personnel);
     }
   }
@@ -441,15 +441,15 @@ class PersonnelActionGroup extends StatelessWidget {
       );
 
   void _onRemoveFromUnit() async {
-    final result = await removeFromUnit(unit, personnels: [personnel]);
+    final result = await removeFromUnit(unit, personnels: [personnel])!;
     if (result.isRight()) {
-      _onMessage('${personnel.name} er fjernet fra ${unit.name}');
+      _onMessage('${personnel!.name} er fjernet fra ${unit!.name}');
       _onChanged(personnel);
     }
   }
 
   Widget _buildMobilizeAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     final color = toPersonnelStatusColor(PersonnelStatus.alerted);
     return Tooltip(
       message: 'Registrer som mobilisert',
@@ -473,7 +473,7 @@ class PersonnelActionGroup extends StatelessWidget {
   }
 
   Widget _buildOnSceneAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     final color = toPersonnelStatusColor(PersonnelStatus.onscene);
     return Tooltip(
       message: 'Registrer som ankommet',
@@ -499,7 +499,7 @@ class PersonnelActionGroup extends StatelessWidget {
   void _onTransition(PersonnelStatus status) async {
     switch (status) {
       case PersonnelStatus.alerted:
-        final result = await mobilizePersonnel(personnel: personnel);
+        final result = await mobilizePersonnel(personnel: personnel)!;
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage('${actual.name} er registert mobilisert');
@@ -508,7 +508,7 @@ class PersonnelActionGroup extends StatelessWidget {
         }
         break;
       case PersonnelStatus.enroute:
-        final result = await mobilizePersonnel(personnel: personnel);
+        final result = await mobilizePersonnel(personnel: personnel)!;
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage('${actual.name} er registert på vei');
@@ -517,7 +517,7 @@ class PersonnelActionGroup extends StatelessWidget {
         }
         break;
       case PersonnelStatus.onscene:
-        final result = await checkInPersonnel(personnel);
+        final result = await checkInPersonnel(personnel)!;
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage('${actual.name} er registert ankommet');
@@ -526,7 +526,7 @@ class PersonnelActionGroup extends StatelessWidget {
         }
         break;
       case PersonnelStatus.leaving:
-        final result = await retirePersonnel(personnel);
+        final result = await retirePersonnel(personnel)!;
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage('${actual.name} er dimmitert');
@@ -535,7 +535,7 @@ class PersonnelActionGroup extends StatelessWidget {
         }
         break;
       case PersonnelStatus.retired:
-        final result = await retirePersonnel(personnel);
+        final result = await retirePersonnel(personnel)!;
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage('${actual.name} er dimmitert');
@@ -547,7 +547,7 @@ class PersonnelActionGroup extends StatelessWidget {
   }
 
   Widget _buildRetireAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     final color = toPersonnelStatusColor(PersonnelStatus.retired);
     return Tooltip(
       message: 'Dimitter og avslutt sporing',
@@ -569,7 +569,7 @@ class PersonnelActionGroup extends StatelessWidget {
   }
 
   Widget _buildDeleteAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     return Tooltip(
       message: 'Slett mannskap',
       child: TextButton.icon(
@@ -588,42 +588,42 @@ class PersonnelActionGroup extends StatelessWidget {
   }
 
   void _onDelete() async {
-    final result = await deletePersonnel(personnel);
+    final result = await deletePersonnel(personnel)!;
     if (result.isRight()) {
-      _onMessage('${personnel.name} er slettet');
+      _onMessage('${personnel!.name} er slettet');
       _onDeleted();
       _onCompleted();
     }
   }
 
   void _onMessage(String message) {
-    if (onMessage != null) onMessage(message);
+    if (onMessage != null) onMessage!(message);
   }
 
   void _onChanged([personnel]) {
-    if (onChanged != null) onChanged(personnel);
+    if (onChanged != null) onChanged!(personnel);
   }
 
   void _onCompleted([personnel]) {
-    if (onCompleted != null) onCompleted(personnel ?? this.personnel);
+    if (onCompleted != null) onCompleted!(personnel ?? this.personnel);
   }
 
   void _onDeleted() {
-    if (onDeleted != null) onDeleted();
+    if (onDeleted != null) onDeleted!();
   }
 }
 
 class PersonnelNameView extends StatelessWidget {
   const PersonnelNameView({
-    Key key,
+    Key? key,
     this.personnel,
     this.onMessage,
     this.onComplete,
   }) : super(key: key);
 
-  final Personnel personnel;
-  final VoidCallback onComplete;
-  final MessageCallback onMessage;
+  final Personnel? personnel;
+  final VoidCallback? onComplete;
+  final MessageCallback? onMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -634,7 +634,7 @@ class PersonnelNameView extends StatelessWidget {
             context: context,
             label: 'Fornavn',
             icon: Icon(Icons.person),
-            value: personnel.fname,
+            value: personnel!.fname,
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -644,7 +644,7 @@ class PersonnelNameView extends StatelessWidget {
             context: context,
             label: 'Etternavn',
             icon: Icon(Icons.person_outline),
-            value: personnel.lname,
+            value: personnel!.lname,
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -656,20 +656,20 @@ class PersonnelNameView extends StatelessWidget {
 
 class PersonnelContactView extends StatelessWidget {
   const PersonnelContactView({
-    Key key,
+    Key? key,
     this.personnel,
     this.onMessage,
     this.onComplete,
   }) : super(key: key);
 
-  final Personnel personnel;
-  final VoidCallback onComplete;
-  final MessageCallback onMessage;
+  final Personnel? personnel;
+  final VoidCallback? onComplete;
+  final MessageCallback? onMessage;
 
   @override
   Widget build(BuildContext context) {
     final units = context.read<UnitBloc>().findUnitsWithPersonnel(
-          personnel.uuid,
+          personnel!.uuid,
         );
     final phone = PersonnelEditor.findPersonnelPhone(
       context,
@@ -682,7 +682,7 @@ class PersonnelContactView extends StatelessWidget {
             context: context,
             label: 'Enhet',
             icon: Icon(Icons.supervised_user_circle),
-            value: units.isNotEmpty ? units.map((unit) => unit.name).join(', ') : 'Ingen',
+            value: units.isNotEmpty ? units.map((unit) => unit!.name).join(', ') : 'Ingen',
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -708,15 +708,15 @@ class PersonnelContactView extends StatelessWidget {
 
 class PersonnelOperationalView extends StatelessWidget {
   const PersonnelOperationalView({
-    Key key,
+    Key? key,
     this.personnel,
     this.onMessage,
     this.onComplete,
   }) : super(key: key);
 
-  final Personnel personnel;
-  final VoidCallback onComplete;
-  final MessageCallback onMessage;
+  final Personnel? personnel;
+  final VoidCallback? onComplete;
+  final MessageCallback? onMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -727,7 +727,7 @@ class PersonnelOperationalView extends StatelessWidget {
             context: context,
             label: 'Funksjon',
             icon: Icon(Icons.functions),
-            value: translateOperationalFunction(personnel.function),
+            value: translateOperationalFunction(personnel!.function),
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -737,7 +737,7 @@ class PersonnelOperationalView extends StatelessWidget {
             context: context,
             label: 'Status',
             icon: Icon(MdiIcons.accountQuestionOutline),
-            value: translatePersonnelStatus(personnel.status),
+            value: translatePersonnelStatus(personnel!.status),
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -751,8 +751,8 @@ class PersonnelTile extends StatelessWidget {
   final Personnel personnel;
 
   const PersonnelTile({
-    Key key,
-    @required this.personnel,
+    Key? key,
+    required this.personnel,
   }) : super(key: key);
 
   @override
@@ -760,7 +760,7 @@ class PersonnelTile extends StatelessWidget {
     return ListTile(
       key: ObjectKey(personnel),
       leading: AffiliationAvatar(
-        affiliation: context.read<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
+        affiliation: context.read<AffiliationBloc>().repo[personnel.affiliation!.uuid]!,
         size: 10.0,
       ),
       title: Text(personnel.name),
@@ -769,11 +769,11 @@ class PersonnelTile extends StatelessWidget {
 }
 
 class PersonnelChip extends StatelessWidget {
-  final Personnel personnel;
+  final Personnel? personnel;
 
   const PersonnelChip({
-    Key key,
-    @required this.personnel,
+    Key? key,
+    required this.personnel,
   }) : super(key: key);
 
   @override
@@ -786,15 +786,15 @@ class PersonnelChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           AffiliationAvatar(
-            affiliation: context.read<AffiliationBloc>().repo[personnel.affiliation?.uuid],
+            affiliation: context.read<AffiliationBloc>().repo[personnel!.affiliation!.uuid!]!,
             size: 6.0,
             maxRadius: 10.0,
           ),
           SizedBox(width: 6.0),
           Text(
-            personnel.formal,
-            style: personnel.isUnavailable
-                ? style.copyWith(
+            personnel!.formal,
+            style: personnel!.isUnavailable
+                ? style!.copyWith(
                     decoration: TextDecoration.lineThrough,
                   )
                 : style,

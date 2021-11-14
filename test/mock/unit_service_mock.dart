@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -16,12 +16,12 @@ import 'package:SarSys/core/utils/data.dart';
 
 class UnitBuilder {
   static Unit create({
-    String uuid,
-    String ouuid,
-    String tuuid,
-    String userId,
+    String? uuid,
+    String? ouuid,
+    String? tuuid,
+    String? userId,
     int number = 1,
-    List<String> personnels,
+    List<String?>? personnels,
     UnitType type = UnitType.team,
     UnitStatus status = UnitStatus.mobilized,
   }) {
@@ -39,13 +39,13 @@ class UnitBuilder {
   }
 
   static createAsJson({
-    @required String ouuid,
-    String uuid,
-    UnitType type,
-    int number,
-    UnitStatus status,
-    List<String> personnels,
-    String tuuid,
+    required String? ouuid,
+    String? uuid,
+    UnitType? type,
+    int? number,
+    UnitStatus? status,
+    List<String?>? personnels,
+    String? tuuid,
   }) {
     return json.decode('{'
         '"uuid": "$uuid",'
@@ -61,12 +61,12 @@ class UnitBuilder {
 }
 
 class UnitServiceMock extends Mock implements UnitService {
-  final Map<String, Map<String, StorageState<Unit>>> unitsRepo = {};
+  final Map<String?, Map<String?, StorageState<Unit>>> unitsRepo = {};
 
   Unit add(
-    String ouuid, {
-    String uuid,
-    String tracking,
+    String? ouuid, {
+    String? uuid,
+    String? tracking,
     UnitType type = UnitType.team,
     UnitStatus status = UnitStatus.mobilized,
   }) {
@@ -84,19 +84,19 @@ class UnitServiceMock extends Mock implements UnitService {
     );
 
     if (unitsRepo.containsKey(ouuid)) {
-      unitsRepo[ouuid].putIfAbsent(unit.uuid, () => state);
+      unitsRepo[ouuid]!.putIfAbsent(unit.uuid, () => state);
     } else {
       unitsRepo[ouuid] = {unit.uuid: state};
     }
     return unit;
   }
 
-  List<StorageState<Unit>> remove(String uuid) {
+  List<StorageState<Unit>?> remove(String uuid) {
     final ouuids = unitsRepo.entries.where(
       (entry) => entry.value.containsKey(uuid),
     );
     return ouuids
-        .map((ouuid) => unitsRepo[ouuid].remove(uuid))
+        .map((ouuid) => unitsRepo[ouuid as String]!.remove(uuid))
         .where(
           (unit) => unit != null,
         )
@@ -139,7 +139,7 @@ class UnitServiceMock extends Mock implements UnitService {
     when(mock.messages).thenAnswer((_) => controller.stream);
 
     when(mock.getListFromId(any)).thenAnswer((_) async {
-      final String ouuid = _.positionalArguments[0];
+      final String? ouuid = _.positionalArguments[0];
       var units = unitsRepo[ouuid];
       if (units == null) {
         units = unitsRepo.putIfAbsent(ouuid, () => {});
@@ -149,17 +149,17 @@ class UnitServiceMock extends Mock implements UnitService {
       );
     });
 
-    when(mock.create(any)).thenAnswer((_) async {
+    when(mock.create(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Unit>;
-      final ouuid = state.value.operation.uuid;
-      if (!state.version.isFirst) {
+      final ouuid = state.value.operation!.uuid;
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Aggregate has not version 0: $state",
         );
       }
       final unit = state.value;
       final unitRepo = unitsRepo.putIfAbsent(ouuid, () => {});
-      final String puuid = unit.uuid;
+      final String? puuid = unit.uuid;
       unitRepo[puuid] = state.remote(
         unit.copyWith(
           operation: state.value.operation,
@@ -171,18 +171,18 @@ class UnitServiceMock extends Mock implements UnitService {
       );
     });
 
-    when(mock.update(any)).thenAnswer((_) async {
+    when(mock.update(any!)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Unit>;
       final unit = next.value;
       final puuid = unit.uuid;
-      final ouuid = unit.operation.uuid;
+      final ouuid = unit.operation!.uuid;
       final unitRepo = unitsRepo.putIfAbsent(ouuid, () => {});
       if (unitRepo.containsKey(puuid)) {
-        final state = unitRepo[puuid];
-        final delta = next.version.value - state.version.value;
+        final state = unitRepo[puuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         unitRepo[puuid] = state.apply(
@@ -199,11 +199,11 @@ class UnitServiceMock extends Mock implements UnitService {
       );
     });
 
-    when(mock.delete(any)).thenAnswer((_) async {
+    when(mock.delete(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Unit>;
       final unit = state.value;
       final puuid = unit.uuid;
-      final ouuid = unit.operation.uuid;
+      final ouuid = unit.operation!.uuid;
       final unitRepo = unitsRepo.putIfAbsent(ouuid, () => {});
       if (unitRepo.containsKey(puuid)) {
         return ServiceResponse.ok(

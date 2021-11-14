@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:io';
@@ -28,13 +28,13 @@ export 'device_bloc_states.dart';
 
 typedef void DeviceCallback(VoidCallback fn);
 
-class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocError, String, Device, DeviceService>
+class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocError, String?, Device, DeviceService>
     with
-        LoadableBloc<Iterable<Device>>,
+        LoadableBloc<Iterable<Device>?>,
         CreatableBloc<Device>,
         UpdatableBloc<Device>,
         DeletableBloc<Device>,
-        UnloadableBloc<Iterable<Device>> {
+        UnloadableBloc<Iterable<Device>?> {
   ///
   /// Default constructor
   ///
@@ -44,17 +44,16 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     BlocEventBus bus,
   ) : super(DevicesEmpty(), bus: bus) {
     assert(repo != null, "repository can not be null");
-    assert(service != null, "service can not be null");
     assert(this.userBloc != null, "userBloc can not be null");
 
-    registerStreamSubscription(userBloc.stream.listen(
+    registerStreamSubscription(userBloc!.stream.listen(
       // Load and unload devices as needed
       _processUserState,
     ));
 
     // Notify when device state has changed
     forward(
-      (t) => _NotifyRepositoryStateChanged(t),
+      (t) => _NotifyRepositoryStateChanged(t as StorageTransition<Device>),
     );
 
     // Toggle device trackability
@@ -66,9 +65,9 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   void _processUserState(UserState state) {
     try {
       if (isOpen) {
-        if (state.shouldLoad() && !repo.isReady) {
+        if (state.shouldLoad() && !repo!.isReady) {
           dispatch(LoadDevices());
-        } else if (state.shouldUnload(isOnline: isOnline) && repo.isReady) {
+        } else if (state.shouldUnload(isOnline: isOnline) && repo!.isReady) {
           dispatch(UnloadDevices());
         }
       }
@@ -77,7 +76,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     }
   }
 
-  StreamSubscription _locationChanged;
+  StreamSubscription? _locationChanged;
 
   void _processActivityChange<T extends BlocState>(Bloc bloc, T event) {
     if (event is ActivityProfileChanged) {
@@ -99,7 +98,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       final current = app;
       // Update device position for this app
       // a-priori of message from backend
-      if (LocationService().isSharing && current.trackable) {
+      if (LocationService().isSharing && current!.trackable!) {
         final next = current.copyWith(position: p);
         service.publish(
           DeviceMessage.positionChanged(
@@ -113,47 +112,47 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   /// Check if bloc is ready
   @override
-  bool get isReady => repo.isReady;
+  bool get isReady => repo!.isReady;
 
   /// Stream of isReady changes
   @override
-  Stream<bool> get onReadyChanged => repo.onReadyChanged;
+  Stream<bool> get onReadyChanged => repo!.onReadyChanged;
 
   /// All repositories
-  Iterable<StatefulRepository> get repos => [repo];
+  Iterable<StatefulRepository?> get repos => [repo];
 
   /// Check if device is this application
-  bool isThisApp(Device device) => userBloc.configBloc.config.udid == device.uuid;
+  bool isThisApp(Device device) => userBloc!.configBloc!.config!.udid == device.uuid;
 
   /// Check if device name should be updated
   bool _shouldSetUser(Device device, StorageStatus status) =>
-      userBloc.isAuthenticated &&
-      isThisApp(device) &&
+      userBloc!.isAuthenticated &&
+      isThisApp(device!) &&
       status != StorageStatus.deleted &&
-      (device.name == null || device.alias == null || device.networkId != userBloc.userId);
+      (device.name == null || device.alias == null || device.networkId != userBloc!.userId);
 
   /// Get [OperationBloc]
-  final UserBloc userBloc;
+  final UserBloc? userBloc;
 
   /// Get [DeviceRepository]
-  final DeviceRepository repo;
+  final DeviceRepository? repo;
 
   /// Get all [Device]s
-  Iterable<Device> get values => repo.values;
+  Iterable<Device> get values => repo!.values;
 
   /// Get [Device] count
-  int count({List<DeviceStatus> exclude: const [DeviceStatus.unavailable]}) => repo.count(exclude: exclude);
+  int count({List<DeviceStatus> exclude: const [DeviceStatus.unavailable]}) => repo!.count(exclude: exclude);
 
   /// Get [Device] from [uuid]
-  Device operator [](String uuid) => repo[uuid];
+  Device? operator [](String? uuid) => repo![uuid!];
 
   /// Get [DeviceService]
-  DeviceService get service => repo.service;
+  DeviceService get service => repo!.service;
 
   /// Find device for this app
-  Device get app {
-    final uuid = userBloc.config?.udid;
-    return uuid != null ? repo[uuid] : null;
+  Device? get app {
+    final uuid = userBloc!.config?.udid;
+    return uuid != null ? repo![uuid] : null;
   }
 
   /// Stream of changes on given device
@@ -163,20 +162,20 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
             (state is DeviceUpdated &&
                 state.isChanged() &&
                 (!skipPosition || !state.isLocationChanged()) &&
-                state.data.uuid == device.uuid) ||
-            (state is DevicesLoaded && state.data.contains(device.uuid)),
+                state.data!.uuid == device!.uuid) ||
+            (state is DevicesLoaded && state.data.contains(device!.uuid)),
       )
-      .map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);
+      .map((state) => state is DevicesLoaded ? repo![device!.uuid] : state.data);
 
   /// Stream of changes on given device
   Stream<Device> onMoved(Device device) => stream
       .where(
-        (state) => (state.isLocationChanged() && state.data.uuid == device.uuid),
+        (state) => (state.isLocationChanged() && state.data.uuid == device!.uuid),
       )
       .map((state) => state.data);
 
   void _assertState() {
-    if (!userBloc.isAuthenticated) {
+    if (!userBloc!.isAuthenticated) {
       throw DeviceBlocError(
         "User not authenticated. "
         "Ensure that an User is authenticated before 'DeviceBloc.load()'",
@@ -194,7 +193,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   /// Fetch [map] from [service]
   @override
-  Future<Iterable<Device>> load() async {
+  Future<Iterable<Device>?> load() async {
     _assertState();
     return dispatch<Iterable<Device>>(
       LoadDevices(),
@@ -240,13 +239,13 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   Future<Device> delete(String uuid) {
     _assertState();
     return dispatch<Device>(
-      DeleteDevice(repo[uuid]),
+      DeleteDevice(repo![uuid]!),
     );
   }
 
   /// Unload devices from local storage
   @override
-  Future<Iterable<Device>> unload() {
+  Future<Iterable<Device>?> unload() {
     return dispatch<Iterable<Device>>(
       UnloadDevices(),
     );
@@ -277,23 +276,23 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     // Fetch cached and handle
     // response from remote when ready
     final onRemote = Completer<Iterable<Device>>();
-    var devices = await repo.load(
+    var devices = await repo!.load(
       onRemote: onRemote,
     );
 
     yield toOK(
       command,
-      DevicesLoaded(repo.keys),
+      DevicesLoaded(repo!.keys as List<String?>),
       result: devices,
     );
 
     // Update device for this app?
     if (app != null) {
-      if (_shouldSetUser(app, repo.getState(app.uuid).status)) {
-        final device = app.copyWith(
+      if (_shouldSetUser(app!, repo!.getState(app!.uuid)!.status)) {
+        final device = app!.copyWith(
           network: 'sarsys',
-          number: userBloc.user.phone,
-          networkId: userBloc.user.userId,
+          number: userBloc!.user!.phone,
+          networkId: userBloc!.user!.userId,
           alias: await getDeviceModelName(),
         );
         dispatch(
@@ -306,7 +305,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     onComplete(
       [onRemote.future],
       toState: (_) => DevicesLoaded(
-        repo.keys,
+        repo!.keys as List<String?>,
         isRemote: true,
       ),
       toCommand: (state) => _NotifyBlocStateChanged<Object>(state),
@@ -332,7 +331,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   Stream<DeviceState> _create(CreateDevice command) async* {
     _assertData(command.data);
-    var device = repo.apply(command.data);
+    var device = repo!.apply(command.data!)!;
     yield toOK(
       command,
       DeviceCreated(device),
@@ -341,7 +340,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(device.uuid)],
+      [repo!.onRemote(device.uuid)],
       toState: (_) => DeviceCreated(
         device,
         isRemote: true,
@@ -357,17 +356,17 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   Stream<DeviceState> _update(UpdateDevice command) async* {
     _assertData(command.data);
-    final previous = repo[command.data.uuid];
-    final device = repo.apply(command.data);
+    final previous = repo![command.data!.uuid];
+    final device = repo!.apply(command.data!)!;
     yield toOK(
       command,
-      DeviceUpdated(device, previous),
+      DeviceUpdated(device, previous!),
       result: device,
     );
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(device.uuid)],
+      [repo!.onRemote(device.uuid)],
       toState: (_) => DeviceUpdated(
         device,
         previous,
@@ -384,7 +383,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   Stream<DeviceState> _delete(DeleteDevice command) async* {
     _assertData(command.data);
-    final device = repo.delete(command.data.uuid);
+    final device = repo!.delete(command.data!.uuid)!;
     yield toOK(
       command,
       DeviceDeleted(device),
@@ -393,7 +392,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(device.uuid, require: false)],
+      [repo!.onRemote(device.uuid, require: false)],
       toState: (_) => DeviceDeleted(
         device,
         isRemote: true,
@@ -408,7 +407,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   }
 
   DeviceState _notify(_NotifyRepositoryStateChanged command) {
-    final state = command.state;
+    final Device state = command.state;
     switch (command.status) {
       case StorageStatus.created:
         return toOK(
@@ -424,7 +423,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
           command,
           DeviceUpdated(
             state,
-            command.previous,
+            command.previous!,
             isRemote: command.isRemote,
           ),
           result: state,
@@ -447,7 +446,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   }
 
   Future<DeviceState> _unload(UnloadDevices command) async {
-    final devices = await repo.close();
+    final devices = await repo!.close();
     return toOK(
       command,
       DevicesUnloaded(devices),
@@ -456,7 +455,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   }
 
   @override
-  DeviceBlocError createError(Object error, {StackTrace stackTrace}) => DeviceBlocError(
+  DeviceBlocError createError(Object error, {StackTrace? stackTrace}) => DeviceBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
@@ -473,5 +472,5 @@ class _NotifyRepositoryStateChanged extends DeviceCommand<StorageTransition<Devi
 
 class _NotifyBlocStateChanged<T> extends DeviceCommand<DeviceState<T>, T>
     with NotifyBlocStateChangedMixin<DeviceState<T>, T> {
-  _NotifyBlocStateChanged(DeviceState state) : super(state);
+  _NotifyBlocStateChanged(DeviceState state) : super(state as DeviceState<T>);
 }

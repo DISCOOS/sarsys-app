@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -15,17 +15,17 @@ part 'device_model.g.dart';
 @JsonSerializable()
 class DeviceModel extends Device implements JsonObject<Map<String, dynamic>> {
   DeviceModel({
-    @required String uuid,
-    @required DeviceType type,
-    String alias,
-    String number,
-    bool manual,
-    bool trackable,
-    String network,
-    String networkId,
+    required String? uuid,
+    required DeviceType? type,
+    String? alias,
+    String? number,
+    bool? manual,
+    bool? trackable,
+    String? network,
+    String? networkId,
     this.allocatedTo,
-    Position position,
-    DeviceStatus status = DeviceStatus.unavailable,
+    Position? position,
+    DeviceStatus? status = DeviceStatus.unavailable,
   }) : super(
           uuid: uuid,
           position: position,
@@ -42,7 +42,7 @@ class DeviceModel extends Device implements JsonObject<Map<String, dynamic>> {
 
   @override
   @JsonKey(fromJson: toIncidentRef)
-  final AggregateRef<Incident> allocatedTo;
+  final AggregateRef<Incident>? allocatedTo;
 
   /// Factory constructor for creating a new `Device` instance
   factory DeviceModel.fromJson(Map<String, dynamic> json) => _$DeviceModelFromJson(json);
@@ -70,17 +70,17 @@ class DeviceModel extends Device implements JsonObject<Map<String, dynamic>> {
 
   /// Clone device and set given location
   Device copyWith({
-    String uuid,
-    bool manual,
-    String alias,
-    String number,
-    bool trackable,
-    String network,
-    DeviceType type,
-    String networkId,
-    Position position,
-    DeviceStatus status,
-    AggregateRef<Incident> allocatedTo,
+    String? uuid,
+    bool? manual,
+    String? alias,
+    String? number,
+    bool? trackable,
+    String? network,
+    DeviceType? type,
+    String? networkId,
+    Position? position,
+    DeviceStatus? status,
+    AggregateRef<Incident>? allocatedTo,
   }) {
     return DeviceModel(
       uuid: uuid ?? this.uuid,

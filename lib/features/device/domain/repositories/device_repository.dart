@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -20,7 +20,7 @@ abstract class DeviceRepository implements StatefulRepository<String, Device, De
 
   /// Load all devices
   Future<Iterable<Device>> load({
-    Completer<Iterable<Device>> onRemote,
+    Completer<Iterable<Device>>? onRemote,
   });
 
   /// Get [Device] count
@@ -32,8 +32,8 @@ abstract class DeviceRepository implements StatefulRepository<String, Device, De
 class DeviceServiceException extends ServiceException {
   DeviceServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(
           error,
           response: response,

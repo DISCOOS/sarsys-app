@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -56,8 +56,8 @@ class Storage {
   static FlutterSecureStorage get secure => _storage;
   static FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  static Future<String> readUserId() => secure.read(key: CURRENT_USER_ID_KEY);
-  static Future<void> writeUserId(String userId) => Storage.secure.write(
+  static Future<String?> readUserId() => secure.read(key: CURRENT_USER_ID_KEY);
+  static Future<void> writeUserId(String? userId) => Storage.secure.write(
         key: CURRENT_USER_ID_KEY,
         value: userId,
       );
@@ -65,28 +65,28 @@ class Storage {
         key: CURRENT_USER_ID_KEY,
       );
 
-  static String userKey(User user, String suffix) => user == null ? suffix : '${user.userId}_$suffix';
+  static String? userKey(User user, String? suffix) => user == null ? suffix : '${user.userId}_$suffix';
 
   static Future<String> readUserValue(
     User user, {
-    String suffix,
-    String defaultValue,
+    String? suffix,
+    String? defaultValue,
   }) =>
-      _storage.read(key: userKey(user, suffix)) ?? defaultValue;
+      _storage.read(key: userKey(user, suffix)!).then((value) => value!) ?? defaultValue as Future<String>;
 
   static Future<void> writeUserValue(
     User user, {
-    String suffix,
-    String value,
+    String? suffix,
+    String? value,
   }) =>
-      _storage.write(key: userKey(user, suffix), value: value);
+      _storage.write(key: userKey(user, suffix)!, value: value);
 
   static Future<void> deleteUserValue(
     User user, {
-    String suffix,
-    String defaultValue,
+    String? suffix,
+    String? defaultValue,
   }) =>
-      _storage.delete(key: userKey(user, suffix));
+      _storage.delete(key: userKey(user, suffix)!);
 
   static Future init() async {
     if (!_initialized) {
@@ -110,7 +110,7 @@ class Storage {
       // DO NOT RE-ORDER THESE, only append! Hive expects typeId to be stable
       _registerStorageStateJsonAdapter<AppConfig>(
         fromJson: (data) => AppConfigModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerTypeJsonAdapter<AuthToken>(
         fromJson: (data) => AuthToken.fromJson(data),
@@ -122,54 +122,54 @@ class Storage {
       );
       _registerStorageStateJsonAdapter<Person>(
         fromJson: (data) => PersonModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Affiliation>(
         fromJson: (data) => AffiliationModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Organisation>(
         fromJson: (data) => OrganisationModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Division>(
         fromJson: (data) => DivisionModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Department>(
         fromJson: (data) => DepartmentModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Incident>(
         fromJson: (data) => IncidentModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Operation>(
         fromJson: (data) => OperationModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Unit>(
         fromJson: (data) => UnitModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Personnel>(
         fromJson: (data) => PersonnelModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Device>(
         fromJson: (data) => DeviceModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
       _registerStorageStateJsonAdapter<Tracking>(
         fromJson: (data) => TrackingModel.fromJson(data),
-        toJson: (data) => data.toJson(),
+        toJson: (data) => data!.toJson(),
       );
     }
   }
 
   static void _registerTypeJsonAdapter<T>({
-    Map<String, dynamic> Function(T data) toJson,
-    T Function(Map<String, dynamic> data) fromJson,
+    Map<String, dynamic> Function(T data)? toJson,
+    T Function(Map<String, dynamic> data)? fromJson,
   }) {
     Hive.registerAdapter(
       TypeJsonAdapter<T>(
@@ -181,8 +181,8 @@ class Storage {
   }
 
   static void _registerStorageStateJsonAdapter<T>({
-    Map<String, dynamic> Function(T data) toJson,
-    T Function(Map<String, dynamic> data) fromJson,
+    Map<String, dynamic> Function(T? data)? toJson,
+    T Function(Map<String, dynamic> data)? fromJson,
   }) {
     Hive.registerAdapter(
       StorageStateJsonAdapter<T>(
@@ -253,29 +253,29 @@ enum StorageStatus {
 
 class StorageState<T> {
   StorageState({
-    @required this.value,
-    @required this.status,
-    @required this.version,
-    @required bool isRemote,
+    required this.value,
+    required this.status,
+    required this.version,
+    required bool? isRemote,
     this.previous,
     this.error,
   }) : _isRemote = isRemote;
   final T value;
-  final T previous;
-  final bool _isRemote;
-  final Object error;
-  final StateVersion version;
+  final T? previous;
+  final bool? _isRemote;
+  final Object? error;
+  final StateVersion? version;
   final StorageStatus status;
 
-  bool get isLocal => !_isRemote;
-  bool get isRemote => _isRemote;
+  bool get isLocal => !_isRemote!;
+  bool? get isRemote => _isRemote;
 
   factory StorageState.created(
     T value,
-    StateVersion version, {
-    bool isRemote = false,
-    T previous,
-    Object error,
+    StateVersion? version, {
+    bool? isRemote = false,
+    T? previous,
+    Object? error,
   }) =>
       StorageState<T>(
         value: value,
@@ -288,10 +288,10 @@ class StorageState<T> {
 
   factory StorageState.updated(
     T value,
-    StateVersion version, {
-    bool isRemote = false,
-    T previous,
-    Object error,
+    StateVersion? version, {
+    bool? isRemote = false,
+    T? previous,
+    Object? error,
   }) =>
       StorageState<T>(
         value: value,
@@ -304,10 +304,10 @@ class StorageState<T> {
 
   factory StorageState.deleted(
     T value,
-    StateVersion version, {
-    bool isRemote = false,
-    T previous,
-    Object error,
+    StateVersion? version, {
+    bool? isRemote = false,
+    T? previous,
+    Object? error,
   }) =>
       StorageState<T>(
         value: value,
@@ -329,7 +329,7 @@ class StorageState<T> {
   bool get hasPrevious => previous != null;
   bool get shouldLoad => !(isCreated && isLocal);
 
-  ConflictModel get conflict => isConflict ? error as ConflictModel : null;
+  ConflictModel? get conflict => isConflict ? error as ConflictModel? : null;
 
   StorageState<T> failed(Object error) => StorageState<T>(
         error: error,
@@ -342,8 +342,8 @@ class StorageState<T> {
 
   StorageState<T> remote(
     T value, {
-    StorageStatus status,
-    StateVersion version,
+    StorageStatus? status,
+    StateVersion? version,
   }) =>
       StorageState<T>(
         value: value,
@@ -351,19 +351,19 @@ class StorageState<T> {
         isRemote: true,
         previous: previous,
         status: status ?? this.status,
-        version: version ?? this.version + 1,
+        version: version ?? this.version! + 1,
       );
 
   StorageState<T> apply(
     T value, {
-    @required bool replace,
-    @required bool isRemote,
-    T previous,
-    Object error,
-    StateVersion version,
+    required bool replace,
+    required bool? isRemote,
+    T? previous,
+    Object? error,
+    StateVersion? version,
   }) {
     if (isCreated && !replace) {
-      final next = _isRemote
+      final next = _isRemote!
           // If current is remote,
           // value MUST HAVE status
           // 'updated'
@@ -379,7 +379,7 @@ class StorageState<T> {
         isRemote: isRemote ?? _isRemote,
         previous: previous ?? this.value,
         // Only increment if state is remote, or if remote is forced
-        version: version ?? (isRemote || !_isRemote ? this.version : this.version + 1),
+        version: version ?? (isRemote! || !_isRemote! ? this.version : this.version! + 1),
       );
     }
     return this.replace(
@@ -394,9 +394,9 @@ class StorageState<T> {
   /// [value]. Returns [StorageState] with
   /// patched [value] is [value] is an
   /// [JsonObject], otherwise [next].
-  StorageState<V> patch<V extends JsonObject>(StorageState<V> next, V fromJson(Map<String, dynamic> json)) {
+  StorageState<V> patch<V extends JsonObject?>(StorageState<V> next, V fromJson(Map<String, dynamic>? json)) {
     if (value is JsonObject) {
-      final patches = JsonUtils.diff(value as JsonObject, next.value);
+      final patches = JsonUtils.diff(value as JsonObject, next.value!);
       if (patches.isNotEmpty) {
         next = apply(
           fromJson(
@@ -426,9 +426,9 @@ class StorageState<T> {
 
   StorageState<T> replace(
     T value, {
-    T previous,
-    bool isRemote,
-    StateVersion version,
+    T? previous,
+    bool? isRemote,
+    StateVersion? version,
   }) {
     switch (status) {
       case StorageStatus.created:
@@ -463,7 +463,7 @@ class StorageState<T> {
   StorageState<T> delete(
     StateVersion version, {
     bool isRemote = false,
-    Object error,
+    Object? error,
   }) =>
       StorageState.deleted(
         value,
@@ -482,16 +482,16 @@ class StorageState<T> {
         '}';
   }
 
-  String _toValueAsString(T value) => '${value?.runtimeType} ${value is Aggregate ? '{${value.uuid}}' : ''}';
+  String _toValueAsString(T? value) => '${value?.runtimeType} ${value is Aggregate ? '{${value.uuid}}' : ''}';
 }
 
 class StorageTransition<T> {
   StorageTransition({this.from, this.to});
-  final StorageState<T> from;
-  final StorageState<T> to;
+  final StorageState<T>? from;
+  final StorageState<T>? to;
 
-  StorageStatus get status => to?.status;
-  StateVersion get version => to?.version;
+  StorageStatus? get status => to?.status;
+  StateVersion? get version => to?.version;
 
   bool get isError => to?.isError ?? false;
   bool get isLocal => to?.isLocal ?? false;
@@ -502,49 +502,49 @@ class StorageTransition<T> {
   bool get isConflict => to?.isConflict ?? false;
   bool get hasPrevious => to?.hasPrevious ?? false;
 
-  ConflictModel get conflict => isConflict ? to.error as ConflictModel : null;
+  ConflictModel? get conflict => isConflict ? to!.error as ConflictModel? : null;
 }
 
 class TypeJsonAdapter<T> extends TypeAdapter<T> {
   TypeJsonAdapter({
-    this.typeId,
+    required this.typeId,
     this.toJson,
     this.fromJson,
   });
 
   @override
-  final typeId;
+  final int typeId;
 
-  final Map<String, dynamic> Function(T value) toJson;
-  final T Function(Map<String, dynamic> value) fromJson;
+  final Map<String, dynamic> Function(T value)? toJson;
+  final T Function(Map<String, dynamic> value)? fromJson;
 
   @override
   T read(BinaryReader reader) {
     var json = reader.readMap();
-    return fromJson(Map<String, dynamic>.from(json));
+    return fromJson!(Map<String, dynamic>.from(json));
   }
 
   @override
   void write(BinaryWriter writer, T value) {
-    writer.writeMap(value != null ? toJson(value) : null);
+    writer.writeMap(toJson!(value));
   }
 }
 
-class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
+class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T?>> {
   StorageStateJsonAdapter({
-    this.typeId,
+    required this.typeId,
     this.toJson,
     this.fromJson,
   });
 
   @override
-  final typeId;
+  final int typeId;
 
-  final Map<String, dynamic> Function(T value) toJson;
-  final T Function(Map<String, dynamic> value) fromJson;
+  final Map<String, dynamic> Function(T? value)? toJson;
+  final T Function(Map<String, dynamic> value)? fromJson;
 
   @override
-  StorageState<T> read(BinaryReader reader) {
+  StorageState<T?> read(BinaryReader reader) {
     var value;
     var error;
     var version;
@@ -568,15 +568,15 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
       value: value,
       version: version,
       previous: previous,
-      status: _toStatus(json['status'] as String),
+      status: _toStatus(json['status'] as String?),
       error: error ?? (json['error'] != null ? json['error'] : null),
-      isRemote: json['remote'] != null ? json['remote'] as bool : false,
+      isRemote: json['remote'] != null ? json['remote'] as bool? : false,
     );
   }
 
-  T _toValue(Map json, String key) => json[key] != null ? fromJson(Map<String, dynamic>.from(json[key])) : null;
+  T? _toValue(Map json, String key) => json[key] != null ? fromJson!(Map<String, dynamic>.from(json[key])) : null;
 
-  StorageStatus _toStatus(String name) {
+  StorageStatus _toStatus(String? name) {
     final status = StorageStatus.values.firstWhere(
       (value) => enumName(value) == name,
       orElse: () => StorageStatus.created,
@@ -585,12 +585,12 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
   }
 
   @override
-  void write(BinaryWriter writer, StorageState<T> state) {
+  void write(BinaryWriter writer, StorageState<T?> state) {
     var value;
     var previous;
     try {
-      value = state.hasValue ? toJson(state.value) : null;
-      previous = state.hasPrevious ? toJson(state.previous) : null;
+      value = state.hasValue ? toJson!(state.value) : null;
+      previous = state.hasPrevious ? toJson!(state.previous) : null;
     } on ArgumentError catch (error, stackTrace) {
       SarSysApp.reportCheckedError(error, stackTrace);
     } on Exception catch (error, stackTrace) {
@@ -599,7 +599,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
     writer.writeMap({
       'value': value,
       'previous': previous,
-      'version': state.version.value,
+      'version': state.version!.value,
       'status': enumName(state.status),
       'error': toError(state),
       'remote': state?._isRemote != null ? state._isRemote : null,
@@ -612,7 +612,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
     }
     final object = state.error;
     if (object is ServiceException) {
-      return object.response.error;
+      return object.response!.error;
     }
     if (object is Map) {
       return object['error'];
@@ -651,14 +651,14 @@ class StateVersion {
   bool get isLast => this == last;
 
   /// Event number value
-  final int value;
+  final int? value;
 
-  StateVersion operator +(int number) => StateVersion(value + number);
-  StateVersion operator -(int number) => StateVersion(value - number);
-  bool operator >(StateVersion number) => value > number.value;
-  bool operator <(StateVersion number) => value < number.value;
-  bool operator >=(StateVersion number) => value >= number.value;
-  bool operator <=(StateVersion number) => value <= number.value;
+  StateVersion operator +(int number) => StateVersion(value! + number);
+  StateVersion operator -(int number) => StateVersion(value! - number);
+  bool operator >(StateVersion number) => value! > number.value!;
+  bool operator <(StateVersion number) => value! < number.value!;
+  bool operator >=(StateVersion number) => value! >= number.value!;
+  bool operator <=(StateVersion number) => value! <= number.value!;
 
   @override
   String toString() {
@@ -676,8 +676,8 @@ class StateVersion {
 class StorageStateException implements Exception {
   StorageStateException(this.error, {this.state, this.stackTrace});
   final Object error;
-  final StorageState state;
-  final StackTrace stackTrace;
+  final StorageState? state;
+  final StackTrace? stackTrace;
 
   @override
   String toString() {

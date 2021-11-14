@@ -1,8 +1,9 @@
-// @dart=2.11
+
 
 import 'dart:convert';
 
 import 'package:async/async.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -30,10 +31,10 @@ import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/filter_sheet.dart';
 
 class DevicesPage extends StatefulWidget {
-  final String query;
+  final String? query;
   final bool withActions;
 
-  DevicesPage({Key key, this.query, this.withActions = true}) : super(key: key);
+  DevicesPage({Key? key, this.query, this.withActions = true}) : super(key: key);
 
   @override
   DevicesPageState createState() => DevicesPageState();
@@ -41,9 +42,9 @@ class DevicesPage extends StatefulWidget {
 
 class DevicesPageState extends State<DevicesPage> {
   static const STATE = "devices_filter";
-  Set<DeviceType> _filter;
+  Set<DeviceType?>? _filter;
 
-  StreamGroup<dynamic> _group;
+  StreamGroup<dynamic>? _group;
 
 //  Map<String, String> _functions;
 //  Map<String, Division> _divisions;
@@ -57,7 +58,7 @@ class DevicesPageState extends State<DevicesPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_group != null) _group.close();
+    if (_group != null) _group!.close();
     _group = StreamGroup.broadcast()
       ..add(context.read<UserBloc>().stream)
       ..add(context.read<UnitBloc>().stream)
@@ -70,7 +71,7 @@ class DevicesPageState extends State<DevicesPage> {
 
   @override
   void dispose() {
-    _group.close();
+    _group!.close();
     super.dispose();
   }
 
@@ -83,7 +84,7 @@ class DevicesPageState extends State<DevicesPage> {
         },
         child: Container(
           child: StreamBuilder(
-              stream: _group.stream,
+              stream: _group!.stream,
               initialData: context.read<DeviceBloc>().state,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
@@ -94,7 +95,7 @@ class DevicesPageState extends State<DevicesPage> {
                 return devices.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         viewportConstraints,
-                        message: snapshot.hasError ? snapshot.error : "Ingen apparater innen rekkevidde",
+                        message: snapshot.hasError ? snapshot.error as String? : "Ingen apparater innen rekkevidde",
                       )
                     : ListView.builder(
                         itemCount: devices.length,
@@ -116,8 +117,8 @@ class DevicesPageState extends State<DevicesPage> {
       .read<DeviceBloc>()
       .values
       .where((device) =>
-          _filter.contains(device.type) &&
-          (widget.query == null || _prepare(device).contains(widget.query.toLowerCase())))
+          _filter!.contains(device!.type) &&
+          (widget.query == null || _prepare(device).contains(widget.query!.toLowerCase())))
       .toList()
         ..sort(
           _compare,
@@ -129,17 +130,17 @@ class DevicesPageState extends State<DevicesPage> {
       .toLowerCase();
 
   int _compare(Device d1, Device d2) {
-    return '${d1.number}'?.toLowerCase()?.compareTo('${d2.number}'.toLowerCase());
+    return '${d1!.number}'.toLowerCase().compareTo('${d2!.number}'.toLowerCase());
   }
 
   Widget _buildDevice(
     List<Device> devices,
     int index,
-    Map<String, Unit> units,
-    Map<String, Personnel> personnel,
-    Map<String, Set<Tracking>> tracked,
+    Map<String?, Unit?> units,
+    Map<String?, Personnel?> personnel,
+    Map<String?, Set<Tracking?>> tracked,
   ) {
-    final device = devices[index];
+    final device = devices[index]!;
     final status = _toTrackingStatus(tracked, device);
     final isThisApp = context.read<DeviceBloc>().isThisApp(device);
     return GestureDetector(
@@ -206,8 +207,8 @@ class DevicesPageState extends State<DevicesPage> {
 
   IconSlideAction _buildRemoveAction(
     Device device,
-    Map<String, Unit> units,
-    Map<String, Personnel> personnel,
+    Map<String?, Unit?> units,
+    Map<String?, Personnel?> personnel,
   ) =>
       IconSlideAction(
         caption: 'FJERN',
@@ -216,7 +217,7 @@ class DevicesPageState extends State<DevicesPage> {
         onTap: () async {
           final unit = units[device.uuid];
           if (unit != null) {
-            final result = await removeFromUnit(unit, devices: [device]);
+            final result = await removeFromUnit(unit, devices: [device])!;
             if (result.isLeft()) return;
           }
           final p = personnel[device.uuid];
@@ -227,24 +228,24 @@ class DevicesPageState extends State<DevicesPage> {
   bool get isSelected => context.read<OperationBloc>().isSelected;
   bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
-  TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
+  TrackingStatus _toTrackingStatus(Map<String?, Set<Tracking?>> tracked, Device device) {
     return tracked[device.uuid]
             ?.firstWhere(
-              (tracking) => tracking.status != TrackingStatus.none,
+              (tracking) => tracking!.status != TrackingStatus.none,
               orElse: () => null,
             )
             ?.status ??
         TrackingStatus.none;
   }
 
-  String _toDivision(String number) => context.read<AffiliationBloc>().findDivision(number)?.name;
-  String _toFunction(String number) => context.read<AffiliationBloc>().findFunction(number)?.name;
+  String? _toDivision(String? number) => context.read<AffiliationBloc>().findDivision(number)?.name;
+  String? _toFunction(String? number) => context.read<AffiliationBloc>().findFunction(number)?.name;
 
   void showFilterSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (BuildContext bc) => FilterSheet<DeviceType>(
+      builder: (BuildContext bc) => FilterSheet<DeviceType?>(
         initial: _filter,
         identifier: STATE,
         bucket: PageStorage.of(context),
@@ -256,22 +257,21 @@ class DevicesPageState extends State<DevicesPage> {
             title: translateDeviceType(type),
           ),
         ),
-        onChanged: (Set<DeviceType> selected) => setState(() => _filter = selected),
+        onChanged: (Set<DeviceType?> selected) => setState(() => _filter = selected),
       ),
     );
   }
 
-  DeviceType _onRead(value) => DeviceType.values.firstWhere(
+  DeviceType? _onRead(value) => DeviceType.values.firstWhereOrNull(
         (e) => value == enumName(e),
-        orElse: () => null,
       );
 }
 
-class DeviceSearch extends SearchDelegate<Device> {
+class DeviceSearch extends SearchDelegate<Device?> {
   static final _storage = Storage.secure;
   static const RECENT_KEY = "search/device/recent";
 
-  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+  ValueNotifier<Set<String>?> _recent = ValueNotifier(null);
 
   DeviceSearch() {
     _init();
@@ -311,12 +311,12 @@ class DeviceSearch extends SearchDelegate<Device> {
   @override
   Widget buildSuggestions(BuildContext context) {
     return query.isEmpty
-        ? ValueListenableBuilder<Set<String>>(
+        ? ValueListenableBuilder<Set<String>?>(
             valueListenable: _recent,
-            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+            builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
               return _buildSuggestionList(
                 context,
-                suggestions?.where(_matches)?.toList() ?? [],
+                suggestions?.where(_matches).toList() ?? [],
               );
             },
           )
@@ -333,7 +333,7 @@ class DeviceSearch extends SearchDelegate<Device> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
@@ -365,15 +365,15 @@ class DeviceSearch extends SearchDelegate<Device> {
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     buildSuggestions(context);
   }
 
   Widget _buildResults(BuildContext context, {bool store = false}) {
     if (store) {
-      final recent = _recent.value.toSet()..add(query);
+      final recent = _recent.value!.toSet()..add(query);
       _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-      _recent.value = recent.toSet() ?? [];
+      _recent.value = (recent.toSet() ?? []) as Set<String>?;
     }
     return DevicesPage(
       query: query,

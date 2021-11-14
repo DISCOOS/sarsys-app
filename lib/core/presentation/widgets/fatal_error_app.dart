@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:io';
 
@@ -18,8 +18,8 @@ class FatalErrorApp extends StatelessWidget {
   static bool noEmailClient = false;
 
   const FatalErrorApp({
-    Key key,
-    @required this.error,
+    Key? key,
+    required this.error,
     this.stackTrace,
   }) : super(key: key);
 
@@ -67,7 +67,7 @@ class FatalErrorApp extends StatelessWidget {
                         } on Exception {
                           setState(() => noEmailClient = true);
                           prompt(
-                            navigatorKey.currentState.overlay.context,
+                            navigatorKey.currentState!.overlay!.context,
                             "Feilmelding kunne ikke sendes",
                             "Kopier feilmeldingen eller ta en skjermdump og send den til support@discoos.org",
                           );
@@ -79,7 +79,7 @@ class FatalErrorApp extends StatelessWidget {
                 tooltip: "Slett data",
                 onPressed: () async {
                   final delete = await prompt(
-                    navigatorKey.currentState.overlay.context,
+                    navigatorKey.currentState!.overlay!.context,
                     "Slette alle data?",
                     "Dette vil slette alle data SarSys har lagret på telefonen unntatt kart. Vil du fortsette?",
                   );
@@ -109,7 +109,7 @@ class FatalErrorWidget extends StatelessWidget {
   const FatalErrorWidget(
     this.error,
     this.stackTrace, {
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -169,6 +169,8 @@ class FatalErrorWidget extends StatelessWidget {
 }
 
 class FatalErrorAppBlocObserver extends FatalErrorApp implements BlocObserver {
+  FatalErrorAppBlocObserver() : super(error: []);
+
   @override
   void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
     runApp(FatalErrorApp(
@@ -178,7 +180,7 @@ class FatalErrorAppBlocObserver extends FatalErrorApp implements BlocObserver {
   }
 
   @override
-  void onEvent(Bloc bloc, Object event) {}
+  void onEvent(Bloc bloc, Object? event) {}
 
   @override
   void onTransition(Bloc bloc, Transition transition) {}

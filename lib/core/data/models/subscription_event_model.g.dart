@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'subscription_event_model.dart';
@@ -10,10 +8,10 @@ part of 'subscription_event_model.dart';
 
 SubscriptionEventModel _$SubscriptionEventModelFromJson(Map json) {
   return SubscriptionEventModel(
-    name: json['name'] as String,
-    statePatches: json['statePatches'] as bool,
-    changedState: json['changedState'] as bool,
-    previousState: json['previousState'] as bool,
+    name: json['name'] as String?,
+    statePatches: json['statePatches'] as bool?,
+    changedState: json['changedState'] as bool?,
+    previousState: json['previousState'] as bool?,
   );
 }
 

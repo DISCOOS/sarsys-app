@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:io';
@@ -18,7 +18,7 @@ import 'error_handler.dart';
 
 class PermissionController {
   PermissionController({
-    @required this.configBloc,
+    required this.configBloc,
     this.onMessage,
     this.onPrompt,
   }) : assert(configBloc != null, "AppConfigBloc is required");
@@ -33,9 +33,9 @@ class PermissionController {
     Permission.activityRecognition,
   ];
 
-  final PromptCallback onPrompt;
+  final PromptCallback? onPrompt;
   final AppConfigBloc configBloc;
-  final ActionCallback<PermissionRequest> onMessage;
+  final ActionCallback<PermissionRequest>? onMessage;
 
   bool _resolving = false;
   bool get resolving => _resolving;
@@ -56,8 +56,8 @@ class PermissionController {
   ///
   /// Will copy resolving state and current permissions
   PermissionController cloneWith({
-    PromptCallback onPrompt,
-    ActionCallback<PermissionRequest> onMessage,
+    PromptCallback? onPrompt,
+    ActionCallback<PermissionRequest>? onMessage,
   }) =>
       PermissionController(
         configBloc: configBloc,
@@ -151,7 +151,7 @@ class PermissionController {
 
   void init({
     List<Permission> permissions = REQUIRED,
-    VoidCallback onReady,
+    VoidCallback? onReady,
   }) async {
     _permissions.addAll(permissions ?? REQUIRED);
     if (_permissions.contains(Permission.storage))
@@ -185,7 +185,7 @@ class PermissionController {
             break;
           case ServiceStatus.notApplicable:
             if (onMessage != null)
-              onMessage(
+              onMessage!(
                 "${request.title} er ikke tilgjengelig. ${request.consequence}",
                 data: request,
               );
@@ -213,7 +213,7 @@ class PermissionController {
       switch (status) {
         case PermissionStatus.granted:
           if (await request.update(true) && onMessage != null)
-            onMessage(
+            onMessage!(
               "${request.title} er tilgjengelig",
               data: request,
             );
@@ -221,7 +221,7 @@ class PermissionController {
           break;
         case PermissionStatus.restricted:
           if (await request.update(false) && onMessage != null)
-            onMessage(
+            onMessage!(
               "Tilgang til ${toBeginningOfSentenceCase(request.title)} tillates ikke",
               data: request,
             );
@@ -245,7 +245,7 @@ class PermissionController {
           );
           break;
       }
-      if (isReady && request.onReady != null) request.onReady();
+      if (isReady && request.onReady != null) request.onReady!();
     }
     _resolving = false;
 
@@ -259,14 +259,14 @@ class PermissionController {
   }
 
   Future<bool> _updateAppConfig({
-    bool storage,
-    bool locationAlways,
-    bool locationWhenInUse,
-    bool activityRecognition,
+    bool? storage,
+    bool? locationAlways,
+    bool? locationWhenInUse,
+    bool? activityRecognition,
   }) async {
     var notify = false;
     if (configBloc.isReady) {
-      final config = configBloc.config;
+      final config = configBloc.config!;
       notify = config.storage != (storage ?? config.storage) ||
           config.locationAlways != (locationAlways ?? config.locationAlways) ||
           config.locationWhenInUse != (locationWhenInUse ?? config.locationWhenInUse) ||
@@ -287,7 +287,7 @@ class PermissionController {
     if (onMessage == null)
       await _onAction(request);
     else
-      onMessage(reason, action: "LØS", data: request, onPressed: () async {
+      onMessage!(reason, action: "LØS", data: request, onPressed: () async {
         await _onAction(request);
       });
   }
@@ -305,7 +305,7 @@ class PermissionController {
       if (deniedBefore > 0 || await request.permission.shouldShowRequestRationale) {
         prompt = onPrompt == null
             ? true
-            : await onPrompt(
+            : await onPrompt!(
                 request.title,
                 _toRationale(
                   request,
@@ -342,7 +342,7 @@ class PermissionController {
       } else {
         await prefs.setInt("userDeniedGroupBefore_${request.permission}", ++deniedBefore);
         if (onMessage != null) {
-          onMessage(
+          onMessage!(
             "${request.title} er ikke tilgjengelig. ${request.consequence}",
             data: request,
           );
@@ -377,7 +377,7 @@ class PermissionController {
     if (onMessage == null)
       await _onOpenSetting(request);
     else
-      onMessage(request.disabledMessage, action: "LØS", data: request, onPressed: () async {
+      onMessage!(request.disabledMessage, action: "LØS", data: request, onPressed: () async {
         await _onOpenSetting(request);
       });
   }
@@ -420,27 +420,27 @@ class PermissionRequest {
   final String consequence;
   final Future<bool> Function(bool value) update;
 
-  final VoidCallback onReady;
-  final String settingTarget;
+  final VoidCallback? onReady;
+  final String? settingTarget;
 
   final List<String> platforms;
 
   PermissionRequest({
-    @required this.platforms,
-    @required this.title,
-    @required this.rationale,
-    @required this.consequence,
-    @required this.deniedBefore,
-    @required this.permission,
-    @required this.update,
-    @required this.deniedMessage,
-    @required this.disabledMessage,
+    required this.platforms,
+    required this.title,
+    required this.rationale,
+    required this.consequence,
+    required this.deniedBefore,
+    required this.permission,
+    required this.update,
+    required this.deniedMessage,
+    required this.disabledMessage,
     this.onReady,
     this.settingTarget,
   });
 
   PermissionRequest copyWith({
-    VoidCallback onReady,
+    VoidCallback? onReady,
   }) {
     return PermissionRequest(
       title: this.title,

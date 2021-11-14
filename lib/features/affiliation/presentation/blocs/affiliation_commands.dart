@@ -40,8 +40,8 @@ class SearchAffiliations extends AffiliationCommand<String, List<Affiliation>> {
   String toString() => '$runtimeType {filter: $data, limit: $limit, offset: $offset}';
 }
 
-class OnboardUser extends AffiliationCommand<String, Affiliation> {
-  OnboardUser(String userId, this.affiliation) : super(userId, props: [affiliation]);
+class OnboardUser extends AffiliationCommand<String?, Affiliation> {
+  OnboardUser(String? userId, this.affiliation) : super(userId, props: [affiliation]);
   final Affiliation affiliation;
 
   @override
@@ -51,7 +51,7 @@ class OnboardUser extends AffiliationCommand<String, Affiliation> {
 class CreateAffiliation extends AffiliationCommand<Affiliation, Affiliation> {
   CreateAffiliation(Affiliation affiliation) : super(affiliation);
 
-  Person get person => data.person;
+  Person get person => data.person!;
 
   @override
   String toString() => '$runtimeType {affiliation: $data}';

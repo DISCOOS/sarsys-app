@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -38,7 +38,7 @@ class _AboutScreenState extends State<AboutScreen> {
       body: FutureBuilder(
         future: PackageInfo.fromPlatform(),
         builder: (BuildContext context, AsyncSnapshot<PackageInfo> snapshot) {
-          return snapshot.hasData ? _buildPacketInfo(context, snapshot.data) : Container();
+          return snapshot.hasData ? _buildPacketInfo(context, snapshot.data!) : Container();
         },
       ),
     );
@@ -57,7 +57,7 @@ class _AboutScreenState extends State<AboutScreen> {
 
   _buildPacketInfo(BuildContext context, PackageInfo data) {
     final channel = context.service<MessageChannel>();
-    final auuid = context.read<DeviceBloc>().app?.uuid;
+    final String auuid = context.read<DeviceBloc>().app!.uuid;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ListView(
@@ -112,7 +112,7 @@ class _AboutScreenState extends State<AboutScreen> {
             child: StreamBuilderWidget(
                 stream: channel.onChanged,
                 initialData: channel.state,
-                builder: (context, _) {
+                builder: (context, dynamic _) {
                   return _buildChannelStatusTile(channel, context);
                 }),
             onTap: () async {
@@ -129,7 +129,7 @@ class _AboutScreenState extends State<AboutScreen> {
   void showMessage(
     String message, {
     String action = "OK",
-    VoidCallback onPressed,
+    VoidCallback? onPressed,
     dynamic data,
   }) {
     final snackbar = SnackBar(
@@ -248,8 +248,8 @@ class _AboutScreenState extends State<AboutScreen> {
       }
       if (!channel.isOpen) {
         channel.open(
-          url: channel.url,
-          appId: context.read<AppConfigBloc>().config.udid,
+          url: channel.url!,
+          appId: context.read<AppConfigBloc>().config!.udid,
         );
       }
       setState(() {});

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/foundation.dart';
@@ -17,15 +17,15 @@ mixin Affiliate {
 
 abstract class Affiliation extends Aggregate<Map<String, dynamic>> {
   Affiliation({
-    String uuid,
-    @required this.person,
-    @required this.org,
-    @required this.div,
-    @required this.dep,
-    @required this.type,
-    @required this.status,
-    @required this.active,
-  }) : super(uuid, fields: [
+    String? uuid,
+    this.person,
+    this.org,
+    this.div,
+    this.dep,
+    this.type,
+    this.status,
+    this.active,
+  }) : super(uuid!, fields: [
           person,
           org,
           div,
@@ -35,13 +35,13 @@ abstract class Affiliation extends Aggregate<Map<String, dynamic>> {
           active,
         ]);
 
-  final Person person;
-  final AggregateRef<Organisation> org;
-  final AggregateRef<Division> div;
-  final AggregateRef<Department> dep;
-  final AffiliationType type;
-  final AffiliationStandbyStatus status;
-  final bool active;
+  final Person? person;
+  final AggregateRef<Organisation>? org;
+  final AggregateRef<Division>? div;
+  final AggregateRef<Department>? dep;
+  final AffiliationType? type;
+  final AffiliationStandbyStatus? status;
+  final bool? active;
 
   /// Check if is [Department]
   bool get isDep => dep?.uuid != null;
@@ -75,17 +75,17 @@ abstract class Affiliation extends Aggregate<Map<String, dynamic>> {
       .join(' ');
 
   /// Get Aggregate reference
-  AggregateRef<Affiliation> toRef();
+  AggregateRef<Affiliation>? toRef();
 
   Affiliation copyWith({
-    String uuid,
-    bool active,
+    String? uuid,
+    bool? active,
     Person person,
-    AffiliationType type,
-    AggregateRef<Division> div,
-    AggregateRef<Department> dep,
-    AggregateRef<Organisation> org,
-    AffiliationStandbyStatus status,
+    AffiliationType? type,
+    AggregateRef<Division>? div,
+    AggregateRef<Department>? dep,
+    AggregateRef<Organisation>? org,
+    AffiliationStandbyStatus? status,
   });
 
   Affiliation withPerson(Person person, {bool keep = true});
@@ -131,7 +131,7 @@ enum AffiliationStandbyStatus {
   unavailable,
 }
 
-String translateAffiliationStandbyStatus(AffiliationStandbyStatus status) {
+String translateAffiliationStandbyStatus(AffiliationStandbyStatus? status) {
   switch (status) {
     case AffiliationStandbyStatus.available:
       return "Tilgjengelig";

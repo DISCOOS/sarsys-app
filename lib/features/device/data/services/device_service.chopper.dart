@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'device_service.dart';
@@ -10,7 +8,7 @@ part of 'device_service.dart';
 
 // ignore_for_file: always_put_control_body_on_new_line, always_specify_types, prefer_const_declarations
 class _$DeviceServiceImpl extends DeviceServiceImpl {
-  _$DeviceServiceImpl([ChopperClient client]) {
+  _$DeviceServiceImpl([ChopperClient? client]) {
     if (client == null) return;
     this.client = client;
   }
@@ -19,7 +17,7 @@ class _$DeviceServiceImpl extends DeviceServiceImpl {
   final definitionType = DeviceServiceImpl;
 
   @override
-  Future<Response<String>> create(String uuid, Device body) {
+  Future<Response<String>> create(String? uuid, Device body) {
     final $url = '/devices';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
@@ -27,7 +25,7 @@ class _$DeviceServiceImpl extends DeviceServiceImpl {
   }
 
   @override
-  Future<Response<StorageState<Device>>> update(String uuid, Device body) {
+  Future<Response<StorageState<Device>>> update(String? uuid, Device body) {
     final $url = '/devices/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
@@ -35,7 +33,7 @@ class _$DeviceServiceImpl extends DeviceServiceImpl {
   }
 
   @override
-  Future<Response<void>> delete(String uuid) {
+  Future<Response<void>> delete(String? uuid) {
     final $url = '/devices/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);

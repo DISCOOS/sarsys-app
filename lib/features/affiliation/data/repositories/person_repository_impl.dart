@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:io';
@@ -21,7 +21,7 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
     implements PersonRepository {
   PersonRepositoryImpl(
     PersonService service, {
-    @required ConnectivityService connectivity,
+    required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
@@ -34,21 +34,21 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   /// Get [Operation.uuid] from [value]
   @override
   String toKey(Person value) {
-    return value?.uuid;
+    return value.uuid;
   }
 
   /// Create [Person] from json
-  Person fromJson(Map<String, dynamic> json) => PersonModel.fromJson(json);
+  Person fromJson(Map<String, dynamic>? json) => PersonModel.fromJson(json!);
 
   /// Find Person with given userId
-  Person findUser(String userId) =>
-      userId == null ? null : find(where: (person) => person.userId == userId).firstOrNull;
+  Person? findUser(String? userId) =>
+      userId == null ? null : find(where: (person) => person!.userId == userId).firstOrNull;
 
   @override
-  Iterable<Person> find({bool where(Person person)}) => isReady ? values.where(where) : [];
+  Iterable<Person> find({bool where(Person person)?}) => isReady ? values.where(where!) : [];
 
   @override
-  Future<int> init({List<Person> persons}) async {
+  Future<int> init({List<Person>? persons}) async {
     await prepare(
       force: true,
     );
@@ -62,8 +62,8 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   @override
   Future<Iterable<Person>> fetch({
     bool replace = false,
-    Iterable<String> uuids,
-    Completer<Iterable<Person>> onRemote,
+    Iterable<String>? uuids,
+    Completer<Iterable<Person>>? onRemote,
   }) async {
     await prepare();
     return _fetch(
@@ -74,19 +74,19 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   }
 
   Iterable<Person> _fetch(
-    Iterable<String> uuids, {
+    Iterable<String?>? uuids, {
     bool replace = false,
-    Completer<Iterable<Person>> onRemote,
+    Completer<Iterable<Person>>? onRemote,
   }) {
-    return requestQueue.load(
+    return requestQueue!.load(
       () async {
-        final values = <StorageState<Person>>[];
+        final List<StorageState<Person>?> values = <StorageState<Person>?>[];
         final errors = <ServiceResponse>[];
-        for (var uuid in uuids) {
+        for (var uuid in uuids!) {
           // Do not attempt to load local values
           final state = getState(uuid);
           if (state == null || state?.shouldLoad == true) {
-            final response = await service.getFromId(uuid);
+            final ServiceResponse<StorageState<Person>> response = await service.getFromId(uuid);
             if (response != null) {
               if (response.is200) {
                 values.add(response.body);
@@ -116,8 +116,8 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   }
 
   @override
-  Future<Iterable<Person>> onReset({Iterable<Person> previous = const []}) => Future.value(_fetch(
-        previous.map((a) => a.uuid).toList(),
+  Future<Iterable<Person>> onReset({Iterable<Person>? previous = const []}) => Future.value(_fetch(
+        previous!.map((a) => a!.uuid).toList(),
         replace: true,
       ));
 
@@ -125,7 +125,7 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   Future<StorageState<Person>> onCreate(StorageState<Person> state) async {
     var response = await service.create(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
     throw PersonServiceException(
       'Failed to create Person ${state.value}',
@@ -135,7 +135,7 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   }
 
   @override
-  Future<StorageState<Person>> onUpdate(StorageState<Person> state) async {
+  Future<StorageState<Person>?> onUpdate(StorageState<Person> state) async {
     var response = await service.update(state);
     if (response.isOK) {
       return response.body;
@@ -148,8 +148,8 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   }
 
   @override
-  Future<StorageState<Person>> onDelete(StorageState<Person> state) async {
-    var response = await service.delete(state);
+  Future<StorageState<Person>?> onDelete(StorageState<Person> state) async {
+    ServiceResponse<StorageState<Person>> response = await service.delete(state);
     if (response.isOK) {
       return response.body;
     }

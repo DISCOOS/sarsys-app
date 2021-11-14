@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/mapping/presentation/layers/poi_layer.dart';
@@ -13,20 +13,20 @@ import 'package:latlong2/latlong.dart';
 
 class PositionTool extends MapTool {
   final VoidCallback onHide;
-  final MapController controller;
-  final ActionCallback onMessage;
+  final MapController? controller;
+  final ActionCallback? onMessage;
   final ValueChanged<LatLng> onShow;
-  final ValueChanged<String> onCopy;
+  final ValueChanged<String?>? onCopy;
 
   @override
   bool active() => true;
 
   PositionTool({
-    @required this.onShow,
-    @required this.onHide,
-    @required this.onCopy,
-    @required this.onMessage,
-    @required this.controller,
+    required this.onShow,
+    required this.onHide,
+    required this.onCopy,
+    required this.onMessage,
+    required this.controller,
   });
 
   @override
@@ -69,7 +69,7 @@ class PositionTool extends MapTool {
   }
 
   void _goto(BuildContext context, Point point) {
-    controller.move(toLatLng(point), controller.zoom);
+    controller!.move(toLatLng(point), controller!.zoom);
     Navigator.pop(context);
   }
 }

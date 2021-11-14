@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/editors/position_editor.dart';
@@ -12,20 +12,20 @@ import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 
-class DeviceParams extends BlocParams<DeviceBloc, Device> {
-  final Unit unit;
-  DeviceParams({Device device, this.unit}) : super(device);
+class DeviceParams extends BlocParams<DeviceBloc, Device?> {
+  final Unit? unit;
+  DeviceParams({Device? device, this.unit}) : super(device);
 }
 
 /// Create an device
-Future<dartz.Either<bool, Device>> createDevice() => CreateDevice()(DeviceParams());
+Future<dartz.Either<bool, Device>>? createDevice() => CreateDevice()(DeviceParams())!.then((value) => value as dartz.Either<bool, Device>);
 
 class CreateDevice extends UseCase<bool, Device, DeviceParams> {
   @override
   Future<dartz.Either<bool, Device>> execute(params) async {
     assert(params.data == null, "Device should not be supplied");
     var result = await showDialog<Device>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => DeviceEditor(),
     );
     if (result == null) return dartz.Left(false);
@@ -36,30 +36,30 @@ class CreateDevice extends UseCase<bool, Device, DeviceParams> {
 }
 
 /// Attach an device to incident
-Future<dartz.Either<bool, Device>> attachDevice() => AttachDevice()(DeviceParams());
+Future<dartz.Either<bool, Device>>? attachDevice() => AttachDevice()(DeviceParams())!.then((value) => value as dartz.Either<bool, Device>);
 
 class AttachDevice extends UseCase<bool, Device, DeviceParams> {
   @override
   Future<dartz.Either<bool, Device>> execute(params) async {
     assert(params.data == null, "Device should not be supplied");
     var result = await prompt(
-      params.overlay.context,
+      params.overlay!.context,
       "Tilknytt aksjon",
       "Dette vil knytte apparatet til aksjonen. Vil du fortsette?",
     );
     if (!result) return dartz.left(false);
-    final device = await params.bloc.attach(params.data);
+    final device = await params.bloc.attach(params.data!);
     return dartz.Right(device);
   }
 }
 
 /// Edit given unit
-Future<dartz.Either<bool, Device>> editDevice(
+Future<dartz.Either<bool, Device>>? editDevice(
   Device device,
 ) =>
     EditDevice()(DeviceParams(
       device: device,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Device>);
 
 class EditDevice extends UseCase<bool, Device, DeviceParams> {
   @override
@@ -68,7 +68,7 @@ class EditDevice extends UseCase<bool, Device, DeviceParams> {
     // The widget returned by the builder does not share a context with the location that
     // showDialog is originally called from. Provider.of will therefore fail.
     var result = await showDialog<Device>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => DeviceEditor(
         device: params.data,
       ),
@@ -81,74 +81,74 @@ class EditDevice extends UseCase<bool, Device, DeviceParams> {
 }
 
 /// Edit last known device location
-Future<dartz.Either<bool, Device>> editDeviceLocation(
+Future<dartz.Either<bool, Device>>? editDeviceLocation(
   Device device,
 ) =>
     EditDeviceLocation()(DeviceParams(
       device: device,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Device>);
 
 class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
   @override
   Future<dartz.Either<bool, Device>> execute(params) async {
     assert(params.data != null, "Device must be supplied");
     var result = await showDialog<Position>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => PositionEditor(
-        params.data.position,
+        params.data!.position,
         title: "Sett siste kjente posisjon",
       ),
     );
     if (result == null) return dartz.Left(false);
-    final device = await params.bloc.update(params.data.copyWith(position: result));
+    final device = await params.bloc.update(params.data!.copyWith(position: result));
     return dartz.Right(device);
   }
 }
 
 /// Detach device from incident
-Future<dartz.Either<bool, DeviceState>> detachDevice(
+Future<dartz.Either<bool, DeviceState>>? detachDevice(
   BuildContext context,
   Device device,
 ) =>
     DetachDevice()(DeviceParams(
       device: device,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, DeviceState<dynamic>>);
 
 class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
   @override
   Future<dartz.Either<bool, DeviceState>> execute(params) async {
     assert(params.data != null, "Device must be supplied");
     var response = await prompt(
-      params.overlay.context,
-      "Fjern ${params.data.name}",
+      params.overlay!.context,
+      "Fjern ${params.data!.name}",
       "Dette vil fjerne apparatet fra sporing og aksjonen. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.update(params.data.copyWith(status: DeviceStatus.available));
+    await params.bloc.update(params.data!.copyWith(status: DeviceStatus.available));
     return dartz.Right(params.bloc.state);
   }
 }
 
 /// Delete device
-Future<dartz.Either<bool, DeviceState>> deleteDevice(
+Future<dartz.Either<bool, DeviceState>>? deleteDevice(
   Device device,
 ) =>
     DeleteDevice()(DeviceParams(
       device: device,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, DeviceState<dynamic>>);
 
 class DeleteDevice extends UseCase<bool, DeviceState, DeviceParams> {
   @override
   Future<dartz.Either<bool, DeviceState>> execute(params) async {
     assert(params.data != null, "Unit must be supplied");
     var response = await prompt(
-      params.overlay.context,
-      "Slett ${params.data.name}",
+      params.overlay!.context,
+      "Slett ${params.data!.name}",
       "Dette vil slette alle data fra sporinger og fjerne apparatet fra aksjonen. "
           "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.delete(params.data.uuid);
+    await params.bloc.delete(params.data!.uuid);
     return dartz.Right(params.bloc.state);
   }
 }

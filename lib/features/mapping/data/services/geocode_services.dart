@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -27,14 +27,14 @@ import 'package:flutter_geocoder/geocoder.dart';
 import 'package:xml/xml.dart';
 
 abstract class GeocodeService extends Service {
-  final Client client;
+  final Client? client;
   final String url;
-  final String name;
+  final String? name;
 
   GeocodeService(
     this.client, {
-    @required this.url,
-    @required this.name,
+    required this.url,
+    required this.name,
   });
 }
 
@@ -44,10 +44,10 @@ mixin GeocodeSearchQuery implements GeocodeService {
 
 mixin GeocodeSearchPoint implements GeocodeService {
   Future<List<GeocodeResult>> lookup(
-    Point point, {
-    String title,
-    IconData icon,
-    GeocodeType type,
+    Point? point, {
+    String? title,
+    IconData? icon,
+    GeocodeType? type,
     int radius = 20,
   });
 }
@@ -57,10 +57,10 @@ class PlaceGeocoderService with GeocodeSearchQuery implements GeocodeService {
   final _SSRService _geocoder;
 
   @override
-  Client get client => _geocoder.client;
+  Client? get client => _geocoder.client;
 
   @override
-  String get name => _geocoder.name;
+  String? get name => _geocoder.name;
 
   @override
   String get url => _geocoder.url;
@@ -87,7 +87,7 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
 
   _SSRService(
     Client client, {
-    String name,
+    String? name,
     this.maxCount = 5,
     this.exactFirst = true,
   }) : super(
@@ -98,7 +98,7 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
 
   Future<List<GeocodeResult>> search(String query) async {
     final request = '$url?antPerSide=$maxCount&eksakteForst=$exactFirst&epsgKode=4326&json&navn=${query.trim()}*';
-    final response = await client.get(Uri.parse(request));
+    final response = await client!.get(Uri.parse(request));
     if (response.statusCode == 200) {
       final doc = XmlDocument.parse(toUtf8(response.body));
       final result = doc.findAllElements('sokRes').first;
@@ -113,8 +113,8 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
 
   GeocodeResult _toResult(String query, xml.XmlElement node) {
     final point = Point.fromCoords(
-      lat: double.tryParse(node.findElements('nord')?.first?.text) ?? 0.0,
-      lon: double.tryParse(node.findElements('aust')?.first?.text) ?? 0.0,
+      lat: double.tryParse(node.findElements('nord').first.text) ?? 0.0,
+      lon: double.tryParse(node.findElements('aust').first.text) ?? 0.0,
     );
     return GeocodeResult(
       query: query,
@@ -136,7 +136,7 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
   }
 
   String _prepareNamedType(xml.XmlElement node) =>
-      node.findElements('navnetype')?.first?.text?.replaceFirst("Adressenavn (veg/gate)", "vei/gate");
+      node.findElements('navnetype').first.text.replaceFirst("Adressenavn (veg/gate)", "vei/gate");
 
   String toUtf8(String text) {
     return utf8.decoder.convert(text.codeUnits);
@@ -148,10 +148,10 @@ class AddressGeocoderService with GeocodeSearchQuery, GeocodeSearchPoint impleme
   final _EnturGeocoderService _geocoder;
 
   @override
-  Client get client => _geocoder.client;
+  Client? get client => _geocoder.client;
 
   @override
-  String get name => _geocoder.name;
+  String? get name => _geocoder.name;
 
   @override
   String get url => _geocoder.url;
@@ -168,7 +168,7 @@ class AddressGeocoderService with GeocodeSearchQuery, GeocodeSearchPoint impleme
   }
 
   @override
-  Future<List<GeocodeResult>> lookup(Point point, {String title, IconData icon, GeocodeType type, int radius = 20}) {
+  Future<List<GeocodeResult>> lookup(Point? point, {String? title, IconData? icon, GeocodeType? type, int radius = 20}) {
     return _geocoder.lookup(point, title: title, icon: icon, type: type, radius: radius);
   }
 }
@@ -182,7 +182,7 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
 
   _EnturGeocoderService(
     Client client, {
-    String name,
+    String? name,
     this.layers = const [],
     this.maxCount = 5,
   }) : super(
@@ -191,25 +191,25 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
           name: name,
         );
 
-  Future<List<GeocodeResult>> search(String query) async => await _fetch(
+  Future<List<GeocodeResult>> search(String query) async => await (_fetch(
         '$url/autocomplete?'
         'lang=no&size=$maxCount${layers.isNotEmpty ? "&${layers.join(',')}" : ''}&text=${query.trim()}',
-      );
+      ) as FutureOr<List<GeocodeResult>>);
 
   @override
   Future<List<GeocodeResult>> lookup(
-    Point point, {
-    String title,
-    IconData icon,
-    GeocodeType type,
+    Point? point, {
+    String? title,
+    IconData? icon,
+    GeocodeType? type,
     int radius = 20,
   }) async =>
-      await _fetch(
-        toUrl(point, radius),
+      await (_fetch(
+        toUrl(point!, radius),
         title: title,
         icon: icon,
         type: type,
-      );
+      ) as FutureOr<List<GeocodeResult>>);
 
   String toUrl(Point point, int radius) {
     final uri = '$url/reverse?lang=no&$maxCount${layers.isNotEmpty ? "&${layers.join(',')}" : ''}';
@@ -218,12 +218,12 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
 
   Future<List> _fetch(
     String request, {
-    String title,
-    IconData icon,
-    GeocodeType type,
+    String? title,
+    IconData? icon,
+    GeocodeType? type,
   }) async {
     if (kDebugMode) debugPrint(request);
-    final response = await client.get(
+    final response = await client!.get(
       Uri.parse(request),
       headers: {
         // Comply with Entur strict rate-limiting policy
@@ -244,10 +244,10 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
 
   List _toResults(
     Response response, {
-    String query,
-    String title,
-    IconData icon,
-    GeocodeType type,
+    String? query,
+    String? title,
+    IconData? icon,
+    GeocodeType? type,
   }) {
     final Map<String, dynamic> body = json.decode(response.body);
     final addresses = body.containsKey('features')
@@ -268,10 +268,10 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
 
   GeocodeResult _toResult(
     feature, {
-    String query,
-    String title,
-    IconData icon,
-    GeocodeType type,
+    String? query,
+    String? title,
+    IconData? icon,
+    GeocodeType? type,
   }) {
     final coords = feature['geometry']['coordinates'];
     final point = Point.fromCoords(
@@ -281,10 +281,10 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
     return GeocodeResult(
       query: query,
       icon: icon ?? Icons.home,
-      title: title ?? feature['properties']['name'] as String,
+      title: title ?? feature['properties']['name'] as String?,
       address: [
-        feature['properties']['postalcode'] as String,
-        feature['properties']['locality'] as String,
+        feature['properties']['postalcode'] as String?,
+        feature['properties']['locality'] as String?,
       ].join(' '),
       position: toUTM(point),
       latitude: point.lat,
@@ -299,12 +299,12 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
 
 /// Search for [GeocodeType.Object] instances in local data providers
 class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
-  final bool withRetired;
+  final bool? withRetired;
   final AddressGeocoderService service;
   final AppController controller;
 
   @override
-  Client get client => service.client;
+  Client? get client => service.client;
 
   @override
   String get url => "local";
@@ -332,7 +332,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
 
   Iterable<AddressLookup> _findPOI(RegExp match, String query) {
     final results = <AddressLookup>[];
-    final incident = controller.bloc<OperationBloc>().selected;
+    final incident = controller.bloc<OperationBloc>()!.selected;
     if (incident != null) {
       // Search for matches in incident
       if (_prepare(incident.searchable).contains(match)) {
@@ -368,18 +368,18 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
   }
 
   Iterable<AddressLookup> _findUnits(RegExp match, String query) => controller
-      .bloc<UnitBloc>()
+      .bloc<UnitBloc>()!
       .units
       .values
-      .where((unit) => withRetired || unit.status != UnitStatus.retired)
+      .where((unit) => withRetired! || unit!.status != UnitStatus.retired)
       .where((unit) =>
           // Search in unit
-          _prepare(unit.searchable).contains(match) ||
+          _prepare(unit!.searchable).contains(match) ||
           // Search in devices tracked with this unit
-          controller.bloc<TrackingBloc>().devices(unit.tracking.uuid).any((device) => _prepare(device).contains(match)))
+          controller.bloc<TrackingBloc>()!.devices(unit.tracking!.uuid).any((device) => _prepare(device).contains(match)))
       .map((unit) => AddressLookup(
             query: query,
-            point: controller.bloc<TrackingBloc>().trackings[unit.tracking.uuid].position?.geometry,
+            point: controller.bloc<TrackingBloc>()!.trackings[unit!.tracking!.uuid]!.position?.geometry,
             icon: Icons.group,
             title: unit.name,
             type: GeocodeType.Object,
@@ -388,19 +388,19 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           ));
 
   Iterable<AddressLookup> _findPersonnel(RegExp match, String query) => controller
-      .bloc<PersonnelBloc>()
+      .bloc<PersonnelBloc>()!
       .repo
       .map
       .values
-      .where((p) => withRetired || p.status != PersonnelStatus.retired)
+      .where((p) => withRetired! || p!.status != PersonnelStatus.retired)
       .where((p) =>
           // Search in personnel
-          _prepare(p.searchable).contains(match) ||
+          _prepare(p!.searchable).contains(match) ||
           // Search in devices tracked with this personnel
-          controller.bloc<TrackingBloc>().devices(p.tracking.uuid).any((device) => _prepare(device).contains(match)))
+          controller.bloc<TrackingBloc>()!.devices(p.tracking!.uuid).any((device) => _prepare(device).contains(match)))
       .map((p) => AddressLookup(
             query: query,
-            point: controller.bloc<TrackingBloc>().find(p).firstOrNull?.position?.geometry,
+            point: controller.bloc<TrackingBloc>()!.find(p!).firstOrNull?.position?.geometry,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,
@@ -409,9 +409,9 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           ));
 
   Iterable<AddressLookup> _findDevices(RegExp match, String query) =>
-      controller.bloc<DeviceBloc>().values.where((p) => _prepare(p).contains(match)).map((p) => AddressLookup(
+      controller.bloc<DeviceBloc>()!.values.where((p) => _prepare(p).contains(match)).map((p) => AddressLookup(
             query: query,
-            point: p.position?.geometry,
+            point: p!.position?.geometry,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,
@@ -419,12 +419,12 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
             source: name,
           ));
 
-  String _prepare(Object object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
+  String _prepare(Object? object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
 }
 
 class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService, GeocodeSearchPoint {
   @override
-  Client get client => null;
+  Client? get client => null;
 
   @override
   String get name => "${Platform.isAndroid ? 'Android' : 'iOS'} søk";
@@ -444,10 +444,10 @@ class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService, Ge
 
   @override
   Future<List<GeocodeResult>> lookup(
-    Point point, {
-    String title,
-    IconData icon,
-    GeocodeType type,
+    Point? point, {
+    String? title,
+    IconData? icon,
+    GeocodeType? type,
     int radius = 20,
   }) async {
     try {
@@ -486,10 +486,10 @@ class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService, Ge
 
   List<GeocodeResult> _toSearchResults(
     List<Address> addresses, {
-    @required String query,
-    String title,
-    IconData icon,
-    GeocodeType type,
+    required String query,
+    String? title,
+    IconData? icon,
+    GeocodeType? type,
     int radius = 20,
   }) =>
       addresses
@@ -515,25 +515,25 @@ class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService, Ge
 enum GeocodeType { Place, Address, Object, Coordinates }
 
 class GeocodeResult extends Equatable {
-  final String title;
-  final IconData icon;
-  final String address;
-  final String position;
-  final double distance;
-  final double longitude;
-  final double latitude;
+  final String? title;
+  final IconData? icon;
+  final String? address;
+  final String? position;
+  final double? distance;
+  final double? longitude;
+  final double? latitude;
   final GeocodeType type;
-  final String source;
-  final String query;
+  final String? source;
+  final String? query;
 
   GeocodeResult({
-    @required this.title,
-    @required this.icon,
-    @required this.longitude,
-    @required this.latitude,
-    @required this.position,
-    @required this.type,
-    @required this.query,
+    required this.title,
+    required this.icon,
+    required this.longitude,
+    required this.latitude,
+    required this.position,
+    required this.type,
+    required this.query,
     this.source,
     this.address,
     this.distance,
@@ -542,7 +542,7 @@ class GeocodeResult extends Equatable {
   bool get hasLocation => latitude != null && longitude != null;
 
   @override
-  List<Object> get props {
+  List<Object?> get props {
     return [
       title,
       icon,
@@ -565,17 +565,17 @@ class GeocodeResult extends Equatable {
 
 /// Used for deferred address lookup from [Point]
 class AddressLookup extends GeocodeResult {
-  final Point point;
+  final Point? point;
   final GeocodeSearchPoint service;
 
   AddressLookup({
-    @required this.point,
-    @required String title,
-    @required IconData icon,
-    @required GeocodeType type,
-    @required this.service,
-    @required String query,
-    String source,
+    required this.point,
+    required String? title,
+    required IconData icon,
+    required GeocodeType type,
+    required this.service,
+    required String query,
+    String? source,
   }) : super(
           icon: icon,
           query: query,
@@ -604,7 +604,7 @@ class AddressLookup extends GeocodeResult {
       );
     }
 
-    GeocodeResult closest;
+    GeocodeResult? closest;
     double last = double.maxFinite;
 
     for (GeocodeResult result in await service.lookup(
@@ -617,17 +617,17 @@ class AddressLookup extends GeocodeResult {
         closest = result;
 
         last = ProjMath.eucledianDistance(
-          closest.latitude,
-          closest.longitude,
-          point.lat,
-          point.lon,
+          closest.latitude!,
+          closest.longitude!,
+          point!.lat!,
+          point!.lon!,
         );
       } else {
         var next = ProjMath.eucledianDistance(
-          closest.latitude,
-          closest.longitude,
-          result.latitude,
-          result.longitude,
+          closest.latitude!,
+          closest.longitude!,
+          result.latitude!,
+          result.longitude!,
         );
         if (next < last) {
           closest = result;
@@ -643,8 +643,8 @@ class AddressLookup extends GeocodeResult {
             title: title,
             address: null,
             position: toUTM(point),
-            latitude: point.lat,
-            longitude: point.lon,
+            latitude: point!.lat,
+            longitude: point!.lon,
             type: type,
             source: source,
           )
@@ -654,8 +654,8 @@ class AddressLookup extends GeocodeResult {
             title: "$title",
             address: closest.address,
             position: toUTM(point),
-            latitude: point.lat,
-            longitude: point.lon,
+            latitude: point!.lat,
+            longitude: point!.lon,
             distance: last,
             type: type,
             source: source,

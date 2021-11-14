@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'personnel_model.dart';
@@ -11,11 +9,8 @@ part of 'personnel_model.dart';
 PersonnelModel _$PersonnelModelFromJson(Map json) {
   return PersonnelModel(
     uuid: json['uuid'] as String,
-    affiliation: json['affiliation'] == null
-        ? null
-        : AffiliationModel.fromJson((json['affiliation'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+    affiliation: AffiliationModel.fromJson(
+        Map<String, dynamic>.from(json['affiliation'] as Map)),
     tracking: toTrackingRef(json['tracking']),
     operation: toOperationRef(json['operation']),
     status: _$enumDecodeNullable(_$PersonnelStatusEnumMap, json['status']),
@@ -26,7 +21,9 @@ PersonnelModel _$PersonnelModelFromJson(Map json) {
 }
 
 Map<String, dynamic> _$PersonnelModelToJson(PersonnelModel instance) {
-  final val = <String, dynamic>{};
+  final val = <String, dynamic>{
+    'uuid': instance.uuid,
+  };
 
   void writeNotNull(String key, dynamic value) {
     if (value != null) {
@@ -34,46 +31,50 @@ Map<String, dynamic> _$PersonnelModelToJson(PersonnelModel instance) {
     }
   }
 
-  writeNotNull('uuid', instance.uuid);
   writeNotNull('status', _$PersonnelStatusEnumMap[instance.status]);
   writeNotNull('function', _$OperationalFunctionTypeEnumMap[instance.function]);
-  writeNotNull('affiliation', instance.affiliation?.toJson());
+  val['affiliation'] = instance.affiliation.toJson();
   writeNotNull('unit', instance.unit?.toJson());
   writeNotNull('operation', instance.operation?.toJson());
-  writeNotNull('tracking', instance.tracking?.toJson());
+  val['tracking'] = instance.tracking.toJson();
   return val;
 }
 
-T _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
-T _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
+K? _$enumDecodeNullable<K, V>(
+  Map<K, V> enumValues,
   dynamic source, {
-  T unknownValue,
+  K? unknownValue,
 }) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
 }
 
 const _$PersonnelStatusEnumMap = {

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -15,11 +15,11 @@ import 'package:SarSys/core/data/services/service.dart';
 
 class DepartmentBuilder {
   static Department create(
-    String divuuid, {
-    @required String name,
-    @required String suffix,
-    String depuuid,
-    bool active,
+    String? divuuid, {
+    required String name,
+    required String suffix,
+    String? depuuid,
+    bool? active,
   }) {
     return DepartmentModel.fromJson(
       createAsJson(
@@ -33,11 +33,11 @@ class DepartmentBuilder {
   }
 
   static createAsJson(
-    String divuuid, {
-    String depuuid,
-    String name,
-    bool active,
-    String suffix,
+    String? divuuid, {
+    String? depuuid,
+    String? name,
+    bool? active,
+    String? suffix,
   }) {
     return json.decode('{'
         '"uuid": "$depuuid",'
@@ -50,14 +50,14 @@ class DepartmentBuilder {
 }
 
 class DepartmentServiceMock extends Mock implements DepartmentService {
-  final Map<String, StorageState<Department>> depRepo = {};
+  final Map<String?, StorageState<Department>> depRepo = {};
 
   Department add(
-    String divuuid, {
-    String depuuid,
-    String name,
-    String suffix,
-    bool active,
+    String? divuuid, {
+    String? depuuid,
+    String? name,
+    String? suffix,
+    bool? active,
   }) {
     final dep = DepartmentBuilder.create(
       divuuid,
@@ -75,7 +75,7 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
     return dep;
   }
 
-  StorageState<Department> remove(String uuid) {
+  StorageState<Department>? remove(String uuid) {
     return depRepo.remove(uuid);
   }
 
@@ -114,9 +114,9 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
 
-    when(mock.create(any)).thenAnswer((_) async {
+    when(mock.create(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Department>;
-      if (!state.version.isFirst) {
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Aggregate has not version 0: $state",
         );
@@ -131,15 +131,15 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
       );
     });
 
-    when(mock.update(any)).thenAnswer((_) async {
+    when(mock.update(any!)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Department>;
       final uuid = next.value.uuid;
       if (depRepo.containsKey(uuid)) {
-        final state = depRepo[uuid];
-        final delta = next.version.value - state.version.value;
+        final state = depRepo[uuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         depRepo[uuid] = state.apply(
@@ -156,7 +156,7 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
       );
     });
 
-    when(mock.delete(any)).thenAnswer((_) async {
+    when(mock.delete(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Department>;
       final uuid = state.value.uuid;
       if (depRepo.containsKey(uuid)) {

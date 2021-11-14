@@ -94,26 +94,26 @@ void main() {
 
   // Distance between p1 and p2
   final dst12 = ProjMath.eucledianDistance(
-    p1.lat,
-    p1.lon,
-    p2.lat,
-    p2.lon,
+    p1.lat!,
+    p1.lon!,
+    p2.lat!,
+    p2.lon!,
   );
 
   // Distance between p2 and p3
   final dst23 = ProjMath.eucledianDistance(
-    p2.lat,
-    p2.lon,
-    p3.lat,
-    p3.lon,
+    p2.lat!,
+    p2.lon!,
+    p3.lat!,
+    p3.lon!,
   );
 
   // Distance between p1 and p3
   final dst13 = ProjMath.eucledianDistance(
-    p1.lat,
-    p1.lon,
-    p3.lat,
-    p3.lon,
+    p1.lat!,
+    p1.lon!,
+    p3.lat!,
+    p3.lon!,
   );
 
   // Total distance (p1,p2) + (p2,p3)
@@ -121,10 +121,10 @@ void main() {
 
   // Distance p12 and p23
   final dst1223a = ProjMath.eucledianDistance(
-    p12.lat,
-    p12.lon,
-    p23.lat,
-    p23.lon,
+    p12.lat!,
+    p12.lon!,
+    p23.lat!,
+    p23.lon!,
   );
 
   // Effort between p1 and p2
@@ -165,10 +165,10 @@ void main() {
     expect(t1.sources.length, 1, reason: "SHOULD contain 1 source");
     expect(t1.sources.first.uuid, s1p1.uuid, reason: "SHOULD contain source ${s1p1.uuid}");
     expect(t1.tracks.length, 1, reason: "SHOULD contain 1 track");
-    expect(t1.tracks.first.positions.length, 2, reason: "SHOULD contain 2 position");
-    expect(t1.position.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+    expect(t1.tracks.first.positions!.length, 2, reason: "SHOULD contain 2 position");
+    expect(t1.position!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
     expect(t1.history.length, 1, reason: "SHOULD be 1");
-    expect(t1.history.last.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+    expect(t1.history.last!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
     expect(t1.distance, 0.0, reason: "SHOULD be 0.0");
     expect(t1.effort, Duration.zero, reason: "SHOULD be ${Duration.zero}");
     expect(t1.speed, 0.0, reason: "SHOULD be 0.0");
@@ -185,10 +185,10 @@ void main() {
     expect(t1.sources.length, 1, reason: "SHOULD contain 1 source");
     expect(t1.sources.first.uuid, s1p1.uuid, reason: "SHOULD contain source ${s1p1.uuid}");
     expect(t1.tracks.length, 1, reason: "SHOULD contain 1 track");
-    expect(t1.tracks.first.positions.length, 3, reason: "SHOULD contain 3 positions");
-    expect(t1.position.geometry, equals(p3.geometry), reason: "SHOULD be p3");
+    expect(t1.tracks.first.positions!.length, 3, reason: "SHOULD contain 3 positions");
+    expect(t1.position!.geometry, equals(p3.geometry), reason: "SHOULD be p3");
     expect(t1.history.length, 1, reason: "SHOULD be 1");
-    expect(t1.history.last.geometry, equals(p3.geometry), reason: "SHOULD be p3");
+    expect(t1.history.last!.geometry, equals(p3.geometry), reason: "SHOULD be p3");
     expect(t1.distance, 0.0, reason: "SHOULD be 0.0");
     expect(t1.effort, Duration.zero, reason: "SHOULD be ${Duration.zero}");
     expect(t1.speed, 0.0, reason: "SHOULD be 0.0");
@@ -213,18 +213,18 @@ void main() {
 
       // Assert t2
       expect(t2.status, TrackingStatus.ready, reason: "SHOULD be empty");
-      expect(t2.position.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t2.position!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
       expect(t2.history.length, 1, reason: "SHOULD be 1");
-      expect(t2.history.first.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t2.history.first!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
       expect(t2.distance, 0.0, reason: "SHOULD be 0.0");
       expect(t2.effort, Duration.zero, reason: "SHOULD be ${Duration.zero}");
       expect(t2.speed, 0.0, reason: "SHOULD be 0.0");
 
       // Assert t3
       expect(t3.status, TrackingStatus.ready, reason: "SHOULD be empty");
-      expect(t3.position.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+      expect(t3.position!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
       expect(t3.history.length, 2, reason: "SHOULD be 1");
-      expect(t3.history.first.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t3.history.first!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
       expect(t3.distance, dst12, reason: "SHOULD be $dst12");
       expect(t3.effort, eft12, reason: "SHOULD be $eft12");
       expect(t3.speed, spd12, reason: "SHOULD be $spd12");
@@ -248,9 +248,9 @@ void main() {
 
     test('[t1] tracking position should be p1 initially', () {
       // Assert
-      expect(t1.position.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t1.position!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
       expect(t1.history.length, 1, reason: "SHOULD be 1");
-      expect(t1.history.last.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t1.history.last!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
       expect(t1.distance, 0.0, reason: "SHOULD be 0.0");
       expect(t1.effort, Duration.zero, reason: "SHOULD be ${Duration.zero}");
       expect(t1.speed, 0.0, reason: "SHOULD be 0.0");
@@ -268,12 +268,12 @@ void main() {
 
       // Assert
       expect(t2.status, TrackingStatus.tracking, reason: "SHOULD be tracking");
-      expect(t2.position.geometry, equals(p3.geometry), reason: "SHOULD be p3");
+      expect(t2.position!.geometry, equals(p3.geometry), reason: "SHOULD be p3");
       expect(t2.sources.length, 1, reason: "SHOULD contain 1 source");
       expect(t2.tracks.length, 1, reason: "SHOULD contain 1 track");
-      expect(t2.tracks.first.positions.length, 3, reason: "SHOULD contain 3 positions");
+      expect(t2.tracks.first.positions!.length, 3, reason: "SHOULD contain 3 positions");
       expect(t2.history.length, 2, reason: "SHOULD be 2");
-      expect(t2.history.last.geometry, equals(p3.geometry), reason: "SHOULD be p3");
+      expect(t2.history.last!.geometry, equals(p3.geometry), reason: "SHOULD be p3");
       expect(t2.distance, dst13, reason: "SHOULD be $dst13");
       expect(t2.effort, eft13, reason: "SHOULD be $eft13");
       expect(t2.speed, spd13, reason: "SHOULD be $spd13");
@@ -289,12 +289,12 @@ void main() {
 
       // Assert
       expect(t3.status, TrackingStatus.tracking, reason: "SHOULD be tracking");
-      expect(t3.position.geometry, equals(p3.geometry), reason: "SHOULD be p3");
+      expect(t3.position!.geometry, equals(p3.geometry), reason: "SHOULD be p3");
       expect(t3.sources.length, 1, reason: "SHOULD contain 1 source");
       expect(t3.tracks.length, 1, reason: "SHOULD contain 1 track");
-      expect(t3.tracks.first.positions.length, 3, reason: "SHOULD contain 3 positions");
+      expect(t3.tracks.first.positions!.length, 3, reason: "SHOULD contain 3 positions");
       expect(t3.history.length, 3, reason: "SHOULD be 3");
-      expect(t3.history.last.geometry, equals(p3.geometry), reason: "SHOULD be p3");
+      expect(t3.history.last!.geometry, equals(p3.geometry), reason: "SHOULD be p3");
       expect(t3.distance, dst1223, reason: "SHOULD be $dst1223");
       expect(t3.effort, eft1223, reason: "SHOULD be $eft1223");
       expect(t3.speed, spd1223, reason: "SHOULD be $spd1223");
@@ -307,7 +307,7 @@ void main() {
       // Assert
       expect(t2.tracks.isNotEmpty, isTrue, reason: "SHOULD not be empty");
       expect(t2.tracks.first.status, TrackStatus.detached, reason: "SHOULD be detached");
-      expect(t2.position.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t2.position!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
       expect(t2.status, TrackingStatus.ready, reason: "SHOULD be empty");
     });
 
@@ -316,14 +316,14 @@ void main() {
       final t2 = TrackingUtils.replaceAll(t1, [s1p2]);
 
       // Assert
-      expect(t2.position.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+      expect(t2.position!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
       expect(t2.status, TrackingStatus.tracking, reason: "SHOULD be tracking");
       expect(t2.tracks.isNotEmpty, isTrue, reason: "SHOULD not be empty");
       expect(t2.tracks.length, 1, reason: "SHOULD contain 1 track");
       expect(t2.tracks.last.status, TrackStatus.attached, reason: "SHOULD be attached");
-      expect(t2.tracks.last.positions.length, 2, reason: "SHOULD contain 2 positions");
+      expect(t2.tracks.last.positions!.length, 2, reason: "SHOULD contain 2 positions");
       expect(t2.history.length, 2, reason: "SHOULD be 2");
-      expect(t2.history.last.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+      expect(t2.history.last!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
       expect(t2.distance, dst12, reason: "SHOULD be $dst13");
       expect(t2.effort, eft12, reason: "SHOULD be $eft12");
       expect(t2.speed, spd12, reason: "SHOULD be $spd12");
@@ -335,7 +335,7 @@ void main() {
 
       // Assert
       expect(t2.tracks.isEmpty, isTrue, reason: "SHOULD be empty");
-      expect(t2.position.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t2.position!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
       expect(t2.status, TrackingStatus.ready, reason: "SHOULD be empty");
     });
 
@@ -347,7 +347,7 @@ void main() {
       // Assert
       expect(t3.tracks.isNotEmpty, isTrue, reason: "SHOULD not be empty");
       expect(t3.tracks.first.status, TrackStatus.attached, reason: "SHOULD be attached");
-      expect(t3.position.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+      expect(t3.position!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
       expect(t3.status, TrackingStatus.tracking, reason: "SHOULD be tracking");
     });
   });
@@ -359,15 +359,15 @@ void main() {
     test('and [s1p1] and [s2p2] is attached to [t1], arithmetic mean between p1 and p2 is calculated', () {
       // Assert
       expect(t1.status, TrackingStatus.tracking, reason: "SHOULD be tracking");
-      expect(t1.position.geometry, equals(p12), reason: "SHOULD be p12");
+      expect(t1.position!.geometry, equals(p12), reason: "SHOULD be p12");
       expect(t1.sources.length, 2, reason: "SHOULD contain 2 sources");
       expect(t1.tracks.length, 2, reason: "SHOULD contain 2 tracks");
-      expect(t1.tracks.first.positions.length, 1, reason: "SHOULD contain 1 position");
-      expect(t1.tracks.first.positions.last.geometry, equals(p1.geometry), reason: "SHOULD be p1");
-      expect(t1.tracks.last.positions.length, 1, reason: "SHOULD contain 1 position");
-      expect(t1.tracks.last.positions.last.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+      expect(t1.tracks.first.positions!.length, 1, reason: "SHOULD contain 1 position");
+      expect(t1.tracks.first.positions!.last!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t1.tracks.last.positions!.length, 1, reason: "SHOULD contain 1 position");
+      expect(t1.tracks.last.positions!.last!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
       expect(t1.history.length, 1, reason: "SHOULD be 1");
-      expect(t1.history.last.geometry, equals(p12), reason: "SHOULD be p12");
+      expect(t1.history.last!.geometry, equals(p12), reason: "SHOULD be p12");
       expect(t1.distance, 0.0, reason: "SHOULD be 0.0");
       expect(t1.effort, Duration.zero, reason: "SHOULD be ${Duration.zero}");
       expect(t1.speed, 0.0, reason: "SHOULD be 0.0");
@@ -379,15 +379,15 @@ void main() {
 
       // Assert
       expect(t2.status, TrackingStatus.tracking, reason: "SHOULD be tracking");
-      expect(t2.position.geometry, equals(p23), reason: "SHOULD be p23");
+      expect(t2.position!.geometry, equals(p23), reason: "SHOULD be p23");
       expect(t2.sources.length, 2, reason: "SHOULD contain 2 sources");
       expect(t2.tracks.length, 2, reason: "SHOULD contain 2 tracks");
-      expect(t2.tracks.first.positions.length, 2, reason: "SHOULD contain 2 positions");
-      expect(t2.tracks.first.positions.last.geometry, equals(p2.geometry), reason: "SHOULD be p2");
-      expect(t2.tracks.last.positions.length, 2, reason: "SHOULD contain 2 positions");
-      expect(t2.tracks.last.positions.last.geometry, equals(p3.geometry), reason: "SHOULD be p3");
+      expect(t2.tracks.first.positions!.length, 2, reason: "SHOULD contain 2 positions");
+      expect(t2.tracks.first.positions!.last!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+      expect(t2.tracks.last.positions!.length, 2, reason: "SHOULD contain 2 positions");
+      expect(t2.tracks.last.positions!.last!.geometry, equals(p3.geometry), reason: "SHOULD be p3");
       expect(t2.history.length, 2, reason: "SHOULD be 2");
-      expect(t2.history.last.geometry, equals(p23), reason: "SHOULD be p23");
+      expect(t2.history.last!.geometry, equals(p23), reason: "SHOULD be p23");
       expect(t2.distance, dst1223a, reason: "SHOULD be $dst1223a");
       expect(t2.effort, eft1223a, reason: "SHOULD be $eft1223a");
       expect(t2.speed, spd1223a, reason: "SHOULD be $spd1223a");
@@ -401,7 +401,7 @@ void main() {
       expect(t2.sources.isEmpty, isTrue, reason: "SHOULD be empty");
       expect(t2.tracks.isNotEmpty, isTrue, reason: "SHOULD not be empty");
       expect(t2.tracks.first.status, TrackStatus.detached, reason: "SHOULD be attached");
-      expect(t2.position.geometry, equals(p12), reason: "SHOULD be p12");
+      expect(t2.position!.geometry, equals(p12), reason: "SHOULD be p12");
       expect(t2.status, TrackingStatus.closed, reason: "SHOULD be closed");
     });
 
@@ -415,7 +415,7 @@ void main() {
       expect(t3.tracks.first.status, TrackStatus.attached, reason: 'SHOULD be attached');
       expect(t3.tracks.last.status, TrackStatus.attached, reason: "SHOULD be attached");
       expect(t3.sources.length, 2, reason: 'SHOULD contain 2 sources');
-      expect(t3.position.geometry, equals(p12), reason: 'SHOULD be p12');
+      expect(t3.position!.geometry, equals(p12), reason: 'SHOULD be p12');
       expect(t3.status, TrackingStatus.tracking, reason: 'SHOULD be tracking');
     });
   });
@@ -424,13 +424,13 @@ void main() {
     // ARRANGE trackable 1 as personnel
     final tbl1 = PersonnelBuilder.create(tuuid: Uuid().v4());
     final tbl1s1 = PositionableSource.from(tbl1, position: p1);
-    final tbl1t1 = TrackingUtils.attachAll(TrackingBuilder.create(uuid: tbl1.tracking.uuid), [tbl1s1]);
+    final tbl1t1 = TrackingUtils.attachAll(TrackingBuilder.create(uuid: tbl1.tracking!.uuid), [tbl1s1]);
     final tbl1t1s1 = PositionableSource.from(tbl1, position: tbl1t1.position);
 
     // ARRANGE trackable 2 as unit
     final tbl2 = UnitBuilder.create(tuuid: Uuid().v4());
     final tbl2s2 = PositionableSource.from(tbl2, position: p2);
-    final tbl2t2 = TrackingUtils.attachAll(TrackingBuilder.create(uuid: tbl2.tracking.uuid), [tbl2s2]);
+    final tbl2t2 = TrackingUtils.attachAll(TrackingBuilder.create(uuid: tbl2.tracking!.uuid), [tbl2s2]);
     final tbl2t2s2 = PositionableSource.from(tbl2, position: tbl2t2.position);
 
     // ACT on two tracking objects
@@ -439,15 +439,15 @@ void main() {
     test('an arithmetic mean of (p1, p2) is calculated for unit [tbl1t1s1] and personnel [tbl2t2s2]', () {
       // Assert
       expect(t1.status, TrackingStatus.tracking, reason: "SHOULD be tracking");
-      expect(t1.position.geometry, equals(p12), reason: "SHOULD be p12");
+      expect(t1.position!.geometry, equals(p12), reason: "SHOULD be p12");
       expect(t1.sources.length, 2, reason: "SHOULD contain 2 sources");
       expect(t1.tracks.length, 2, reason: "SHOULD contain 2 tracks");
-      expect(t1.tracks.first.positions.length, 1, reason: "SHOULD contain 1 position");
-      expect(t1.tracks.first.positions.last.geometry, equals(p1.geometry), reason: "SHOULD be p1");
-      expect(t1.tracks.last.positions.length, 1, reason: "SHOULD contain 1 position");
-      expect(t1.tracks.last.positions.last.geometry, equals(p2.geometry), reason: "SHOULD be p2");
+      expect(t1.tracks.first.positions!.length, 1, reason: "SHOULD contain 1 position");
+      expect(t1.tracks.first.positions!.last!.geometry, equals(p1.geometry), reason: "SHOULD be p1");
+      expect(t1.tracks.last.positions!.length, 1, reason: "SHOULD contain 1 position");
+      expect(t1.tracks.last.positions!.last!.geometry, equals(p2.geometry), reason: "SHOULD be p2");
       expect(t1.history.length, 1, reason: "SHOULD be 1");
-      expect(t1.history.last.geometry, equals(p12), reason: "SHOULD be p12");
+      expect(t1.history.last!.geometry, equals(p12), reason: "SHOULD be p12");
       expect(t1.distance, 0.0, reason: "SHOULD be 0.0");
       expect(t1.effort, Duration.zero, reason: "SHOULD be ${Duration.zero}");
       expect(t1.speed, 0.0, reason: "SHOULD be 0.0");

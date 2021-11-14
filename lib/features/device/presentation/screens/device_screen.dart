@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -33,7 +33,7 @@ class DeviceScreen extends Screen<_DeviceScreenState> {
 
   final Device device;
 
-  const DeviceScreen({Key key, @required this.device}) : super(key: key);
+  const DeviceScreen({Key? key, required this.device}) : super(key: key);
 
   @override
   _DeviceScreenState createState() => _DeviceScreenState(device);
@@ -44,12 +44,12 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
 
   final _controller = MapWidgetController();
 
-  Device _device;
-  StreamGroup<dynamic> _group;
-  StreamSubscription<Device> _onMoved;
+  late Device _device;
+  StreamGroup<dynamic>? _group;
+  StreamSubscription<Device>? _onMoved;
 
   /// Use current device name
-  String get title => _device?.name;
+  String? get title => _device?.name;
 
   @override
   void initState() {
@@ -62,7 +62,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_onMoved != null) _onMoved.cancel();
+    if (_onMoved != null) _onMoved!.cancel();
     if (isCommander || isSelected) {
       _onMoved = context.read<DeviceBloc>().onMoved(_device).listen(_onMove);
     }
@@ -114,7 +114,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
             builder: (context, snapshot) {
               if (!snapshot.hasData) return Center(child: Text("Ingen data"));
               if (snapshot.data is Device) {
-                _device = snapshot.data;
+                _device = snapshot.data!;
               }
               final unit = context.read<TrackingBloc>().units.find(_device);
               final personnel = context.read<TrackingBloc>().personnels.find(
@@ -122,7 +122,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                   );
               final person = personnel?.person ??
                   context.read<AffiliationBloc>().persons.findUser(
-                        _device.networkId,
+                        _device!.networkId,
                       );
               return DeviceWidget(
                 unit: unit,
@@ -146,7 +146,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     );
   }
 
-  LatLng toCenter(Point location) {
+  LatLng? toCenter(Point? location) {
     return location != null ? toLatLng(location) : null;
   }
 

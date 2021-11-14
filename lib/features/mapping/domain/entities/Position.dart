@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
 import 'package:equatable/equatable.dart';
@@ -15,60 +15,60 @@ part 'Position.g.dart';
 @JsonSerializable()
 class Position extends ValueObject<Map<String, dynamic>> {
   Position({
-    @required this.geometry,
-    @required this.properties,
+    required this.geometry,
+    required this.properties,
   }) : super([
           geometry,
           properties,
           PositionType.feature,
         ]);
 
-  final Point geometry;
-  final PositionProperties properties;
+  final Point? geometry;
+  final PositionProperties? properties;
   final PositionType type = PositionType.feature;
 
   @JsonKey(ignore: true)
-  double get lat => geometry?.lat;
+  double? get lat => geometry?.lat;
 
   @JsonKey(ignore: true)
-  double get lon => geometry?.lon;
+  double? get lon => geometry?.lon;
 
   @JsonKey(ignore: true)
-  double get alt => geometry?.alt;
+  double? get alt => geometry?.alt;
 
   @JsonKey(ignore: true)
-  double get acc => properties?.acc;
+  double? get acc => properties?.acc;
 
   @JsonKey(ignore: true)
-  double get speed => properties?.speed;
+  double? get speed => properties?.speed;
 
   @JsonKey(ignore: true)
-  double get bearing => properties?.bearing;
+  double? get bearing => properties?.bearing;
 
   @JsonKey(ignore: true)
-  bool get isMoving => properties?.isMoving;
+  bool? get isMoving => properties?.isMoving;
 
   @JsonKey(ignore: true)
-  Activity get activity => properties?.activity;
+  Activity? get activity => properties?.activity;
 
   @JsonKey(ignore: true)
-  PositionSource get source => properties?.source;
+  PositionSource? get source => properties?.source;
 
   @JsonKey(ignore: true)
-  DateTime get timestamp => properties?.timestamp;
+  DateTime? get timestamp => properties?.timestamp;
 
   bool get isEmpty => !isNotEmpty;
   bool get isNotEmpty => geometry?.isNotEmpty == true;
 
   factory Position.fromPoint(
     Point point, {
-    @required PositionSource source,
-    double acc,
-    double speed,
-    bool isMoving,
-    double bearing,
-    Activity activity,
-    DateTime timestamp,
+    required PositionSource source,
+    double? acc,
+    double? speed,
+    bool? isMoving,
+    double? bearing,
+    Activity? activity,
+    DateTime? timestamp,
   }) {
     return Position.timestamp(
       lat: point.lat,
@@ -85,15 +85,15 @@ class Position extends ValueObject<Map<String, dynamic>> {
   }
 
   factory Position.now({
-    @required double lat,
-    @required double lon,
-    @required PositionSource source,
-    double alt,
-    double acc,
-    double speed,
-    bool isMoving,
-    double bearing,
-    Activity activity,
+    required double? lat,
+    required double? lon,
+    required PositionSource source,
+    double? alt,
+    double? acc,
+    double? speed,
+    bool? isMoving,
+    double? bearing,
+    Activity? activity,
   }) {
     return Position.timestamp(
       lat: lat,
@@ -110,16 +110,16 @@ class Position extends ValueObject<Map<String, dynamic>> {
   }
 
   factory Position.timestamp({
-    @required double lat,
-    @required double lon,
-    @required DateTime timestamp,
-    double acc,
-    double alt,
-    double speed,
-    bool isMoving,
-    double bearing,
-    Activity activity,
-    PositionSource source,
+    required double? lat,
+    required double? lon,
+    required DateTime? timestamp,
+    double? acc,
+    double? alt,
+    double? speed,
+    bool? isMoving,
+    double? bearing,
+    Activity? activity,
+    PositionSource? source,
   }) {
     return Position(
       geometry: Point.fromCoords(
@@ -149,15 +149,15 @@ class Position extends ValueObject<Map<String, dynamic>> {
 
   /// Clone with given overrides
   Position copyWith({
-    double lat,
-    double lon,
-    double alt,
-    double acc,
-    double speed,
-    double bearing,
-    Activity activity,
-    DateTime timestamp,
-    PositionSource source,
+    double? lat,
+    double? lon,
+    double? alt,
+    double? acc,
+    double? speed,
+    double? bearing,
+    Activity? activity,
+    DateTime? timestamp,
+    PositionSource? source,
   }) =>
       Position(
         geometry: Point(
@@ -206,18 +206,18 @@ String translatePositionSource(PositionSource type) {
 @JsonSerializable()
 class PositionProperties extends Equatable {
   PositionProperties({
-    @required this.acc,
-    @required this.timestamp,
+    required this.acc,
+    required this.timestamp,
     this.speed,
     this.bearing,
     this.isMoving,
-    Activity activity,
+    Activity? activity,
     this.source = PositionSource.manual,
   })  : activity = activity ?? Activity.unknown,
         super();
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         acc,
         source,
         activity,
@@ -227,25 +227,25 @@ class PositionProperties extends Equatable {
 
   /// The estimated horizontal accuracy of the position in meters.
   @JsonKey(name: 'accuracy')
-  final double acc;
+  final double? acc;
 
   /// Speed at which the device is traveling in meters per second over ground.
-  final double speed;
+  final double? speed;
 
   /// The heading in which the device is traveling in degrees.
-  final double bearing;
+  final double? bearing;
 
   /// [True] if devices was moving when positions was sampled
-  final bool isMoving;
+  final bool? isMoving;
 
   /// Estimated activity type with confidence
   final Activity activity;
 
   /// The [DateTime] at which this position was determined.
-  final DateTime timestamp;
+  final DateTime? timestamp;
 
   /// The [PositionSource] type
-  final PositionSource source;
+  final PositionSource? source;
 
   /// Factory constructor for creating a new `Point`  instance
   factory PositionProperties.fromJson(Map<String, dynamic> json) => _$PositionPropertiesFromJson(json);
@@ -254,15 +254,15 @@ class PositionProperties extends Equatable {
   Map<String, dynamic> toJson() => _$PositionPropertiesToJson(this);
 
   PositionProperties cloneWith({
-    double acc,
-    bool isMoving,
-    SourceType source,
-    DateTime timestamp,
+    double? acc,
+    bool? isMoving,
+    SourceType? source,
+    DateTime? timestamp,
   }) =>
       PositionProperties(
         acc: acc ?? this.acc,
         speed: speed ?? this.speed,
-        source: source ?? this.source,
+        source: source as PositionSource? ?? this.source,
         bearing: bearing ?? this.bearing,
         activity: activity ?? this.activity,
         isMoving: isMoving ?? this.isMoving,
@@ -272,11 +272,11 @@ class PositionProperties extends Equatable {
 
 abstract class Positionable<T> extends Aggregate<T> {
   Positionable(
-    String uuid,
+    String? uuid,
     this.position, {
     List fields = const [],
-  }) : super(uuid, fields: [position, ...fields]);
-  final Position position;
+  }) : super(uuid!, fields: [position, ...fields]);
+  final Position? position;
 }
 
 @JsonSerializable()
@@ -287,21 +287,21 @@ class Activity extends Equatable {
   );
 
   Activity({
-    @required this.type,
-    @required this.confidence,
+    required this.type,
+    required this.confidence,
   }) : super();
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         type,
         confidence,
       ];
 
   /// Estimated activity type
-  final ActivityType type;
+  final ActivityType? type;
 
   /// Estimate confidence (0-100%)
-  final int confidence;
+  final int? confidence;
 
   /// Factory constructor for creating a new `Activity`  instance
   factory Activity.fromJson(Map<String, dynamic> json) => _$ActivityFromJson(json);
@@ -313,12 +313,12 @@ class Activity extends Equatable {
   Map<String, dynamic> toJson() => _$ActivityToJson(this);
 
   Activity cloneWith({
-    double acc,
-    SourceType source,
-    DateTime timestamp,
+    double? acc,
+    SourceType? source,
+    DateTime? timestamp,
   }) =>
       Activity(
-        type: acc ?? this.type,
+        type: acc as ActivityType? ?? this.type,
         confidence: confidence ?? this.confidence,
       );
 }
@@ -333,7 +333,7 @@ enum ActivityType {
   in_vehicle,
 }
 
-String translateActivityType(ActivityType type) {
+String translateActivityType(ActivityType? type) {
   switch (type) {
     case ActivityType.still:
       return "I ro";

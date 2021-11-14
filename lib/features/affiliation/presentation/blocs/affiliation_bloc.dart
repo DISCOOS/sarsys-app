@@ -1,8 +1,9 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -71,47 +72,37 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   /// Default constructor
   ///
   AffiliationBloc({
-    @required this.users,
-    @required this.repo,
-    @required BlocEventBus bus,
+    required this.users,
+    required this.repo,
+    required BlocEventBus bus,
   }) : super(AffiliationsEmpty(), bus: bus) {
-    assert(this.orgs != null, "organisations repository can not be null");
-    assert(this.divs != null, "divisions repository can not be null");
-    assert(this.deps != null, "departments repository can not be null");
     assert(this.users != null, "userBloc can not be null");
-    assert(this.persons != null, "persons repository can not be null");
-    assert(this.repo != null, "affiliations repository can not be null");
-    assert(this.orgs.service != null, "organisations service can not be null");
-    assert(this.divs.service != null, "divisions service can not be null");
-    assert(this.deps.service != null, "departments service can not be null");
-    assert(this.persons.service != null, "departments service can not be null");
-    assert(this.repo.service != null, "departments service can not be null");
-
-    registerStreamSubscription(users.stream.listen(
+    
+    registerStreamSubscription(users!.stream.listen(
       // Load and unload repos as needed
       _processUserState,
     ));
 
     // Notify when repository states change
     forward<Person>(
-      (t) => _NotifyRepositoryStateChanged<Person>(t),
+      (t) => _NotifyRepositoryStateChanged<Person>(t!),
     );
     forward<Affiliation>(
-      (t) => _NotifyRepositoryStateChanged<Affiliation>(t),
+      (t) => _NotifyRepositoryStateChanged<Affiliation>(t!),
     );
     forward<Organisation>(
-      (t) => _NotifyRepositoryStateChanged<Organisation>(t),
+      (t) => _NotifyRepositoryStateChanged<Organisation?>(t!),
     );
     forward<Division>(
-      (t) => _NotifyRepositoryStateChanged<Division>(t),
+      (t) => _NotifyRepositoryStateChanged<Division?>(t!),
     );
     forward<Department>(
-      (t) => _NotifyRepositoryStateChanged<Department>(t),
+      (t) => _NotifyRepositoryStateChanged<Department?>(t!),
     );
   }
 
   /// All repositories
-  Iterable<StatefulRepository> get repos => [
+  Iterable<StatefulRepository?> get repos => [
         orgs,
         divs,
         deps,
@@ -135,13 +126,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   Iterable<Affiliation> get values => repo.values;
 
   /// Get [Affiliation] from [uuid]
-  Affiliation operator [](String uuid) => repo[uuid];
+  Affiliation? operator [](String? uuid) => repo[uuid];
 
   /// Get [AffiliationRepository]
   final AffiliationRepository repo;
 
   /// Get [UserBloc]
-  final UserBloc users;
+  final UserBloc? users;
 
   void _processUserState(UserState state) async {
     try {
@@ -172,35 +163,35 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   Stream<bool> get onReadyChanged => repo.onReadyChanged;
 
   /// Get searchable string from [Affiliation.uuid]
-  String toSearchable(String uuid) {
-    final affiliation = repo[uuid];
+  String toSearchable(String? uuid) {
+    final affiliation = repo[uuid!];
     if (affiliation?.person?.uuid != null) {
-      final person = persons[affiliation.person.uuid];
+      final person = persons[affiliation!.person!.uuid];
       return "${person?.searchable} ${affiliation?.searchable}";
     }
     return "${affiliation?.searchable ?? ''}";
   }
 
   /// Find [Affiliation]s matching given query
-  Iterable<Affiliation> find({bool where(Affiliation affiliation)}) => repo.find(where: where);
+  Iterable<Affiliation> find({required bool where(Affiliation affiliation)}) => repo.find(where: where);
 
   /// Find [Affiliation]s matching given  query
   Iterable<Affiliation> findAffiliates(Person person) => repo.findPerson(person.uuid);
 
   /// Get entity as [Affiliation] from device number
-  Affiliation findEntity(String number) {
+  Affiliation findEntity(String? number) {
     final org = findOrganisation(number);
     final div = findDivision(number);
     final dep = findDepartment(number);
     return AffiliationModel(
-      org: org?.toRef(),
-      div: div?.toRef(),
-      dep: dep?.toRef(),
+      org: org?.toRef() as AggregateRef<OrganisationModel>?,
+      div: div?.toRef() as AggregateRef<DivisionModel>?,
+      dep: dep?.toRef() as AggregateRef<DepartmentModel>?,
     );
   }
 
   /// Get full affiliation name as comma-separated list of organisation, division and department names
-  String findEntityName(String number, {String empty = 'Ingen'}) {
+  String findEntityName(String? number, {String empty = 'Ingen'}) {
     final names = [
       findOrganisation(number)?.name,
       findDivision(number)?.name,
@@ -210,7 +201,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get full affiliation name as comma-separated list of organisation, division and department names
-  String toName(
+  String? toName(
     Affiliation affiliation, {
     String empty = 'Ingen',
     bool short = false,
@@ -232,18 +223,18 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   /// If [userId] is not given, current
   /// authenticated user is returned,
   /// or [null] if ont found
-  Person findUserPerson({String userId}) =>
-      users.isAuthenticated ? persons.findUser(userId ?? users.user.userId) : null;
+  Person? findUserPerson({String? userId}) =>
+      users!.isAuthenticated ? persons.findUser(userId ?? users!.user!.userId) : null;
 
   /// Get Affiliation from User
-  Affiliation findUserAffiliation({
-    String userId,
+  Affiliation? findUserAffiliation({
+    String? userId,
     bool ensure = true,
     AffiliationType defaultType = AffiliationType.volunteer,
     AffiliationStandbyStatus defaultStatus = AffiliationStandbyStatus.available,
   }) {
     // Prepare
-    final _userId = userId ?? users.userId;
+    final _userId = userId ?? users!.userId;
     final person = findUserPerson(userId: _userId);
     final org = findUserOrganisation(userId: _userId);
     final div = findUserDivision(userId: _userId, org: org);
@@ -257,9 +248,9 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           ? [Pair<Affiliation, int>.of(affiliations.first, 0)]
           : affiliations.fold(
               <Pair<Affiliation, int>>[],
-              (candidates, a) {
+              (dynamic candidates, a) {
                 var rank = 0;
-                if (a.org?.uuid != null) {
+                if (a!.org?.uuid != null) {
                   rank++;
                 }
                 if (a.div?.uuid != null) {
@@ -298,13 +289,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     final affiliation = AffiliationModel(
       uuid: Uuid().v4(),
       type: defaultType,
-      org: org?.toRef(),
-      div: div?.toRef(),
-      dep: dep?.toRef(),
+      org: org?.toRef() as AggregateRef<OrganisationModel>?,
+      div: div?.toRef() as AggregateRef<DivisionModel>?,
+      dep: dep?.toRef() as AggregateRef<DepartmentModel>?,
       status: defaultStatus,
-      person: person ??
+      person: person as PersonModel? ??
           PersonModel.fromUser(
-            users.repo[_userId],
+            users!.repo[_userId],
             temporary: isUnorganized,
           ),
     );
@@ -315,17 +306,17 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   /// Get [Affiliation] from [Personnel].
   /// Throws an [ArgumentError] if [Personnel] does
   /// not contain a reference to an [Affiliation]
-  Affiliation findPersonnelAffiliation(
-    Personnel personnel, {
+  Affiliation? findPersonnelAffiliation(
+    Personnel? personnel, {
     bool ensure = true,
     AffiliationType defaultType = AffiliationType.volunteer,
     AffiliationStandbyStatus defaultStatus = AffiliationStandbyStatus.available,
   }) {
-    final affiliation = repo[personnel?.affiliation?.uuid];
+    final affiliation = repo[personnel!.affiliation!.uuid];
     if (affiliation == null) {
       return findUserAffiliation(
         ensure: ensure,
-        userId: personnel.userId,
+        userId: personnel!.userId,
         defaultType: defaultType,
         defaultStatus: defaultStatus,
       )?.copyWith(
@@ -336,30 +327,30 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get [Organisation] from [userId]
-  Organisation findUserOrganisation({String userId}) {
-    List<Affiliation> affiliates;
-    var user = users.repo[userId];
+  Organisation? findUserOrganisation({String? userId}) {
+    List<Affiliation>? affiliates;
+    var user = users!.repo[userId];
     if (user == null) {
       final person = persons.findUser(userId);
       if (person != null) {
         affiliates = findAffiliates(person).toList();
         final ouuids = affiliates
             .where(
-              (a) => a.org?.uuid != null,
+              (a) => a!.org?.uuid != null,
             )
-            .map((a) => a.org.uuid)
+            .map((a) => a!.org!.uuid)
             .toList();
         if (ouuids.isNotEmpty) {
           return orgs[ouuids.first];
         }
       }
-      user = users.repo.user;
+      user = users!.repo.user;
     }
     if (user != null) {
       final name = user.org?.toLowerCase();
       final found = orgs.values
           .where(
-            (org) => org.name.toLowerCase() == name,
+            (org) => org.name!.toLowerCase() == name,
           )
           ?.firstOrNull;
       if (found != null) {
@@ -384,33 +375,33 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get Division from User
-  Division findUserDivision({
-    String userId,
-    Organisation org,
-    List<Affiliation> affiliates,
+  Division? findUserDivision({
+    String? userId,
+    Organisation? org,
+    List<Affiliation>? affiliates,
   }) {
-    var user = users.repo[userId];
+    var user = users!.repo[userId];
     if (user == null) {
       final person = persons.findUser(userId);
       if (person != null) {
         affiliates = affiliates ?? findAffiliates(person).toList();
         final duuids = affiliates
             .where(
-              (a) => a.div?.uuid != null && (org == null || org.uuid == a.org?.uuid),
+              (a) => a!.div?.uuid != null && (org == null || org.uuid == a.org?.uuid),
             )
-            .map((a) => a.div.uuid);
+            .map((a) => a!.div!.uuid);
         if (duuids.isNotEmpty) {
           return divs[duuids.first];
         }
       }
-      user = users.repo.user;
+      user = users!.repo.user;
     }
     if (user != null) {
       final name = user.div?.toLowerCase();
       final duuids = org?.divisions ?? <String>[];
       return divs.values
           .where((division) => duuids.isEmpty || duuids.contains(division.uuid))
-          .where((division) => division.name.toLowerCase() == name)
+          .where((division) => division.name!.toLowerCase() == name)
           ?.firstOrNull;
     }
     final dep = findUserDepartment(
@@ -424,41 +415,41 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get Department id from User
-  Department findUserDepartment({
-    String userId,
-    Division div,
-    List<Affiliation> affiliates,
+  Department? findUserDepartment({
+    String? userId,
+    Division? div,
+    List<Affiliation>? affiliates,
   }) {
-    var user = users.repo[userId];
+    var user = users!.repo[userId];
     if (user == null) {
       final person = persons.findUser(userId);
       if (person != null) {
         affiliates = affiliates ?? findAffiliates(person).toList();
         final duuids = affiliates
             .where(
-              (a) => a.dep?.uuid != null && (div == null || div.uuid == a.div?.uuid),
+              (a) => a!.dep?.uuid != null && (div == null || div.uuid == a.div?.uuid),
             )
-            .map((a) => a.dep.uuid);
+            .map((a) => a!.dep!.uuid);
         if (duuids.isNotEmpty) {
           return deps[duuids.first];
         }
       }
-      user = users.repo.user;
+      user = users!.repo.user;
     }
     if (user != null) {
-      final name = (user ?? users.user).dep?.toLowerCase();
+      final name = (user ?? users!.user)!.dep?.toLowerCase();
       final duuids = div?.departments ?? <String>[];
       return deps.values
           .where((department) => duuids.isEmpty || duuids.contains(department.uuid))
-          .where((department) => department.name.toLowerCase() == name)
+          .where((department) => department.name!.toLowerCase() == name)
           ?.firstOrNull;
     }
     return null;
   }
 
   /// Get Organisation from [FleetMap] number
-  Organisation findOrganisation(String number) {
-    String prefix = AffiliationUtils.toPrefix(number);
+  Organisation? findOrganisation(String? number) {
+    String? prefix = AffiliationUtils.toPrefix(number);
     if (prefix != null) {
       return orgs.values
           .where(
@@ -470,8 +461,8 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get Division from [FleetMap] number
-  Division findDivision(String number) {
-    String suffix = AffiliationUtils.toSuffix(number);
+  Division? findDivision(String? number) {
+    String? suffix = AffiliationUtils.toSuffix(number);
     if (suffix != null) {
       return divs.values
           .where(
@@ -483,8 +474,8 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get Department from device number
-  Department findDepartment(String number) {
-    String suffix = AffiliationUtils.toSuffix(number);
+  Department? findDepartment(String? number) {
+    String? suffix = AffiliationUtils.toSuffix(number);
     if (suffix != null) {
       return deps.values
           .where(
@@ -496,9 +487,9 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get function from device number
-  OperationalFunction findFunction(String number) {
+  OperationalFunction? findFunction(String? number) {
     final org = findOrganisation(number);
-    return org == null ? null : AffiliationUtils.findFunction(org.fleetMap, number);
+    return org == null ? null : AffiliationUtils.findFunction(org.fleetMap!, number);
   }
 
   /// Get [AffiliationQuery] object from current state
@@ -516,34 +507,34 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       );
 
   /// Get all [Organisation] sorted on [Organisation.name]
-  Iterable<Organisation> getOrganisations() {
-    return sortMapValues<String, Organisation, String>(
+  Iterable<Organisation?> getOrganisations() {
+    return sortMapValues<String?, Organisation, String>(
       orgs.map ?? <String, Organisation>{},
-      (org) => org.name,
+      (org) => org!.name,
     ).values;
   }
 
   /// Get divisions in given [Organisation] sorted on [Division.name]
-  Iterable<Division> getDivisions(String orguuid) {
+  Iterable<Division?> getDivisions(String? orguuid) {
     final org = orgs[orguuid];
     if (org?.divisions?.isNotEmpty == true) {
-      final divisions = Map.fromEntries(org.divisions.map((uuid) => MapEntry(uuid, divs[uuid])));
-      return sortMapValues<String, Division, String>(
+      final divisions = Map.fromEntries(org!.divisions!.map((uuid) => MapEntry(uuid, divs[uuid])));
+      return sortMapValues<String, Division?, String>(
         divisions ?? <String, Division>{},
-        (division) => division.name,
+        (division) => division!.name,
       ).values;
     }
     return [];
   }
 
   /// Get departments in given [Division] sorted on [Department.name]
-  Iterable<Department> getDepartments(String divuuid) {
+  Iterable<Department?> getDepartments(String? divuuid) {
     final div = divs[divuuid];
     if (div?.departments?.isNotEmpty == true) {
-      final departments = Map.fromEntries(div.departments.map((uuid) => MapEntry(uuid, deps[uuid])));
-      return sortMapValues<String, Department, String>(
+      final departments = Map.fromEntries(div!.departments!.map((uuid) => MapEntry(uuid, deps[uuid])));
+      return sortMapValues<String, Department?, String>(
         departments ?? {},
-        (department) => department.name,
+        (department) => department!.name,
       ).values;
     }
     return [];
@@ -551,7 +542,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
 
   /// Search for affiliations matching given [filter]
   /// from [repo.service] and store matches in [repo]
-  Future<List<Affiliation>> search(
+  Future<List<Affiliation>?> search(
     String filter, {
     int offset = 0,
     int limit = 20,
@@ -566,7 +557,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Fetch given affiliations from [repo]
-  Future<List<Affiliation>> fetch(Iterable<String> uuids) async {
+  Future<List<Affiliation>?> fetch(Iterable<String> uuids) async {
     return dispatch(
       FetchAffiliations(uuids: uuids.toList()),
     );
@@ -576,20 +567,20 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   Future<List<Affiliation>> load() async {
     return dispatch(
       LoadAffiliations(),
-    );
+    ) as Future<List<Affiliation>>;
   }
 
   /// Onboard current user. If already onboarded
   /// existing [affiliation] is returned.
   Future<Affiliation> onboardUser({
-    String userId,
+    String? userId,
     AffiliationType type = AffiliationType.member,
     AffiliationStandbyStatus status = AffiliationStandbyStatus.available,
   }) async {
     await _assertState('onboard');
     await onLoadedAsync();
-    final _userId = userId ?? users.user.userId;
-    final affiliation = findUserAffiliation(userId: _userId);
+    final _userId = userId ?? users!.user!.userId;
+    final affiliation = findUserAffiliation(userId: _userId)!;
     if (!repo.containsKey(affiliation.uuid)) {
       return dispatch(
         OnboardUser(
@@ -599,14 +590,14 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
             type: affiliation.isUnorganized ? AffiliationType.volunteer : type,
           ),
         ),
-      );
+      ) as Future<Affiliation>;
     }
     return affiliation;
   }
 
   /// Check if [Affiliation.uuid] is [Affiliation.temporary]
-  bool isTemporary(String uuid) {
-    final affiliation = repo[uuid];
+  bool isTemporary(String? uuid) {
+    final affiliation = repo[uuid!];
     return affiliation?.isUnorganized == true;
   }
 
@@ -625,21 +616,21 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         _assertData(CreateAffiliation(
           affiliation,
         )),
-      );
+      ) as Future<Affiliation>;
     }
-    return repo[affiliation.uuid];
+    return repo[affiliation.uuid]!;
   }
 
   Future<Affiliation> update(Affiliation affiliation) async {
     await _assertState('update');
     return dispatch(
       UpdateAffiliation(affiliation),
-    );
+    ) as Future<Affiliation>;
   }
 
   /// Clear all organisations
   Future<List<Affiliation>> unload() {
-    return dispatch(UnloadAffiliations());
+    return dispatch(UnloadAffiliations()) as Future<List<Affiliation>>;
   }
 
   @override
@@ -659,7 +650,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     } else if (command is UnloadAffiliations) {
       yield* _unload(command);
     } else if (command is _NotifyRepositoryStateChanged) {
-      yield _notify(command);
+      yield _notify(command)!;
     } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
@@ -728,13 +719,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
             stackTrace: stackTrace,
           );
         }
-        return null;
+        return null as AffiliationState<dynamic>;
       },
     );
   }
 
   Stream<AffiliationState> _fetch(FetchAffiliations command) async* {
-    final uuids = command.data;
+    final List<String> uuids = command.data;
     final onRemote = Completer<Iterable<Affiliation>>();
     final cached = await repo.fetch(
       uuids,
@@ -746,7 +737,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       AffiliationsFetched(
         isRemote: false,
         affiliations: command.data,
-        persons: cached.map((e) => e.person?.uuid).whereNotNull().toList(),
+        persons: cached.map((e) => e.person?.uuid).whereNotNull().toList() as Iterable<String>?,
       ),
       result: cached,
     );
@@ -758,7 +749,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         return AffiliationsFetched(
           isRemote: true,
           affiliations: results.firstOrNull?.map((a) => a.uuid) ?? <String>[],
-          persons: results.whereType<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList(),
+          persons: results.whereType<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList() as Iterable<String>?,
         );
       },
       toCommand: (state) => _NotifyBlocStateChanged<Iterable<String>>(state),
@@ -773,7 +764,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
             stackTrace: stackTrace,
           );
         }
-        return null;
+        return null as AffiliationState<dynamic>;
       },
     );
   }
@@ -790,8 +781,8 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       command,
       AffiliationsFetched(
         isRemote: true,
-        affiliations: affiliations.map((a) => a.uuid),
-        persons: affiliations.map((e) => e.person?.uuid).whereNotNull().toList(),
+        affiliations: affiliations.map((a) => a!.uuid),
+        persons: affiliations.map((e) => e!.person?.uuid).whereNotNull().toList() as Iterable<String>?,
       ),
       result: affiliations,
     );
@@ -807,12 +798,12 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   void _removeMissingPersons() => repo.values
-      .where((affiliation) => !persons.containsKey(affiliation.person?.uuid))
-      .forEach((affiliation) => repo.delete(affiliation.uuid));
+      .where((affiliation) => !persons.containsKey(affiliation!.person?.uuid))
+      .forEach((affiliation) => repo.delete(affiliation!.uuid));
 
   Stream<AffiliationState> _onboard(OnboardUser command) async* {
     _assertOnboarding(command);
-    final userId = command.data;
+    final String? userId = command.data;
     var affiliation = command.affiliation;
 
     // Find user
@@ -821,9 +812,9 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     // Ensure person is applied to affiliation
     affiliation = repo.apply(affiliation.copyWith(
       person: person,
-    ));
+    ))!;
 
-    final created = toOK(
+    final AffiliationState<dynamic>? created = toOK(
       command,
       UserOnboarded(
         person: person,
@@ -832,7 +823,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       ),
       result: affiliation,
     );
-    yield created;
+    yield created!;
 
     // Notify when all states are remote
     onComplete(
@@ -852,11 +843,11 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     );
   }
 
-  Person _ensurePerson(String userId, Affiliation affiliation) {
+  Person _ensurePerson(String? userId, Affiliation affiliation) {
     return persons.findUser(userId) ??
         affiliation.person ??
         PersonModel.fromUser(
-          users.repo[userId],
+          users!.repo[userId],
           temporary: affiliation.isUnorganized,
         );
   }
@@ -864,22 +855,22 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   Stream<AffiliationState> _create(CreateAffiliation command) async* {
     _assertData(command);
     final person = _ensurePerson(
-      command.person.userId,
+      command.person!.userId,
       command.data,
     );
     final affiliation = repo.apply(command.data.copyWith(
       person: person,
       type: command.data.type ?? AffiliationType.volunteer,
       status: command.data.status ?? AffiliationStandbyStatus.available,
-    ));
-    final created = toOK(
+    ))!;
+    final AffiliationState<dynamic>? created = toOK(
       command,
       AffiliationCreated(
         affiliation,
       ),
       result: affiliation,
     );
-    yield created;
+    yield created!;
 
     // Notify when all states are remote
     onComplete(
@@ -898,13 +889,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   Stream<AffiliationState> _update(UpdateAffiliation command) async* {
-    final affiliation = repo.apply(command.data);
-    final updated = toOK(
+    final affiliation = repo.apply(command.data!)!;
+    final AffiliationState<dynamic>? updated = toOK(
       command,
       AffiliationUpdated(affiliation),
       result: affiliation,
     );
-    yield updated;
+    yield updated!;
 
     // Notify when all states are remote
     onComplete(
@@ -1114,28 +1105,28 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     final _persons = await persons.close();
     final _affiliations = await repo.close();
 
-    final unloaded = toOK(
+    final AffiliationState<dynamic>? unloaded = toOK(
       command,
       AffiliationsUnloaded(
         orgs: _orgs.map((e) => e.uuid),
         divs: _divs.map((e) => e.uuid),
         deps: _deps.map((e) => e.uuid),
-        persons: _persons.map((e) => e.uuid),
-        affiliations: _affiliations.map((e) => e.uuid),
+        persons: _persons.map((e) => e!.uuid),
+        affiliations: _affiliations.map((e) => e!.uuid),
       ),
       result: _affiliations,
     );
-    yield unloaded;
+    yield unloaded!;
   }
 
   @override
-  AffiliationBlocError createError(Object error, {StackTrace stackTrace}) => AffiliationBlocError(
+  AffiliationBlocError createError(Object error, {StackTrace? stackTrace}) => AffiliationBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
 
   Affiliation _assertOnboarding(OnboardUser command) {
-    final current = findUserAffiliation(userId: command.data);
+    final current = findUserAffiliation(userId: command.data)!;
     if (repo.containsKey(current.uuid)) {
       throw ArgumentError("User ${command.data} already onboarded");
     } else if (command.affiliation.uuid == null) {
@@ -1173,5 +1164,5 @@ class _NotifyRepositoryStateChanged<T> extends AffiliationCommand<StorageTransit
 
 class _NotifyBlocStateChanged<T> extends AffiliationCommand<AffiliationState<T>, T>
     with NotifyBlocStateChangedMixin<AffiliationState<T>, T> {
-  _NotifyBlocStateChanged(AffiliationState state) : super(state);
+  _NotifyBlocStateChanged(AffiliationState state) : super(state as AffiliationState<T>);
 }

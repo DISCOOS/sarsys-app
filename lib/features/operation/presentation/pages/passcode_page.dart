@@ -1,4 +1,6 @@
-// @dart=2.11
+
+
+import 'dart:async';
 
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -8,23 +10,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/core/presentation/widgets/descriptions.dart';
 
-typedef PasscodeCallback = Future<bool> Function(Operation operation, String passcode);
+typedef PasscodeCallback = Future<bool?> Function(Operation? operation, String? passcode);
 
 class PasscodePage extends StatefulWidget {
   PasscodePage({
-    Key key,
-    @required this.operation,
-    @required this.onComplete,
-    @required this.onAuthorize,
+    Key? key,
+    required this.operation,
+    required this.onComplete,
+    required this.onAuthorize,
     this.requireCommand = false,
     this.onVerify,
   }) : super(key: key) {
     assert(operation != null, 'Operation is required');
   }
 
-  final Operation operation;
+  final Operation? operation;
   final bool requireCommand;
-  final ValueNotifier<bool> onVerify;
+  final ValueNotifier<bool>? onVerify;
   final PasscodeCallback onAuthorize;
   final ValueChanged<bool> onComplete;
 
@@ -36,7 +38,7 @@ class _PasscodePageState extends State<PasscodePage> {
   final _formKey = GlobalKey<FormState>();
   final FocusNode _focusNode = FocusNode();
 
-  String _passcode = '';
+  String? _passcode = '';
   bool _verifying = false;
 
   @override
@@ -72,7 +74,7 @@ class _PasscodePageState extends State<PasscodePage> {
               style: Theme.of(context).textTheme.headline6,
             ),
             subtitle: Text(
-              "${[translateOperationType(widget.operation.type), widget.operation.name].join(' ').trim()}",
+              "${[translateOperationType(widget.operation!.type), widget.operation!.name].join(' ').trim()}",
               style: Theme.of(context).textTheme.subtitle1,
               textAlign: TextAlign.left,
             ),
@@ -82,9 +84,9 @@ class _PasscodePageState extends State<PasscodePage> {
             stream: context.read<UserBloc>().stream,
             initialData: context.read<UserBloc>().state,
             builder: (context, snapshot) {
-              final forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data.isError();
+              final forbidden = _passcode!.length > 0 && snapshot.hasData && snapshot.data!.isError();
               final authorization = context.read<UserBloc>().getAuthorization(widget.operation);
-              final command = _verifying && !authorization.withCommanderCode && widget.requireCommand;
+              final command = _verifying && !authorization!.withCommanderCode! && widget.requireCommand;
               return _buildPasscodeInput(
                 errorText: forbidden || command
                     ? (command ? 'Du må oppgi tilgangskode for aksjonsledelse' : 'Feil tilgangskode, forsøk igjen')
@@ -99,7 +101,7 @@ class _PasscodePageState extends State<PasscodePage> {
   }
 
   Widget _buildPasscodeInput({
-    String errorText = null,
+    String? errorText = null,
   }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.0),
@@ -125,7 +127,7 @@ class _PasscodePageState extends State<PasscodePage> {
             (oldValue, newValue) => newValue.copyWith(text: newValue.text.toUpperCase()),
           ),
         ],
-        validator: (value) => value.isEmpty ? 'Tilgangskode må fylles ut' : null,
+        validator: (value) => value!.isEmpty ? 'Tilgangskode må fylles ut' : null,
         onSaved: (value) => _passcode = value,
         onChanged: (value) {
           if (value.isEmpty) {
@@ -148,9 +150,9 @@ class _PasscodePageState extends State<PasscodePage> {
   }
 
   void _verifyPassCode() async {
-    if ((widget.onVerify == null || widget.onVerify.value) && _validateAndSave()) {
+    if ((widget.onVerify == null || widget.onVerify!.value) && _validateAndSave()) {
       _verifying = true;
-      if (await widget.onAuthorize(widget.operation, _passcode)) {
+      if (await (widget.onAuthorize(widget.operation, _passcode) as FutureOr<bool>)) {
         widget.onComplete(true);
         return;
       }
@@ -159,7 +161,7 @@ class _PasscodePageState extends State<PasscodePage> {
   }
 
   bool _validateAndSave() {
-    final form = _formKey.currentState;
+    final form = _formKey.currentState!;
     final valid = form.validate();
     if (valid) {
       form.save();

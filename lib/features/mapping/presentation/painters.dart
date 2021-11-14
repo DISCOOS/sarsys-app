@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:math';
 import 'dart:ui' as ui;
@@ -6,12 +6,12 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 class PointPainter extends CustomPainter {
-  final double size;
-  final Color color;
+  final double? size;
+  final Color? color;
   final double opacity;
-  final double outer;
+  final double? outer;
   final double centerSize;
-  final Color centerColor;
+  final Color? centerColor;
 
   const PointPainter({
     this.size,
@@ -25,16 +25,16 @@ class PointPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, _) {
     final offset = 0.0;
-    final radius = size / 2.0;
+    final radius = size! / 2.0;
     final paint = Paint()..color = Colors.white.withOpacity(opacity);
     final center = Offset(offset, offset);
     canvas.drawCircle(center, radius, paint);
 
-    paint.color = color.withOpacity(opacity);
+    paint.color = color!.withOpacity(opacity);
     paint.style = PaintingStyle.fill;
     canvas.drawCircle(center, radius - 2, paint);
     if (outer != null) {
-      canvas.drawCircle(center, outer - 2, paint);
+      canvas.drawCircle(center, outer! - 2, paint);
     }
     canvas.drawCircle(center, centerSize, paint..color = centerColor ?? Colors.black);
   }
@@ -46,7 +46,7 @@ class PointPainter extends CustomPainter {
 }
 
 class LabelPainter extends CustomPainter {
-  final String label;
+  final String? label;
   final double top;
   final double width;
   final double padding;
@@ -68,7 +68,7 @@ class LabelPainter extends CustomPainter {
 
     var builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: fontSize, textAlign: TextAlign.left))
       ..pushStyle(ui.TextStyle(color: Colors.black, height: 1.0))
-      ..addText(label);
+      ..addText(label!);
     var p = builder.build()..layout(ui.ParagraphConstraints(width: this.width));
     var height = p.height;
     var width = p.maxIntrinsicWidth;
@@ -93,10 +93,10 @@ class LabelPainter extends CustomPainter {
 }
 
 class LineStringPainter extends CustomPainter {
-  final List<Offset> offsets;
+  final List<Offset>? offsets;
 
-  final Color color;
-  final Color borderColor;
+  final Color? color;
+  final Color? borderColor;
   final double opacity;
   final double borderStrokeWidth;
   final bool isFilled;
@@ -112,7 +112,7 @@ class LineStringPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (offsets.length < 2) {
+    if (offsets!.length < 2) {
       return;
     }
     final rect = Offset.zero & size;
@@ -122,10 +122,10 @@ class LineStringPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
-      ..color = color.withOpacity(opacity);
+      ..color = color!.withOpacity(opacity);
 
     var path = Path();
-    path.addPolygon(offsets, false);
+    path.addPolygon(offsets!, false);
     canvas.drawPath(path, paint);
   }
 
@@ -134,7 +134,7 @@ class LineStringPainter extends CustomPainter {
 }
 
 class CrossPainter extends CustomPainter {
-  Paint _paint;
+  late Paint _paint;
   final gap;
   final length;
   final opacity;
@@ -166,7 +166,7 @@ class BearingPainter extends CustomPainter {
   final Paint bearingPaint;
   final Paint bearingsPaint;
 
-  double bearing;
+  double? bearing;
 
   BearingPainter(this.bearing)
       : bearingPaint = Paint(),
@@ -185,7 +185,7 @@ class BearingPainter extends CustomPainter {
 
     canvas.translate(radius, radius);
 
-    canvas.rotate(this.bearing * pi / 180);
+    canvas.rotate(this.bearing! * pi / 180);
 
     Path path = Path();
     path.moveTo(0.0, -radius);

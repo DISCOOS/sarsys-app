@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'package:SarSys/core/data/models/message_model.dart';
@@ -13,6 +13,7 @@ import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'tracking_service.chopper.dart';
 
 /// Service for consuming trackings endpoint
@@ -50,7 +51,7 @@ class TrackingService extends StatefulServiceDelegate<Tracking, TrackingModel>
   void dispose() {
     _controller.close();
     TrackingMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -60,12 +61,12 @@ abstract class TrackingServiceImpl extends StatefulService<Tracking, TrackingMod
   TrackingServiceImpl()
       : super(
           decoder: (json) => TrackingModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<TrackingModel>(value, retain: const [
+          reducer: (value) => JsonUtils.toJson<TrackingModel?>(value, retain: const [
             'uuid',
             'sources',
           ]),
         );
-  static TrackingServiceImpl newInstance([ChopperClient client]) => _$TrackingServiceImpl(client);
+  static TrackingServiceImpl newInstance([ChopperClient? client]) => _$TrackingServiceImpl(client);
 
   @override
   Future<Response<StorageState<Tracking>>> onUpdate(StorageState<Tracking> state) => update(
@@ -75,13 +76,13 @@ abstract class TrackingServiceImpl extends StatefulService<Tracking, TrackingMod
 
   @Patch(path: '/trackings/{uuid}')
   Future<Response<StorageState<Tracking>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Tracking body,
   );
 
   @override
   Future<Response<StorageState<Tracking>>> onGetFromId(
-    String id, {
+    String? id, {
     List<String> options = const [],
   }) =>
       get(id, expand: options);
@@ -94,14 +95,14 @@ abstract class TrackingServiceImpl extends StatefulService<Tracking, TrackingMod
 
   @override
   Future<Response<PagedList<StorageState<Tracking>>>> onGetPageFromId(
-          String id, int offset, int limit, List<String> options) =>
+          String? id, int? offset, int? limit, List<String> options) =>
       getAll(id, offset, limit);
 
   @Get(path: '/operations/{ouuid}/trackings')
   Future<Response<PagedList<StorageState<Tracking>>>> getAll(
     @Path('ouuid') ouuid,
-    @Query('offset') int offset,
-    @Query('limit') int limit, {
+    @Query('offset') int? offset,
+    @Query('limit') int? limit, {
     @Query('expand') List<String> expand = const [],
   });
 }
@@ -144,8 +145,8 @@ class TrackingMessage extends MessageModel {
         'number': version.value,
       });
 
-  TrackingMessageType get type {
+  TrackingMessageType? get type {
     final type = data.elementAt('type');
-    return TrackingMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return TrackingMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }

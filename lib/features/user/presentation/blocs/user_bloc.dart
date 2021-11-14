@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:developer' as developer;
@@ -24,7 +24,7 @@ import 'package:permission_handler/permission_handler.dart';
 typedef void UserCallback(VoidCallback fn);
 
 class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
-    with LoadableBloc<User>, UnloadableBloc<List<User>> {
+    with LoadableBloc<User>, UnloadableBloc<List<User>?> {
   UserBloc(
     this.repo,
     this.configBloc,
@@ -37,47 +37,47 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   final UserRepository repo;
-  final AppConfigBloc configBloc;
-  final _authorized = <String, UserAuthorized>{};
+  final AppConfigBloc? configBloc;
+  final _authorized = <String?, UserAuthorized>{};
 
   /// [UserService] instance
-  UserService get service => repo.service;
+  UserService? get service => repo.service;
 
   /// Authenticated user
   User get user => repo.user;
 
   /// Token for authenticated user
-  AuthToken get token => repo.token;
+  AuthToken? get token => repo.token;
 
   /// Id of authenticated use
-  String get userId => repo.user?.userId;
+  String? get userId => repo.user?.userId;
 
   /// Get [AppConfig]
-  AppConfig get config => configBloc.config;
+  AppConfig get config => configBloc!.config;
 
   /// Get all user on this device
-  Iterable<User> get users => repo.values;
+  Iterable<User>? get users => repo.values;
 
   /// Get current security applied to user
-  Security get security => user?.security;
+  Security? get security => user?.security;
 
   /// Check if user has roles
   bool get hasRoles => user?.hasRoles == true;
 
   /// Check if application is running on a shared device (multiple uses accounts allowed)
-  bool get isShared => SecurityMode.shared == config.securityMode;
+  bool get isShared => SecurityMode.shared == config!.securityMode;
 
   /// Check if application is running on a private device (only one account is allowed)
-  bool get isPersonal => SecurityMode.personal == config.securityMode;
+  bool get isPersonal => SecurityMode.personal == config!.securityMode;
 
   /// Get requested security mode from [AppConfig]
-  SecurityMode get securityMode => config.securityMode;
+  SecurityMode get securityMode => config!.securityMode;
 
   /// Get requested security type from [AppConfig]
-  SecurityType get securityType => config.securityType;
+  SecurityType get securityType => config!.securityType;
 
   /// Get trusted domains from [AppConfig]
-  List<String> get trustedDomains => config.trustedDomains;
+  List<String?> get trustedDomains => config!.trustedDomains;
 
   /// User identity is secured
   bool get isSecured => security != null;
@@ -119,22 +119,22 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   bool isAuthor(Operation data) => user?.isAuthor(data) == true;
 
   /// Check if current [user] is authorized access to given [operation]
-  bool isAuthorized(Operation operation) {
-    return isAuthenticated && (getAuthorization(operation).isAuthorized() || user.isAuthor(operation));
+  bool isAuthorized(Operation? operation) {
+    return isAuthenticated && (getAuthorization(operation)!.isAuthorized() || user!.isAuthor(operation!));
   }
 
   /// Check if current [user] is authorized access to given [operation] with given [role]
-  bool isAuthorizedAs(Operation operation, UserRole role) {
+  bool isAuthorizedAs(Operation? operation, UserRole role) {
     return getAuthorization(operation)?.isAuthorizedAs(role) == true;
   }
 
   /// Get current [user] authorization for given [operation]
-  UserAuthorized getAuthorization(Operation operation) {
+  UserAuthorized? getAuthorization(Operation? operation) {
     if (isAuthenticated && operation != null) {
       // Look for passcode?
-      if (!_authorized.containsKey(operation.uuid) && user.passcodes?.isNotEmpty == true) {
-        final withCommanderCode = user.passcodes.any((p) => operation.passcodes.commander == p.commander);
-        final withPersonnelCode = user.passcodes.any((p) => operation.passcodes.personnel == p.personnel);
+      if (!_authorized.containsKey(operation.uuid) && user!.passcodes?.isNotEmpty == true) {
+        final withCommanderCode = user!.passcodes!.any((p) => operation.passcodes!.commander == p.commander);
+        final withPersonnelCode = user!.passcodes!.any((p) => operation.passcodes!.personnel == p.personnel);
         if (withPersonnelCode || withCommanderCode) {
           _authorized[operation.uuid] = UserAuthorized(
             user,
@@ -146,7 +146,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
       if (_authorized.containsKey(operation.uuid)) {
         return _authorized[operation.uuid];
       }
-      if (user?.userId == operation.author.userId) {
+      if (user?.userId == operation.author!.userId) {
         return UserAuthorized(
           user,
           operation: operation,
@@ -164,7 +164,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   /// Secure user access with given settings
-  Future<Security> secure(String pin, {bool locked}) async {
+  Future<Security?> secure(String? pin, {bool? locked}) async {
     return dispatch<Security>(SecureUser(pin, locked: locked));
   }
 
@@ -174,7 +174,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   /// Unlock user access
-  Future<dynamic> unlock(String pin) async {
+  Future<dynamic> unlock(String? pin) async {
     return dispatch<dynamic>(UnlockUser(pin));
   }
 
@@ -186,7 +186,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   /// Authenticate user
-  Future<User> login({String userId, String username, String password, String idpHint}) {
+  Future<User> login({String? userId, String? username, String? password, String? idpHint}) {
     return dispatch<User>(LoginUser(
       userId: userId,
       username: username,
@@ -199,7 +199,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     return dispatch<User>(LogoutUser(delete: delete));
   }
 
-  Future<List<User>> unload() {
+  Future<List<User>?> unload() {
     return dispatch<List<User>>(UnloadUsers());
   }
 
@@ -213,7 +213,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     );
   }
 
-  Future<bool> authorize(Operation data, String passcode) {
+  Future<bool?> authorize(Operation data, String passcode) {
     return dispatch<bool>(_assertAuthenticated<User>(
       AuthorizeUser(data, passcode),
     ));
@@ -252,8 +252,8 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
         command.data,
         trusted: trustUser(),
         locked: command.locked,
-        type: config.securityType,
-        mode: config.securityMode,
+        type: config!.securityType,
+        mode: config!.securityMode,
       );
       return _toEvent(command, response);
     } on Exception catch (e) {
@@ -262,10 +262,10 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   bool trustUser() {
-    final email = user.email;
+    final email = user!.email;
     if (email != null) {
       final domain = UserService.toDomain(email);
-      return config.trustedDomains.contains(domain);
+      return config!.trustedDomains.contains(domain);
     }
     return false;
   }
@@ -352,8 +352,8 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   Future<UserState> _authorize(AuthorizeUser command) async {
-    bool withCommanderCode = command.data.passcodes.commander == command.passcode;
-    bool withPersonnelCode = command.data.passcodes.personnel == command.passcode;
+    bool withCommanderCode = command.data.passcodes!.commander == command.passcode;
+    bool withPersonnelCode = command.data.passcodes!.personnel == command.passcode;
     if (withCommanderCode || withPersonnelCode) {
       await repo.authorize(
         command.data.passcodes,
@@ -379,7 +379,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     );
   }
 
-  UserState _toEvent(UserCommand command, Object result) {
+  UserState _toEvent(UserCommand command, Object? result) {
     if (result == null) {
       if (kDebugMode) {
         developer.log("No user found", level: Level.CONFIG.value);
@@ -401,7 +401,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
       return toOK(
         command,
-        isTokenExpired ? AuthTokenExpired(token) : UserAuthenticated(user),
+        (isTokenExpired ? AuthTokenExpired(token) : UserAuthenticated(user)) as UserState<dynamic>,
         result: _toAuthResult(command),
       );
     } else if (result is Security) {
@@ -410,7 +410,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
       }
       return toOK(
         command,
-        _toSecurityState(),
+        _toSecurityState() as UserState<dynamic>,
         result: security,
       );
     } else if (result is UserNotFoundException ||
@@ -446,15 +446,15 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   /// 2) If user is not authorized local AppConfig instance is created
   /// 3) If user authorized local changes is pushed to server
   Future _configure() async {
-    if (configBloc.repo.isEmpty) {
+    if (configBloc!.repo.isEmpty) {
       if (isAuthenticated) {
-        await configBloc.load();
+        await configBloc!.load();
         await _updatePermissions();
       } else {
-        await configBloc.init(local: true);
+        await configBloc!.init(local: true);
       }
     } else if (isAuthenticated) {
-      await configBloc.repo.commit();
+      await configBloc!.repo.commit();
     }
   }
 
@@ -463,12 +463,12 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     var isLocationAlwaysGranted = await Permission.locationAlways.isGranted;
     var isLocationWhenInUseGranted = await Permission.locationWhenInUse.isGranted;
     var isActivityRecognitionGranted = await Permission.activityRecognition.isGranted;
-    final config = configBloc.config;
+    final config = configBloc!.config!;
     if (config.storage != isStorageGranted ||
         config.locationAlways != isLocationAlwaysGranted ||
         config.locationWhenInUse != isLocationWhenInUseGranted ||
         config.activityRecognition != isActivityRecognitionGranted) {
-      await configBloc.updateWith(
+      await configBloc!.updateWith(
         storage: isStorageGranted,
         locationAlways: isLocationAlwaysGranted,
         locationWhenInUse: isLocationWhenInUseGranted,
@@ -477,14 +477,14 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     }
   }
 
-  Object _toAuthResult(UserCommand command) {
+  Object? _toAuthResult(UserCommand command) {
     return command is LoadUser || command is LoginUser ? user : true;
   }
 
   Equatable _toSecurityState() {
     return security == null
         ? UserUnset()
-        : security.locked
+        : security!.locked!
             ? UserLocked(
                 security,
               )
@@ -494,7 +494,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   @override
-  UserBlocError createError(Object error, {StackTrace stackTrace}) => UserBlocError(
+  UserBlocError createError(Object error, {StackTrace? stackTrace}) => UserBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
@@ -513,16 +513,16 @@ abstract class UserCommand<S, T> extends BlocCommand<S, T> {
   UserCommand(S data, [props = const []]) : super(data, props);
 }
 
-class LoadUser extends UserCommand<String, User> {
-  LoadUser({String userId}) : super(null);
+class LoadUser extends UserCommand<String?, User> {
+  LoadUser({String? userId}) : super(null);
 
   @override
   String toString() => '$runtimeType {userId: $data}';
 }
 
-class SecureUser extends UserCommand<String, Security> {
-  final bool locked;
-  SecureUser(String pin, {this.locked}) : super(pin);
+class SecureUser extends UserCommand<String?, Security> {
+  final bool? locked;
+  SecureUser(String? pin, {this.locked}) : super(pin);
 
   @override
   String toString() => '$runtimeType {pin: $data, locked: $locked}';
@@ -535,19 +535,19 @@ class LockUser extends UserCommand<void, Security> {
   String toString() => '$runtimeType';
 }
 
-class UnlockUser extends UserCommand<String, Security> {
-  UnlockUser(String pin) : super(pin);
+class UnlockUser extends UserCommand<String?, Security> {
+  UnlockUser(String? pin) : super(pin);
 
   @override
   String toString() => '$runtimeType {pin: $data}';
 }
 
-class LoginUser extends UserCommand<String, User> {
-  final String userId;
-  final String password;
-  final String idpHint;
+class LoginUser extends UserCommand<String?, User> {
+  final String? userId;
+  final String? password;
+  final String? idpHint;
   LoginUser({
-    String username,
+    String? username,
     this.password,
     this.userId,
     this.idpHint,
@@ -596,7 +596,7 @@ class _NotifyAuthTokenRefreshed extends UserCommand<AuthToken, AuthToken> {
 abstract class UserState<T> extends BlocState<T> {
   UserState(
     T data, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
     props = const [],
   }) : super(data, props: props, stackTrace: stackTrace);
 
@@ -628,26 +628,26 @@ class UserUnset extends UserState<void> {
   String toString() => '$runtimeType';
 }
 
-class UserLocked extends UserState<Security> {
-  UserLocked(Security data) : super(data);
+class UserLocked extends UserState<Security?> {
+  UserLocked(Security? data) : super(data);
   @override
   String toString() => '$runtimeType {security: $data}';
 }
 
-class UserUnlocking extends UserState<String> {
-  UserUnlocking(String pin) : super(pin);
+class UserUnlocking extends UserState<String?> {
+  UserUnlocking(String? pin) : super(pin);
   @override
   String toString() => '$runtimeType {pin: $data}';
 }
 
-class UserUnlocked extends UserState<Security> {
-  UserUnlocked(Security data) : super(data);
+class UserUnlocked extends UserState<Security?> {
+  UserUnlocked(Security? data) : super(data);
   @override
   String toString() => '$runtimeType  {security: $data}';
 }
 
-class UserAuthenticating extends UserState<String> {
-  UserAuthenticating(String username) : super(username);
+class UserAuthenticating extends UserState<String?> {
+  UserAuthenticating(String? username) : super(username);
   @override
   String toString() => '$runtimeType {username: $data}';
 }
@@ -655,7 +655,7 @@ class UserAuthenticating extends UserState<String> {
 class UserAuthenticated extends UserState<User> {
   UserAuthenticated(User user) : super(user);
   @override
-  String toString() => '$runtimeType {userid: ${data.userId}}';
+  String toString() => '$runtimeType {userid: ${data!.userId}}';
 }
 
 class UserAuthorized extends UserState<User> {
@@ -670,9 +670,9 @@ class UserAuthorized extends UserState<User> {
           withPersonnelCode,
         ]);
 
-  final Operation operation;
-  final bool withCommanderCode;
-  final bool withPersonnelCode;
+  final Operation? operation;
+  final bool? withCommanderCode;
+  final bool? withPersonnelCode;
 
   @override
   bool isAuthorized() => withPersonnelCode == true || withCommanderCode == true;
@@ -683,7 +683,7 @@ class UserAuthorized extends UserState<User> {
   bool get isUnitLeader => data?.isUnitLeader == true;
   bool get isPlanningChief => data?.isPlanningChief == true;
   bool get isOperationsChief => data?.isOperationsChief == true;
-  bool get isAuthor => data != null && operation?.author?.userId == data.userId;
+  bool get isAuthor => data != null && operation?.author?.userId == data!.userId;
   bool get isLeader => isCommander || isUnitLeader || isPlanningChief || isOperationsChief;
 
   /// Check [User] [data] is authorized access to given [operation] with given [role]
@@ -698,15 +698,15 @@ class UserAuthorized extends UserState<User> {
 
     switch (role) {
       case UserRole.commander:
-        return isCommander && (available || withCommanderCode);
+        return isCommander && (available || withCommanderCode!);
       case UserRole.planning_chief:
-        return isPlanningChief && (available || withCommanderCode);
+        return isPlanningChief && (available || withCommanderCode!);
       case UserRole.operations_chief:
-        return isOperationsChief && (available || withCommanderCode);
+        return isOperationsChief && (available || withCommanderCode!);
       case UserRole.unit_leader:
-        return isUnitLeader && (available || withCommanderCode);
+        return isUnitLeader && (available || withCommanderCode!);
       case UserRole.personnel:
-        return available || withCommanderCode || withPersonnelCode;
+        return available || withCommanderCode! || withPersonnelCode!;
       default:
         return false;
     }
@@ -715,10 +715,10 @@ class UserAuthorized extends UserState<User> {
   String toString() => '$runtimeType {user: $data, command: $withCommanderCode, personnel: $withPersonnelCode}';
 }
 
-class AuthTokenExpired extends UserState<AuthToken> {
-  AuthTokenExpired(AuthToken token) : super(token);
+class AuthTokenExpired extends UserState<AuthToken?> {
+  AuthTokenExpired(AuthToken? token) : super(token);
   @override
-  String toString() => '$runtimeType {userId: ${data.userId}}';
+  String toString() => '$runtimeType {userId: ${data!.userId}}';
 }
 
 class AuthTokenRefreshed extends UserState<AuthToken> {
@@ -731,10 +731,10 @@ class AuthTokenRefreshed extends UserState<AuthToken> {
 /// Error states
 /// ---------------------
 
-class UserBlocError extends UserState<Object> {
+class UserBlocError extends UserState<Object?> {
   UserBlocError(
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) : super(error, stackTrace: stackTrace);
 
   @override
@@ -768,9 +768,9 @@ class UserBlocIsOffline extends UserBlocError {
 
 class UserBlocException implements Exception {
   UserBlocException(this.state, {this.command, this.stackTrace});
-  final UserCommand command;
+  final UserCommand? command;
   final UserState state;
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
 
   @override
   String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';

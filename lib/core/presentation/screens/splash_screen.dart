@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/size_config.dart';
 import 'package:flutter/material.dart';
@@ -6,20 +6,20 @@ import 'package:flutter/material.dart';
 class SplashScreen extends StatefulWidget {
   static const String ROUTE = 'splash';
   const SplashScreen({
-    Key key,
+    Key? key,
     this.message,
     this.icon = 'sar-team-2.png',
   }) : super(key: key);
 
   final String icon;
-  final Widget message;
+  final Widget? message;
 
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
-  AnimationController _animController;
+  late AnimationController _animController;
 
   @override
   void initState() {
@@ -42,7 +42,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _animController.repeat();
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final rationaleStyle = textTheme.headline6.copyWith(
+    final rationaleStyle = textTheme.headline6!.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
@@ -117,7 +117,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   Widget _buildTitle(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final titleStyle = textTheme.headline6.copyWith(
+    final titleStyle = textTheme.headline6!.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -19,14 +19,14 @@ class OperationConfigScreen extends StatefulWidget {
 class _OperationConfigScreenState extends State<OperationConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  AppConfigBloc _bloc;
+  late AppConfigBloc _bloc;
 
-  List<String> _templates;
+  List<String>? _templates;
 
   @override
   void initState() {
     super.initState();
-    _templates ??= context.read<AppConfigBloc>().config.units;
+    _templates ??= context.read<AppConfigBloc>().config!.units;
   }
 
   @override
@@ -92,20 +92,20 @@ class _OperationConfigScreenState extends State<OperationConfigScreen> {
         category: 'alle',
         options: _findUnits,
         items: () => _templates,
-        onChanged: (templates) => updateUnitsTemplate(templates));
+        onChanged: (templates) => updateUnitsTemplate(templates as List<String>));
   }
 
   void updateUnitsTemplate(List<String> templates) {
-    _templates.clear();
-    _templates.addAll(templates);
+    _templates!.clear();
+    _templates!.addAll(templates);
     _bloc.updateWith(units: List<String>.from(templates));
   }
 
-  List<String> _findUnits(String type, String query) {
-    var lowercaseQuery = query.toLowerCase();
+  List<String> _findUnits(String? type, String? query) {
+    var lowercaseQuery = query!.toLowerCase();
     final templates = asUnitTemplates(query, 15);
     return templates
-        .where((template) => (template.toLowerCase().contains(type.toLowerCase())) || type.contains('alle'))
+        .where((template) => (template.toLowerCase().contains(type!.toLowerCase())) || type.contains('alle'))
         .where((template) => template.toLowerCase().contains(lowercaseQuery))
         .toList(growable: false);
   }

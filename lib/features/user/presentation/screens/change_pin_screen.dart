@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -14,12 +14,12 @@ class ChangePinScreen extends StatefulWidget {
   static const ROUTE = 'change/pin';
 
   const ChangePinScreen({
-    Key key,
+    Key? key,
     this.returnTo,
     this.popOnClose = false,
   }) : super(key: key);
-  final String returnTo;
-  final bool popOnClose;
+  final String? returnTo;
+  final bool? popOnClose;
 
   @override
   ChangePinScreenState createState() => ChangePinScreenState();
@@ -30,7 +30,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   final _formKey = GlobalKey<FormState>();
 
   /// Next pin
-  String _pin;
+  String? _pin;
 
   /// Forces user to enter current pin before changing it
   bool _verifyPin = false;
@@ -53,20 +53,20 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   /// Securing with pin is in progress
   bool _isSecuring = false;
 
-  AnimationController _animController;
+  AnimationController? _animController;
 
-  FocusNode _focusNode;
-  ScrollController _scrollController;
-  TextEditingController _pinController;
+  FocusNode? _focusNode;
+  ScrollController? _scrollController;
+  TextEditingController? _pinController;
 
-  TextTheme textTheme;
-  TextStyle titleStyle;
-  TextStyle emailStyle;
+  TextTheme? textTheme;
+  TextStyle? titleStyle;
+  TextStyle? emailStyle;
 
-  UserBloc _bloc;
+  late UserBloc _bloc;
 
   bool _validateAndSave() {
-    final form = _formKey.currentState;
+    final form = _formKey.currentState!;
     if (form.validate()) {
       form.save();
       return true;
@@ -95,11 +95,11 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   Widget build(BuildContext context) {
     SizeConfig.init(context);
     textTheme ??= Theme.of(context).textTheme;
-    titleStyle ??= textTheme.subtitle2.copyWith(
+    titleStyle ??= textTheme!.subtitle2!.copyWith(
       fontSize: SizeConfig.safeBlockVertical * 2.5,
     );
-    emailStyle ??= textTheme.bodyText2.copyWith(
-      color: textTheme.caption.color,
+    emailStyle ??= textTheme!.bodyText2!.copyWith(
+      color: textTheme!.caption!.color,
       fontSize: SizeConfig.safeBlockVertical * 2.1,
     );
 
@@ -175,7 +175,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
 
   void _requestFocus() {
     if (!(_pinComplete || _isPopped || _isSecuring)) {
-      _focusNode.requestFocus();
+      _focusNode!.requestFocus();
     }
   }
 
@@ -183,7 +183,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     final isError = _isError();
     var fields = isError ? [_buildErrorText()] : <Widget>[];
     if (isError) {
-      _pinController.clear();
+      _pinController!.clear();
     }
     return fields..add(_buildSecure());
   }
@@ -220,9 +220,9 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     BuildContext context,
     double size,
     FontWeight weight, {
-    Color color = color,
+    Color? color = color,
   }) =>
-      Theme.of(context).textTheme.headline6.copyWith(
+      Theme.of(context).textTheme.headline6!.copyWith(
             fontSize: size,
             color: color,
             fontWeight: weight,
@@ -242,7 +242,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
             children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 24.0),
-                child: _buildFullName(_bloc.user),
+                child: _buildFullName(_bloc.user!),
               ),
               Text(
                 _toPinText(),
@@ -276,7 +276,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     return 'Oppgi ny pinkode';
   }
 
-  Widget _buildSecureAction({bool enabled}) => buildAction(
+  Widget _buildSecureAction({bool? enabled}) => buildAction(
         _bloc.isSecured ? 'ENDRE' : 'OPPRETT',
         () async {
           try {
@@ -306,14 +306,14 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
           ),
           Flexible(
             child: Text(
-              user.email,
+              user.email!,
               style: emailStyle,
             ),
           ),
         ],
       );
 
-  Widget _buildPinInput({StateSetter setState}) => Container(
+  Widget _buildPinInput({StateSetter? setState}) => Container(
         constraints: BoxConstraints(minWidth: 215, maxWidth: 215),
         padding: const EdgeInsets.only(top: 24.0),
         child: PinCodeTextField(
@@ -340,9 +340,9 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
         ),
       );
 
-  void _onCompleted(String value, StateSetter setState) async {
+  void _onCompleted(String value, StateSetter? setState) async {
     if (_verifyPin) {
-      _wrongPin = _bloc.user.security.pin != value;
+      _wrongPin = _bloc.user!.security!.pin != value;
       _verifyPin = _wrongPin;
       _newPin = !_wrongPin;
     } else if (_newPin) {
@@ -355,8 +355,8 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
       _changePin = !_confirmPin;
     }
     if (!(_changePin || _isPopped)) {
-      _pinController.clear();
-      _focusNode.requestFocus();
+      _pinController!.clear();
+      _focusNode!.requestFocus();
     }
     if (setState != null) {
       setState(() {});
@@ -366,9 +366,9 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   Widget buildAction(
     String label,
     Function() onPressed, {
-    bool enabled = true,
+    bool? enabled = true,
     Type type = ElevatedButton,
-    Widget icon,
+    Widget? icon,
     Color color = const Color.fromRGBO(00, 41, 73, 1),
     bool validate = true,
   }) =>
@@ -395,16 +395,16 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   Widget _buildButton(
     Color color,
     String label,
-    bool enabled,
+    bool? enabled,
     onPressed(),
     Type type, {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) {
     if (type == OutlinedButton) {
       return _buildOutlineButton(
         label,
-        enabled,
+        enabled!,
         onPressed,
         icon: icon,
         validate: validate,
@@ -413,7 +413,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     return _buildElevatedButton(
       color,
       label,
-      enabled,
+      enabled!,
       onPressed,
       icon: icon,
       validate: validate,
@@ -425,7 +425,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     String label,
     bool enabled,
     onPressed(), {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) =>
       ElevatedButton(
@@ -464,7 +464,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     String label,
     bool enabled,
     onPressed(), {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) =>
       OutlinedButton(
@@ -490,7 +490,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   void _popTo(BuildContext context) {
     if (!_isPopped) {
       _isPopped = true;
-      if (widget.popOnClose) {
+      if (widget.popOnClose!) {
         Navigator.pop(context);
       } else {
         Navigator.pushReplacementNamed(
@@ -505,8 +505,8 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   void dispose() {
     _animController?.dispose();
     _scrollController?.dispose();
-    _focusNode.dispose();
-    _pinController.dispose();
+    _focusNode!.dispose();
+    _pinController!.dispose();
     _animController = null;
     _scrollController = null;
     _focusNode = null;

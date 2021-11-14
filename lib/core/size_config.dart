@@ -1,23 +1,23 @@
-// @dart=2.11
+
 
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 
 class SizeConfig {
-  static MediaQueryData _mediaQueryData;
-  static double screenWidth;
-  static double screenHeight;
-  static double blockSizeHorizontal;
-  static double blockSizeVertical;
+  static late MediaQueryData _mediaQueryData;
+  static late double screenWidth;
+  static late double screenHeight;
+  static late double blockSizeHorizontal;
+  static late double blockSizeVertical;
 
   static double get screenMin => min(screenWidth, screenHeight);
   static double get screenMax => max(screenWidth, screenHeight);
 
-  static double safeAreaHorizontal;
-  static double safeAreaVertical;
-  static double safeBlockHorizontal;
-  static double safeBlockVertical;
+  static late double safeAreaHorizontal;
+  static late double safeAreaVertical;
+  static late double safeBlockHorizontal;
+  static late double safeBlockVertical;
 
   static double get labelFontSize => width(3.4);
   static double width(double percent) => (isPortrait ? safeBlockHorizontal : safeBlockVertical) * percent;

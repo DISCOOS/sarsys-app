@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'Author.dart';
@@ -10,7 +8,7 @@ part of 'Author.dart';
 
 Author _$AuthorFromJson(Map json) {
   return Author(
-    userId: json['userId'] as String,
+    userId: json['userId'] as String?,
     timestamp: json['timestamp'] == null
         ? null
         : DateTime.parse(json['timestamp'] as String),

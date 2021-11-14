@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -24,13 +24,13 @@ class AppConfigBloc
   final AppConfigRepository repo;
 
   /// All repositories
-  Iterable<StatefulRepository> get repos => [repo];
+  Iterable<StatefulRepository?> get repos => [repo];
 
   AppConfigService get service => repo.service;
 
   /// Check if [config] is empty
   @override
-  bool get isReady => repo.isReady && repo.state != null && repo.state.isDeleted != true;
+  bool get isReady => repo.isReady && repo.state != null && repo.state!.isDeleted != true;
 
   /// Stream of isReady changes
   @override
@@ -43,55 +43,55 @@ class AppConfigBloc
   Iterable<AppConfig> get values => repo.values;
 
   /// Get [AppConfig] from [version]
-  AppConfig operator [](String version) => repo[version];
+  AppConfig operator [](String version) => repo[version]!;
 
   /// Initialize config from [service]
   @override
   Future<AppConfig> init({bool local = false}) async => dispatch(InitAppConfig(
         isLocal: local,
-      ));
+      )) as Future<AppConfig>;
 
   /// Load config from [service]
   @override
-  Future<AppConfig> load() async => dispatch(LoadAppConfig());
+  Future<AppConfig> load() async => dispatch(LoadAppConfig()) as Future<AppConfig>;
 
   /// Load config from [service]
   @override
   Future<AppConfig> update(AppConfig data) async => dispatch(
         UpdateAppConfig(data),
-      );
+      ) as Future<AppConfig>;
 
   /// Update with given settings
   Future<AppConfig> updateWith({
-    bool demo,
-    String demoRole,
-    bool onboarded,
-    bool firstSetup,
-    String orgId,
-    String divId,
-    String depId,
-    List<String> talkGroups,
-    String talkGroupCatalog,
-    bool storage,
-    bool locationAlways,
-    bool locationWhenInUse,
-    bool activityRecognition,
-    bool locationStoreLocally,
-    bool locationAllowSharing,
-    int mapCacheTTL,
-    bool mapRetinaMode,
-    int mapCacheCapacity,
-    String locationAccuracy,
-    int locationFastestInterval,
-    int locationSmallestDisplacement,
-    bool keepScreenOn,
-    bool callsignReuse,
-    List<String> units,
-    SecurityType securityType,
-    SecurityMode securityMode,
-    List<String> trustedDomains,
-    int securityLockAfter,
-    bool locationDebug,
+    bool? demo,
+    String? demoRole,
+    bool? onboarded,
+    bool? firstSetup,
+    String? orgId,
+    String? divId,
+    String? depId,
+    List<String>? talkGroups,
+    String? talkGroupCatalog,
+    bool? storage,
+    bool? locationAlways,
+    bool? locationWhenInUse,
+    bool? activityRecognition,
+    bool? locationStoreLocally,
+    bool? locationAllowSharing,
+    int? mapCacheTTL,
+    bool? mapRetinaMode,
+    int? mapCacheCapacity,
+    String? locationAccuracy,
+    int? locationFastestInterval,
+    int? locationSmallestDisplacement,
+    bool? keepScreenOn,
+    bool? callsignReuse,
+    List<String>? units,
+    SecurityType? securityType,
+    SecurityMode? securityMode,
+    List<String?>? trustedDomains,
+    int? securityLockAfter,
+    bool? locationDebug,
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
     final config = this.config.copyWith(
@@ -143,7 +143,7 @@ class AppConfigBloc
     } else if (command is DeleteAppConfig) {
       yield* _delete(command);
     } else if (command is _NotifyBlocStateChange) {
-      yield command.data;
+      yield command.data!;
     } else {
       yield toUnsupported(command);
     }
@@ -217,7 +217,7 @@ class AppConfigBloc
 
   Stream<AppConfigState> _update(UpdateAppConfig command) async* {
     final config = repo.apply(
-      command.data,
+      command.data!,
     );
     yield toOK(
       command,
@@ -252,7 +252,7 @@ class AppConfigBloc
     );
     yield toOK(
       command,
-      AppConfigDeleted(config),
+      AppConfigDeleted(config!),
       result: config,
     );
     // Notify when all states are remote
@@ -272,7 +272,7 @@ class AppConfigBloc
   }
 
   // Complete with error and return response as error state to bloc
-  AppConfigBlocError createError(Object error, {StackTrace stackTrace}) => AppConfigBlocError(
+  AppConfigBlocError createError(Object error, {StackTrace? stackTrace}) => AppConfigBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
@@ -281,8 +281,8 @@ class AppConfigBloc
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class AppConfigCommand<T> extends BlocCommand<T, T> {
-  AppConfigCommand(T data, [props = const []]) : super(data, props);
+abstract class AppConfigCommand<T> extends BlocCommand<T?, T> {
+  AppConfigCommand(T? data, [props = const []]) : super(data, props);
 }
 
 class InitAppConfig extends AppConfigCommand<AppConfig> {
@@ -330,7 +330,7 @@ class _NotifyBlocStateChange extends AppConfigCommand<AppConfigState> {
 abstract class AppConfigState<T> extends PushableBlocEvent {
   AppConfigState(
     T data, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
     props = const [],
     bool isRemote = false,
   }) : super(
@@ -400,7 +400,7 @@ class AppConfigDeleted extends AppConfigState<AppConfig> {
 class AppConfigBlocError extends AppConfigState<Object> {
   AppConfigBlocError(
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) : super(error, stackTrace: stackTrace);
 
   @override
@@ -414,8 +414,8 @@ class AppConfigBlocError extends AppConfigState<Object> {
 class AppConfigBlocException implements Exception {
   AppConfigBlocException(this.state, {this.command, this.stackTrace});
   final AppConfigState state;
-  final StackTrace stackTrace;
-  final AppConfigCommand command;
+  final StackTrace? stackTrace;
+  final AppConfigCommand? command;
 
   @override
   String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -10,12 +10,12 @@ import 'package:SarSys/core/utils/data.dart';
 
 class ConnectivityService extends Service {
   factory ConnectivityService() {
-    if (_singleton == null || _singleton._disposed) {
+    if (_singleton == null || _singleton!._disposed) {
       _singleton = ConnectivityService._internal();
     } else {
-      _singleton.update();
+      _singleton!.update();
     }
-    return _singleton;
+    return _singleton!;
   }
 
   ConnectivityService._internal() {
@@ -45,13 +45,13 @@ class ConnectivityService extends Service {
         .toList();
   }
 
-  static ConnectivityService _singleton;
+  static ConnectivityService? _singleton;
   static const defaultTimeout = const Duration(seconds: 1);
 
   final StreamController<ConnectivityStatus> _controller = StreamController<ConnectivityStatus>.broadcast();
 
-  Timer _speedTimer;
-  Timer _statusTimer;
+  Timer? _speedTimer;
+  Timer? _statusTimer;
   bool _disposed = false;
   bool _hasConnection = true;
   List<StreamSubscription> _subscriptions = [];
@@ -106,19 +106,19 @@ class ConnectivityService extends Service {
       );
 
   /// Register timeout errors
-  Future<ConnectivityState> onTimeout(Object error, {StackTrace stackTrace, bool analyse = false}) async {
+  Future<ConnectivityState> onTimeout(Object? error, {StackTrace? stackTrace, bool analyse = false}) async {
     _timeouts.update(
       error.runtimeType,
       (result) => result.next(error, stackTrace),
       ifAbsent: () => TimeoutResult.first(error, stackTrace),
     );
-    return analyse ? update() : state;
+    return (analyse ? update() : state) as FutureOr<ConnectivityState>;
   }
 
   /// Register timeout errors
   Future<ConnectivityState> onSpeedResult(SpeedResult result, {bool analyse = false}) async {
     _speedResults.add(result);
-    return analyse ? update() : state;
+    return (analyse ? update() : state) as FutureOr<ConnectivityState>;
   }
 
   /// Update [ConnectivityState]
@@ -169,7 +169,7 @@ class ConnectivityService extends Service {
       while (_speedResults.length > 10) {
         _speedResults.remove(_speedResults.first);
       }
-      final total = _speedResults.fold(0, (speed, result) => speed + result.speed);
+      final total = _speedResults.fold(0, (dynamic speed, result) => speed + result.speed);
       final speed = total ~/ _speedResults.length;
       if (speed < SpeedState.norm3g) {
         return SpeedState(
@@ -194,7 +194,7 @@ class ConnectivityService extends Service {
     final timeouts = calcTimeouts();
     final failureRatio = calcFailureRatio();
 
-    if (failureRatio > 0.5 || timeouts > 3) {
+    if (failureRatio > 0.5 || timeouts! > 3) {
       _quality = ConnectivityQuality.bad;
       result = ConnectivityResult.none;
     } else if (failureRatio > 0.1 || timeouts > 1) {
@@ -205,11 +205,11 @@ class ConnectivityService extends Service {
     return result;
   }
 
-  int calcTimeouts() {
+  int? calcTimeouts() {
     final toc = DateTime.now();
     final timeouts = _timeouts.values
         .where((result) => toc.difference(result.timestamp) < const Duration(minutes: 1))
-        .fold(0, (count, result) => count + result.count);
+        .fold(0, (dynamic count, result) => count + result.count);
     return timeouts;
   }
 
@@ -336,13 +336,13 @@ enum SpeedUnit { kbs, mbs }
 class TimeoutResult {
   TimeoutResult._(this.error, this.count, [this.stackTrace]);
   final int count;
-  final Object error;
-  final StackTrace stackTrace;
+  final Object? error;
+  final StackTrace? stackTrace;
   final DateTime timestamp = DateTime.now();
 
-  factory TimeoutResult.first(Object error, [StackTrace stackTrace]) => TimeoutResult._(error, 1);
+  factory TimeoutResult.first(Object? error, [StackTrace? stackTrace]) => TimeoutResult._(error, 1);
 
-  TimeoutResult next(Object error, StackTrace stackTrace,
+  TimeoutResult next(Object? error, StackTrace? stackTrace,
       {Duration ttl = const Duration(
         minutes: 1,
       )}) {

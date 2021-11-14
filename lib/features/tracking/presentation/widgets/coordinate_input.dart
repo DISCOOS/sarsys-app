@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -12,13 +12,13 @@ class CoordinateInput extends StatefulWidget {
   final int zone;
   final bool isSouth;
   final String band;
-  final LatLng point;
-  final ValueChanged<LatLng> onChanged;
-  final VoidCallback onEditingComplete;
+  final LatLng? point;
+  final ValueChanged<LatLng>? onChanged;
+  final VoidCallback? onEditingComplete;
   final bool withBorder;
 
   const CoordinateInput({
-    Key key,
+    Key? key,
     this.point,
     this.zone = 32,
     this.band = 'V',
@@ -33,11 +33,11 @@ class CoordinateInput extends StatefulWidget {
 }
 
 class _CoordinateInputState extends State<CoordinateInput> {
-  FocusNode _northingFocusNode;
-  TransverseMercatorProjection proj;
+  FocusNode? _northingFocusNode;
+  late TransverseMercatorProjection proj;
 
-  TextEditingController _eastingController;
-  TextEditingController _northingController;
+  TextEditingController? _eastingController;
+  TextEditingController? _northingController;
 
   @override
   void initState() {
@@ -68,9 +68,9 @@ class _CoordinateInputState extends State<CoordinateInput> {
 
   @override
   void dispose() {
-    _northingFocusNode.dispose();
-    _eastingController.dispose();
-    _northingController.dispose();
+    _northingFocusNode!.dispose();
+    _eastingController!.dispose();
+    _northingController!.dispose();
     super.dispose();
   }
 
@@ -113,7 +113,7 @@ class _CoordinateInputState extends State<CoordinateInput> {
     );
   }
 
-  String _toBand(LatLng point) {
+  String _toBand(LatLng? point) {
     return point != null
         ? TransverseMercatorProjection.toBand(
             point.latitude,
@@ -122,7 +122,7 @@ class _CoordinateInputState extends State<CoordinateInput> {
         : widget.band;
   }
 
-  ProjCoordinate _toUTM(LatLng point) {
+  ProjCoordinate? _toUTM(LatLng? point) {
     return point != null
         ? proj.project(ProjCoordinate.from2D(
             point.longitude,
@@ -146,12 +146,12 @@ class _CoordinateInputState extends State<CoordinateInput> {
         FilteringTextInputFormatter.digitsOnly,
       ],
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      onChanged: (value) => _update(value, _northingController.text),
-      validator: (value) => int.tryParse(value) == null ? "Kun heltall" : null,
+      onChanged: (value) => _update(value, _northingController!.text),
+      validator: (value) => int.tryParse(value!) == null ? "Kun heltall" : null,
       onEditingComplete: () {
         FocusScope.of(context).unfocus();
-        if (_update(_eastingController.text, _northingController.text)) {
-          if (widget.onEditingComplete != null) widget.onEditingComplete();
+        if (_update(_eastingController!.text, _northingController!.text)) {
+          if (widget.onEditingComplete != null) widget.onEditingComplete!();
         } else {
           FocusScope.of(context).requestFocus(_northingFocusNode);
         }
@@ -175,12 +175,12 @@ class _CoordinateInputState extends State<CoordinateInput> {
         FilteringTextInputFormatter.digitsOnly,
       ],
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      onChanged: (value) => _update(_eastingController.text, value),
-      validator: (value) => int.tryParse(value) == null ? "Kun heltall" : null,
+      onChanged: (value) => _update(_eastingController!.text, value),
+      validator: (value) => int.tryParse(value!) == null ? "Kun heltall" : null,
       onEditingComplete: () {
         FocusScope.of(context).unfocus();
-        _update(_eastingController.text, _northingController.text);
-        if (widget.onEditingComplete != null) widget.onEditingComplete();
+        _update(_eastingController!.text, _northingController!.text);
+        if (widget.onEditingComplete != null) widget.onEditingComplete!();
       },
     );
   }
@@ -222,7 +222,7 @@ class _CoordinateInputState extends State<CoordinateInput> {
     if (x == null || y == null) return false;
     if (widget.onChanged != null) {
       final point = proj.inverse(ProjCoordinate.from2D(x, y));
-      widget.onChanged(LatLng(point.y, point.x));
+      widget.onChanged!(LatLng(point.y!, point.x!));
     }
     return true;
   }

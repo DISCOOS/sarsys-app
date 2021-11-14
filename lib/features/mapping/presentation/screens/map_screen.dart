@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -23,13 +23,13 @@ import 'package:SarSys/core/presentation/widgets/app_drawer.dart';
 class MapScreen extends StatefulWidget {
   static const ROUTE = 'map';
 
-  final LatLng center;
-  final Operation operation;
-  final LatLngBounds fitBounds;
-  final FitBoundsOptions fitBoundOptions;
+  final LatLng? center;
+  final Operation? operation;
+  final LatLngBounds? fitBounds;
+  final FitBoundsOptions? fitBoundOptions;
 
   const MapScreen({
-    Key key,
+    Key? key,
     this.center,
     this.fitBounds,
     this.fitBoundOptions,
@@ -47,8 +47,8 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
   bool _showFAB = true;
 
   bool _unloaded = false;
-  StreamSubscription<OperationState> _subscription;
-  Operation get operation => _unloaded ? null : widget.operation;
+  StreamSubscription<OperationState?>? _subscription;
+  Operation? get operation => _unloaded ? null : widget.operation;
 
   @override
   void didChangeDependencies() {
@@ -61,7 +61,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
     _subscription?.cancel();
     _subscription = context.read<OperationBloc>().stream.listen((state) {
       setState(() {
-        _unloaded = state.shouldUnload(widget.operation?.uuid);
+        _unloaded = state!.shouldUnload(widget.operation?.uuid);
       });
     });
   }
@@ -109,7 +109,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
         onToolChange: (tool) => setState(() {
           _showFAB = !tool.active();
         }),
-        onOpenDrawer: () => _scaffoldKey.currentState.openDrawer(),
+        onOpenDrawer: () => _scaffoldKey.currentState!.openDrawer(),
       );
 
   void _showCreateItemSheet(BuildContext context) {
@@ -149,7 +149,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                         onTap: () async {
                           final result = await createOperation(
                             ipp: toPoint(_mapController.center),
-                          );
+                          )!;
                           result.fold((_) => null, (incident) => jumpToOperation(context, incident));
                           Navigator.pop(context);
                         },
@@ -165,7 +165,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
   void _showMessage(
     String message, {
     String action = "OK",
-    VoidCallback onPressed,
+    VoidCallback? onPressed,
     dynamic data,
   }) {
     final snackbar = SnackBar(
@@ -177,7 +177,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
       action: _buildAction(action, () {
         if (onPressed != null) onPressed();
         ScaffoldMessenger.of(context).hideCurrentSnackBar(reason: SnackBarClosedReason.action);
-      }),
+      }) as SnackBarAction?,
     );
     ScaffoldMessenger.of(context).showSnackBar(snackbar);
   }

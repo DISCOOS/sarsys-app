@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/core/domain/models/core.dart';
@@ -7,16 +7,16 @@ import 'package:meta/meta.dart';
 
 abstract class Incident extends Aggregate<Map<String, dynamic>> {
   Incident({
-    @required String uuid,
-    @required this.name,
-    @required this.type,
-    @required this.status,
-    @required this.summary,
-    @required this.occurred,
-    @required this.resolution,
-    @required this.operations,
+    required String? uuid,
+    required this.name,
+    required this.type,
+    required this.status,
+    required this.summary,
+    required this.occurred,
+    required this.resolution,
+    required this.operations,
     this.exercise = false,
-  }) : super(uuid, fields: [
+  }) : super(uuid!, fields: [
           name,
           type,
           status,
@@ -26,14 +26,14 @@ abstract class Incident extends Aggregate<Map<String, dynamic>> {
           resolution,
         ]);
 
-  final String name;
-  final bool exercise;
-  final String summary;
-  final IncidentType type;
-  final DateTime occurred;
-  final IncidentStatus status;
-  final List<String> operations;
-  final IncidentResolution resolution;
+  final String? name;
+  final bool? exercise;
+  final String? summary;
+  final IncidentType? type;
+  final DateTime? occurred;
+  final IncidentStatus? status;
+  final List<String>? operations;
+  final IncidentResolution? resolution;
 
   /// Get searchable string
   get searchable => [
@@ -53,19 +53,19 @@ abstract class Incident extends Aggregate<Map<String, dynamic>> {
 
   /// Clone with author
   Incident copyWith({
-    String name,
-    bool exercise,
-    IncidentType type,
-    DateTime occurred,
-    IncidentStatus status,
-    List<String> operations,
-    IncidentResolution resolution,
+    String? name,
+    bool? exercise,
+    IncidentType? type,
+    DateTime? occurred,
+    IncidentStatus? status,
+    List<String>? operations,
+    IncidentResolution? resolution,
   });
 }
 
 enum IncidentType { lost, distress, disaster, other }
 
-String translateIncidentType(IncidentType type) {
+String translateIncidentType(IncidentType? type) {
   switch (type) {
     case IncidentType.lost:
       return "Savnet";

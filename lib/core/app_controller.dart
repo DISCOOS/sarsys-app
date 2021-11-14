@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -114,13 +114,13 @@ class AppController {
   BlocEventBus get bus => observer.bus;
 
   /// Get SARSys api implementation
-  Api get api => _api;
-  Api _api;
+  Api? get api => _api;
+  Api? _api;
 
   /// [MessageChannel] instance communicating
   /// with the backend using web-socket
-  MessageChannel get channel => _channel;
-  MessageChannel _channel;
+  MessageChannel? get channel => _channel;
+  MessageChannel? _channel;
 
   /// Get current [state] of [AppController]
   AppState get state => _state;
@@ -136,8 +136,8 @@ class AppController {
   bool get isConfigured => state.index >= AppState.Configured.index;
   bool get isAnonymous => state.index <= AppState.Anonymous.index;
   bool get isAuthenticated => state.index >= AppState.Authenticated.index;
-  bool get isSecured => isAuthenticated && bloc<UserBloc>().isSecured;
-  bool get isLocked => !isSecured || bloc<UserBloc>().isLocked;
+  bool get isSecured => isAuthenticated && bloc<UserBloc>()!.isSecured;
+  bool get isLocked => !isSecured || bloc<UserBloc>()!.isLocked;
   bool get isLoading => isAuthenticated && !isReady || _state == AppState.Loading;
   bool get isReady => state == AppState.Ready;
 
@@ -164,30 +164,30 @@ class AppController {
   Stream<AppState> get onChanged => _controller.stream;
 
   /// Get [Bloc] instance of type [T]
-  T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
+  T? bloc<T extends Bloc?>() => _blocs[typeOf<T>()] as T?;
   final _blocs = <Type, Bloc>{};
 
   /// Get [BlocProvider] instance for [Bloc] of type [T]
   BlocProvider<T> toBlocProvider<T extends Bloc>() => BlocProvider.value(
-        value: _blocs[typeOf<T>()] as T,
+        value: (_blocs[typeOf<T>()] as T) as Never,
       );
 
   /// Get [Repository] instance of type [T]
-  T repository<T extends Repository>() => _repos[typeOf<T>()] as T;
-  final _repos = <Type, Repository>{};
+  T? repository<T extends Repository?>() => _repos[typeOf<T>()] as T?;
+  final _repos = <Type, Repository?>{};
 
   /// Get [RepositoryProvider] instance for [Repository] of type [T]
-  RepositoryProvider<T> toRepoProvider<T extends Repository>() => RepositoryProvider.value(
-        value: _repos[typeOf<T>()] as T,
+  RepositoryProvider<T?> toRepoProvider<T extends Repository?>() => RepositoryProvider.value(
+        value: _repos[typeOf<T>()] as T?,
       );
 
   /// Get [Service] instance of type [T]
-  T service<T extends Service>() => _services[typeOf<T>()] as T;
+  T? service<T extends Service?>() => _services[typeOf<T>()] as T?;
   final _services = <Type, Service>{};
 
   /// Get [ServiceProvider] instance for [Service] of type [T]
-  ServiceProvider<T> toServiceProvider<T extends Service>() => ServiceProvider.value(
-        value: _services[typeOf<T>()] as T,
+  ServiceProvider<T?> toServiceProvider<T extends Service?>() => ServiceProvider.value(
+        value: _services[typeOf<T>()] as T?,
       );
 
   /// Get all [BlocProvider]s as list
@@ -231,7 +231,7 @@ class AppController {
         ServiceProvider<LocationService>(
           create: (_) => LocationService(),
         ),
-        ServiceProvider<MessageChannel>(
+        ServiceProvider<MessageChannel?>(
           create: (_) => _channel,
         ),
       ];
@@ -246,7 +246,7 @@ class AppController {
 
   static AppController _build(
     AppController controller, {
-    @required Client client,
+    required Client client,
   }) {
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
@@ -428,7 +428,7 @@ class AppController {
       [positionListService.delegate],
       (services, repos) => List.from(services)
         ..addAll(
-          repos.map((repo) => repo.service.delegate),
+          repos.map((repo) => repo.service!.delegate),
         ),
     ).toList();
     final apiServices = repoServices.whereType<JsonService>().toList();
@@ -458,7 +458,7 @@ class AppController {
         ...blocs
             .whereType<ConnectionAwareBloc>()
             .map((bloc) => bloc.repos)
-            .fold<Iterable<Repository>>(<Repository>[], (all, repos) => List.from(all)..addAll(repos)),
+            .fold<Iterable<Repository?>>(<Repository>[], (all, repos) => List.from(all)..addAll(repos)),
         // Add special cases
         userBloc.repo,
         userBloc.repo.tokens,
@@ -487,13 +487,13 @@ class AppController {
         // it will be selected as current
         // operation.
         //
-        await bloc<UserBloc>().load();
+        await bloc<UserBloc>()!.load();
 
         // Wait for config to become available
         await waitThroughStateWithData<AppConfigState, AppConfig>(
           bus,
           fail: true,
-          map: (state) => state.data,
+          map: (state) => state!.data,
           timeout: Duration(minutes: 1),
           test: (state) => state.data is AppConfig,
         );
@@ -502,16 +502,16 @@ class AppController {
         _setState(AppState.Configured);
 
         // Set app state from user state
-        _onUserState(bloc<UserBloc>().state);
+        _onUserState(bloc<UserBloc>()!.state);
 
         // Toggles between Anonymous and Authenticated states
         registerStreamSubscription(
-          bloc<UserBloc>().stream.listen(_onUserState),
+          bloc<UserBloc>()!.stream.listen(_onUserState),
         );
 
         // Toggles between loading and ready state
         registerStreamSubscription(
-          bloc<AffiliationBloc>().stream.listen(_onModalState),
+          bloc<AffiliationBloc>()!.stream.listen(_onModalState),
         );
       }
     } catch (e, stackTrace) {
@@ -548,7 +548,7 @@ class AppController {
       } else if (shouldRoute(state)) {
         final route = inferRouteName(
           defaultName: MapScreen.ROUTE,
-        );
+        )!;
         NavigationService().pushReplacementNamed(route);
       }
     } catch (e, stackTrace) {
@@ -556,7 +556,7 @@ class AppController {
     }
   }
 
-  String inferRouteName({RouteSettings settings, String defaultName}) {
+  String? inferRouteName({RouteSettings? settings, String? defaultName}) {
     var route;
     if (!isConfigured) {
       route = SplashScreen.ROUTE;
@@ -590,7 +590,7 @@ class AppController {
     }
 
     // Initialize logout and delete user
-    await bloc<UserBloc>().logout(delete: true);
+    await bloc<UserBloc>()!.logout(delete: true);
 
     // Close
     _unset();
@@ -609,16 +609,16 @@ class AppController {
     // This will invalidate this
     // SarSysAppState instance
     Phoenix.rebirth(
-      NavigationService().context,
+      NavigationService().context!,
     );
   }
 
   AppController _set({
-    @required Api api,
-    @required Iterable<Bloc> blocs,
-    @required MessageChannel channel,
-    @required Iterable<Repository> repos,
-    @required Iterable<Service> services,
+    required Api api,
+    required Iterable<Bloc> blocs,
+    required MessageChannel channel,
+    required Iterable<Repository?> repos,
+    required Iterable<Service> services,
   }) {
     assert(
       _blocs.isEmpty,
@@ -662,7 +662,7 @@ class AppController {
     // 2) Anonymous -> Authenticated (when user is authenticated or token is refreshed)
     // 3) Authenticated -> Anonymous (when token expires or user is logged out)
     if (isConfigured) {
-      _setState(bloc<UserBloc>().isAuthenticated
+      _setState(bloc<UserBloc>()!.isAuthenticated
           // Application require new pin
           ? (isReady ? AppState.Ready : AppState.Authenticated)
           // Application require login
@@ -678,13 +678,13 @@ class AppController {
   }
 
   void _onModalState(AffiliationState state) async {
-    debugPrint('AppController._onModalState(state: ${state.runtimeType}{isRemote: ${state.isRemote}})');
+    debugPrint('AppController._onModalState(state: ${state.runtimeType}{isRemote: ${state!.isRemote}})');
     if (isAuthenticated) {
       switch (state.runtimeType) {
         case AffiliationsLoaded:
         case AffiliationsFetched:
           if (isOnline) {
-            await bloc<AffiliationBloc>().onLoadedAsync();
+            await bloc<AffiliationBloc>()!.onLoadedAsync();
           }
           _setState(AppState.Ready);
           break;
@@ -696,8 +696,8 @@ class AppController {
   }
 
   void _configureServices(UserState state) {
-    _channel.open(
-      appId: bloc<AppConfigBloc>().config.udid,
+    _channel!.open(
+      appId: bloc<AppConfigBloc>()!.config!.udid,
       url: '${Defaults.baseWsUrl}/api/messages/connect',
       config: SubscriptionModel(
         types: [
@@ -759,16 +759,16 @@ class AppController {
     // Ensure that token is updated
     if (!LocationService.exists || state.isTokenRefreshed()) {
       LocationService(
-        options: bloc<ActivityBloc>().profile.options,
+        options: bloc<ActivityBloc>()!.profile.options,
       ).configure(
-        token: bloc<UserBloc>().repo.token,
-        duuid: bloc<DeviceBloc>().app?.uuid,
-        debug: bloc<AppConfigBloc>().config?.locationDebug,
+        token: bloc<UserBloc>()!.repo.token,
+        duuid: bloc<DeviceBloc>()!.app?.uuid,
+        debug: bloc<AppConfigBloc>()!.config?.locationDebug,
       );
     }
   }
 
-  bool get isShared => SecurityMode.shared == bloc<AppConfigBloc>().config?.securityMode;
+  bool get isShared => SecurityMode.shared == bloc<AppConfigBloc>()!.config?.securityMode;
 
   void _disposeServices(UserState state) async {
     if (LocationService.exists && state.isUnset()) {
@@ -786,10 +786,10 @@ class AppController {
   void _unset() {
     // Unsubscribe all handlers
     bus.unsubscribeAll();
-    channel.unsubscribeAll();
+    channel!.unsubscribeAll();
 
     // Dispose message channel
-    channel.dispose();
+    channel!.dispose();
 
     // Notify blocs not ready, will show splash screen
     _setState(AppState.Empty);
@@ -814,10 +814,10 @@ class AppController {
   int get securityLockAfter => bloc<AppConfigBloc>()?.config?.securityLockAfter ?? Defaults.securityLockAfter;
 
   Future<void> setLockTimeout() async {
-    if (bloc<UserBloc>().isReady) {
-      final heartbeat = bloc<UserBloc>().security.heartbeat;
+    if (bloc<UserBloc>()!.isReady) {
+      final heartbeat = bloc<UserBloc>()!.security!.heartbeat;
       if (heartbeat == null || DateTime.now().difference(heartbeat).inMinutes > securityLockAfter) {
-        await bloc<UserBloc>().lock();
+        await bloc<UserBloc>()!.lock();
       }
     }
   }
@@ -882,7 +882,7 @@ enum AppState {
 }
 
 class DemoParams {
-  final bool active;
+  final bool? active;
   final UserRole role;
   final int unitCount;
   final int personnelCount;

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -54,10 +54,10 @@ class SarSysAppWidget extends StatefulWidget {
   final AppController controller;
   final GlobalKey<NavigatorState> navigatorKey;
   const SarSysAppWidget({
-    Key key,
-    @required this.navigatorKey,
-    @required this.controller,
-    @required this.bucket,
+    Key? key,
+    required this.navigatorKey,
+    required this.controller,
+    required this.bucket,
   }) : super(key: key);
 
   @override
@@ -67,9 +67,9 @@ class SarSysAppWidget extends StatefulWidget {
 class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingObserver {
   List<StreamSubscription> _subscriptions = [];
 
-  AppConfigBloc get configBloc => widget.controller.bloc<AppConfigBloc>();
-  OperationBloc get operationBloc => widget.controller.bloc<OperationBloc>();
-  PersonnelBloc get personnelBloc => widget.controller.bloc<PersonnelBloc>();
+  AppConfigBloc? get configBloc => widget.controller.bloc<AppConfigBloc>();
+  OperationBloc? get operationBloc => widget.controller.bloc<OperationBloc>();
+  PersonnelBloc? get personnelBloc => widget.controller.bloc<PersonnelBloc>();
 
   bool get isConfigured => widget.controller.isConfigured;
   bool get isAnonymous => widget.controller.isAnonymous;
@@ -88,7 +88,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance!.addObserver(this);
     _listenForOperationsLoaded();
   }
 
@@ -96,7 +96,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
-      writePageStorageBucket(widget.bucket);
+      writePageStorageBucket(widget.bucket, context: context);
     } else if (state == AppLifecycleState.resumed) {
       readPageStorageBucket(widget.bucket);
       await widget.controller.setLockTimeout();
@@ -111,7 +111,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance!.removeObserver(this);
     _cancelAll();
     super.dispose();
   }
@@ -126,16 +126,16 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
   /// Reselect [Operation] if previous
   /// selected on first [OperationsLoaded].
   void _listenForOperationsLoaded() {
-    final subscription = widget.controller
-        .bloc<OperationBloc>()
+    final StreamSubscription<OperationState<dynamic>?> subscription = widget.controller
+        .bloc<OperationBloc>()!
         .stream
-        .firstWhere((state) => state.isLoaded())
+        .firstWhere((state) => state!.isLoaded())
         .asStream()
         // User is authenticated (not null)
         // by convention when OperationsLoaded
         // has been published by OperationBloc
         .listen(
-          (value) => _selectOnLoad(widget.controller.bloc<UserBloc>().user),
+          (value) => _selectOnLoad(widget.controller.bloc<UserBloc>()!.user),
         );
 
     // Cancelled by _cancelAll
@@ -155,9 +155,9 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
         RouteWriter.STATE,
         defaultValue: {},
       );
-      final result = await openOperation(ouuid);
+      final result = await openOperation(ouuid)!;
       if (result.isRight()) {
-        route[UserScreen.ROUTE_OPERATION] = result.toIterable().firstOrNull;
+        route![UserScreen.ROUTE_OPERATION] = result.toIterable().firstOrNull;
         NavigationService().pushReplacementNamed(
           route.elementAt(RouteWriter.FIELD_NAME) ?? MapScreen.ROUTE,
           arguments: route,
@@ -209,13 +209,13 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
   }
 
   Widget _buildWithProviders({
-    @required BuildContext context,
-    @required Widget child,
+    required BuildContext context,
+    required Widget child,
   }) =>
       Provider<PermissionController>(
         // Lazily create when first asked for it
         create: (BuildContext context) => PermissionController(
-          configBloc: configBloc,
+          configBloc: configBloc!,
         ),
         child: Provider.value(
           value: widget.controller.client,
@@ -244,7 +244,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
         ? _toScreen(route, persisted: true)
         : _toPreviousRoute(
             orElse: _toMapScreen(
-              operation: operationBloc.selected,
+              operation: operationBloc!.selected,
             ),
           );
     return PageStorage(
@@ -254,7 +254,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
   }
 
   Route _toRoute(RouteSettings settings) {
-    String route;
+    String? route;
 
     debugPrint(
       "SarSysApp._toRoute(route: ${settings.name}, controller: ${widget.controller.state})",
@@ -273,14 +273,14 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
     );
   }
 
-  String _inferRouteName({RouteSettings settings}) => widget.controller.inferRouteName(
+  String? _inferRouteName({RouteSettings? settings}) => widget.controller.inferRouteName(
         settings: settings,
         defaultName: _toPreviousRouteName(),
       );
 
   Widget _toScreen(
-    String name, {
-    Object arguments,
+    String? name, {
+    Object? arguments,
     bool persisted = false,
   }) {
     Widget screen;
@@ -322,7 +322,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
       case MapScreen.ROUTE:
         screen = _toMapScreen(
           arguments: arguments,
-          operation: widget.controller.bloc<OperationBloc>().selected,
+          operation: widget.controller.bloc<OperationBloc>()!.selected,
         );
         break;
       case UserScreen.ROUTE_OPERATION:
@@ -378,7 +378,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
     return screen;
   }
 
-  T toArgument<T>(Object arguments, String path, {T defaultValue}) {
+  T? toArgument<T>(Object? arguments, String path, {T? defaultValue}) {
     if (arguments is Map) {
       final map = arguments as Map<String, dynamic>;
       return map.hasPath(path) ? arguments.elementAt<T>(path) : defaultValue;
@@ -399,7 +399,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
         );
   }
 
-  Widget _toMapScreen({Object arguments, Operation operation}) {
+  Widget _toMapScreen({Object? arguments, Operation? operation}) {
     if (arguments is Map) {
       return MapScreen(
         center: arguments["center"],
@@ -410,12 +410,12 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
     }
     if (operation != null) {
       var model = getPageState<MapWidgetStateModel>(
-        widget.navigatorKey.currentState.context,
+        widget.navigatorKey.currentState!.context,
         MapWidgetState.STATE,
       );
       if (model?.ouuid != operation.uuid) {
-        final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
-        final meetup = operation.meetup != null ? toLatLng(operation.meetup.point) : null;
+        final ipp = operation.ipp != null ? toLatLng(operation.ipp!.point) : null;
+        final meetup = operation.meetup != null ? toLatLng(operation.meetup!.point) : null;
         final fitBounds = LatLngBounds(ipp, meetup);
         return MapScreen(
           operation: operation,
@@ -426,7 +426,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
     return MapScreen();
   }
 
-  Widget _toUnitScreen(Object arguments, bool persisted) {
+  Widget _toUnitScreen(Object? arguments, bool persisted) {
     var unit;
     if (arguments is Unit) {
       unit = arguments;
@@ -437,9 +437,9 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
     return unit == null || persisted ? CommandScreen(tabIndex: CommandScreen.TAB_UNITS) : UnitScreen(unit: unit);
   }
 
-  Map<String, Unit> get units => widget.controller.bloc<UnitBloc>().units;
+  Map<String?, Unit?> get units => widget.controller.bloc<UnitBloc>()!.units;
 
-  Widget _toPersonnelScreen(Object arguments, bool persisted) {
+  Widget _toPersonnelScreen(Object? arguments, bool persisted) {
     var personnel;
     if (arguments is Personnel) {
       personnel = arguments;
@@ -452,9 +452,9 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
         : PersonnelScreen(personnel: personnel);
   }
 
-  Map<String, Personnel> get personnels => widget.controller.bloc<PersonnelBloc>().repo.map;
+  Map<String?, Personnel?> get personnels => widget.controller.bloc<PersonnelBloc>()!.repo.map;
 
-  Widget _toDeviceScreen(Object arguments, bool persisted) {
+  Widget _toDeviceScreen(Object? arguments, bool persisted) {
     var device;
     if (arguments is Device) {
       device = arguments;
@@ -467,13 +467,13 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
         : DeviceScreen(device: device);
   }
 
-  Map<String, Device> get devices => widget.controller.bloc<DeviceBloc>().repo.map;
+  Map<String?, Device> get devices => widget.controller.bloc<DeviceBloc>()!.repo!.map;
 
-  Widget _toPreviousRoute({@required Widget orElse}) {
+  Widget _toPreviousRoute({required Widget orElse}) {
     var child;
     var state = getPageState<Map>(context, RouteWriter.STATE);
     if (state != null) {
-      bool isUnset = operationBloc.isUnselected || personnelBloc.findUser().isEmpty;
+      bool isUnset = operationBloc!.isUnselected || personnelBloc!.findUser().isEmpty;
       child = _toScreen(
         isUnset ? OperationsScreen.ROUTE : state[RouteWriter.FIELD_NAME],
         arguments: isUnset ? null : state,
@@ -488,5 +488,5 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
     return _toDefaultRouteName(state?.elementAt(RouteWriter.FIELD_NAME));
   }
 
-  String _toDefaultRouteName(String name) => name ?? OperationsScreen.ROUTE;
+  String _toDefaultRouteName(String? name) => name ?? OperationsScreen.ROUTE;
 }

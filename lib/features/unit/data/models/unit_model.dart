@@ -1,5 +1,3 @@
-// @dart=2.11
-
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -17,17 +15,17 @@ part 'unit_model.g.dart';
 @JsonSerializable()
 class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
   UnitModel({
-    @required String uuid,
-    @required UnitType type,
-    @required int number,
-    @required UnitStatus status,
-    @required String callsign,
-    @required AggregateRef<Tracking> tracking,
-    @required AggregateRef<Operation> operation,
-    String phone,
-    List<String> personnels = const [],
-  })  : tracking = tracking?.cast<TrackingModel>(),
-        operation = operation?.cast<OperationModel>(),
+    required String uuid,
+    required UnitType? type,
+    required int? number,
+    required UnitStatus? status,
+    required String? callsign,
+    required AggregateRef<Tracking> tracking,
+    required AggregateRef<Operation> operation,
+    String? phone,
+    List<String>? personnels = const [],
+  })  : tracking = tracking.cast<TrackingModel>(),
+        operation = operation.cast<OperationModel>(),
         super(
           uuid: uuid,
           type: type,
@@ -41,7 +39,7 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
 
   @override
   @JsonKey(fromJson: toTrackingRef)
-  final AggregateRef<TrackingModel> tracking;
+  final AggregateRef<Tracking> tracking;
 
   @override
   @JsonKey(fromJson: toOperationRef)
@@ -69,15 +67,15 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
   }
 
   Unit copyWith({
-    String uuid,
-    UnitType type,
-    int number,
-    UnitStatus status,
-    String phone,
-    String callsign,
-    List<String> personnels,
-    AggregateRef<Tracking> tracking,
-    AggregateRef<Operation> operation,
+    String? uuid,
+    UnitType? type,
+    int? number,
+    UnitStatus? status,
+    String? phone,
+    String? callsign,
+    List<String>? personnels,
+    AggregateRef<Tracking>? tracking,
+    AggregateRef<Operation>? operation,
   }) {
     return UnitModel(
       uuid: uuid ?? this.uuid,

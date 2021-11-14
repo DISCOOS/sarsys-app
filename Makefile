@@ -130,7 +130,7 @@ test:
 
 models:
 	echo "Generating models..."; \
-	flutter packages pub run --no-sound-null-safety build_runner build --delete-conflicting-outputs; \
+	flutter pub run build_runner build --delete-conflicting-outputs; \
 	echo "[✓] Generating models complete."
 
 build: models test android-build ios-build

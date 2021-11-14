@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
@@ -8,12 +8,12 @@ import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 /// ---------------------
 abstract class TrackingState<T> extends PushableBlocEvent<T> {
   TrackingState(
-    Object data, {
-    StackTrace stackTrace,
+    Object? data, {
+    StackTrace? stackTrace,
     props = const [],
     bool isRemote = false,
   }) : super(
-          data,
+          data as T,
           isRemote: isRemote,
           stackTrace: stackTrace,
         );
@@ -30,7 +30,7 @@ abstract class TrackingState<T> extends PushableBlocEvent<T> {
   bool isLocationChanged() => false;
 }
 
-class TrackingsEmpty extends TrackingState<Null> {
+class TrackingsEmpty extends TrackingState<Object> {
   TrackingsEmpty() : super(null);
 
   @override
@@ -39,7 +39,7 @@ class TrackingsEmpty extends TrackingState<Null> {
 
 class TrackingsLoaded extends TrackingState<List<String>> {
   TrackingsLoaded(
-    List<String> data, {
+    List<String?> data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -49,7 +49,7 @@ class TrackingsLoaded extends TrackingState<List<String>> {
 
 class TrackingCreated extends TrackingState<Tracking> {
   TrackingCreated(
-    Tracking data, {
+    Tracking? data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -59,16 +59,16 @@ class TrackingCreated extends TrackingState<Tracking> {
 
 class TrackingUpdated extends TrackingState<Tracking> {
   TrackingUpdated(
-    Tracking data,
+    Tracking? data,
     this.previous, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
-  final Tracking previous;
+  final Tracking? previous;
 
   bool isChanged() => data != previous;
-  bool isStatusChanged() => data.status != previous?.status;
-  bool isLocationChanged() => data.position != previous?.position;
+  bool isStatusChanged() => data!.status != previous?.status;
+  bool isLocationChanged() => data!.position != previous?.position;
 
   @override
   String toString() => '$runtimeType {tracking: $data, isRemote: $isRemote}';
@@ -76,7 +76,7 @@ class TrackingUpdated extends TrackingState<Tracking> {
 
 class TrackingDeleted extends TrackingState<Tracking> {
   TrackingDeleted(
-    Tracking data, {
+    Tracking? data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -85,7 +85,7 @@ class TrackingDeleted extends TrackingState<Tracking> {
 }
 
 class TrackingsUnloaded extends TrackingState<List<Tracking>> {
-  TrackingsUnloaded(List<Tracking> tracks) : super(tracks);
+  TrackingsUnloaded(List<Tracking?> tracks) : super(tracks);
 
   @override
   String toString() => '$runtimeType {trackings: $data}';
@@ -96,7 +96,7 @@ class TrackingsUnloaded extends TrackingState<List<Tracking>> {
 /// ---------------------
 
 class TrackingBlocError extends TrackingState<Object> {
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
 
   TrackingBlocError(Object error, {this.stackTrace}) : super(error);
 
@@ -120,9 +120,9 @@ class TrackingBlocException implements Exception {
   TrackingBlocException(this.error, this.state, {this.command, this.stackTrace});
 
   final Object error;
-  final Object command;
+  final Object? command;
   final TrackingState state;
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
 
   @override
   String toString() => '$runtimeType {'

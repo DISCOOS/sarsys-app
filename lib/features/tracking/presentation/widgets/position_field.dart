@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/tracking/presentation/editors/position_editor.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -12,19 +12,19 @@ class PositionField extends StatelessWidget {
   final String hintText;
   final String labelText;
   final String errorText;
-  final String helperText;
-  final Position initialValue;
-  final Operation operation;
+  final String? helperText;
+  final Position? initialValue;
+  final Operation? operation;
   final bool optional;
   final bool enabled;
-  final ValueChanged<Position> onChanged;
+  final ValueChanged<Position>? onChanged;
 
   const PositionField({
-    Key key,
-    @required this.name,
-    @required this.labelText,
-    @required this.hintText,
-    @required this.errorText,
+    Key? key,
+    required this.name,
+    required this.labelText,
+    required this.hintText,
+    required this.errorText,
     this.operation,
     this.initialValue,
     this.onChanged,
@@ -40,7 +40,7 @@ class PositionField extends StatelessWidget {
 //      formField: FormField<Position>(
       enabled: enabled,
       initialValue: initialValue,
-      builder: (FormFieldState<Position> field) => GestureDetector(
+      builder: (FormFieldState<Position?> field) => GestureDetector(
         child: InputDecorator(
           decoration: InputDecoration(
             filled: true,
@@ -55,24 +55,24 @@ class PositionField extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.only(top: 4.0),
             child: field.value == null
-                ? Text(hintText, style: Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey))
+                ? Text(hintText, style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.grey))
                 : Text(
-                    toUTM(field.value?.geometry),
-                    style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 16),
+                    toUTM(field.value?.geometry)!,
+                    style: Theme.of(context).textTheme.subtitle2!.copyWith(fontSize: 16),
                   ),
           ),
         ),
         onTap: enabled ? () => _selectLocation(context, field) : null,
       ),
 //      ),
-      valueTransformer: (point) => point?.toJson(),
+      valueTransformer: (dynamic point) => point?.toJson(),
       validator: FormBuilderValidators.compose([
         if (optional == false) FormBuilderValidators.required(context, errorText: errorText),
       ]),
     );
   }
 
-  void _selectLocation(BuildContext context, FormFieldState<Position> field) async {
+  void _selectLocation(BuildContext context, FormFieldState<Position?> field) async {
     final selected = await showDialog<Position>(
       context: context,
       builder: (context) => PositionEditor(
@@ -83,7 +83,7 @@ class PositionField extends StatelessWidget {
     );
     if (selected != field.value) {
       field.didChange(selected ?? initialValue);
-      if (onChanged != null) onChanged(selected ?? initialValue);
+      if (onChanged != null) onChanged!(selected! ?? initialValue!);
     }
   }
 }

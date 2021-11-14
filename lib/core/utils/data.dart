@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:math';
 import 'dart:collection';
@@ -13,9 +13,9 @@ import 'package:latlong2/latlong.dart';
 /// Type helper class
 Type typeOf<T>() => T;
 
-String enumName(Object o) => o.toString().split('.').last;
+String enumName(Object? o) => o.toString().split('.').last;
 
-String toDD(Point point, {String prefix = "DD", String empty = "Velg"}) {
+String toDD(Point? point, {String prefix = "DD", String empty = "Velg"}) {
   if (point == null) return empty;
   return ("$prefix ${CoordinateFormat.toDD(ProjCoordinate.from2D(point.lon, point.lat))}").trim();
 }
@@ -33,15 +33,15 @@ TransverseMercatorProjection toUTMProj({
   return _utmProjs.putIfAbsent("$zone.$isSouth", () => TransverseMercatorProjection.utm(zone, isSouth));
 }
 
-String toUTM(
-  Point point, {
+String? toUTM(
+  Point? point, {
   int zone = 32,
   bool isSouth = false,
   String prefix = "UTM",
-  String empty = "Velg",
+  String? empty = "Velg",
 }) {
   if (point?.isNotEmpty != true) return empty;
-  var src = ProjCoordinate.from2D(point.lon, point.lat);
+  var src = ProjCoordinate.from2D(point!.lon, point.lat);
   var proj = toUTMProj(zone: zone, isSouth: isSouth);
   var dst = proj.project(src);
   var band = TransverseMercatorProjection.toBand(point.lat);
@@ -49,11 +49,11 @@ String toUTM(
 }
 
 String formatSince(
-  DateTime timestamp, {
+  DateTime? timestamp, {
   bool approx = true,
   String defaultValue = "-",
   bool withUnits = true,
-  DateTime now,
+  DateTime? now,
 }) {
   if (timestamp == null) return defaultValue;
   return formatDuration(
@@ -65,7 +65,7 @@ String formatSince(
 }
 
 String formatDuration(
-  Duration delta, {
+  Duration? delta, {
   bool approx = true,
   String defaultValue = "-",
   bool withUnits = true,
@@ -85,12 +85,12 @@ String formatDuration(
                       : "${delta.inMilliseconds}${withUnits ? " ms" : ""}";
 }
 
-String formatDistance(double distance) {
+String formatDistance(double? distance) {
   if (distance == null) return "-";
   return distance > 1000 ? "${(distance / 1000).toStringAsFixed(1)} km" : "${distance.round()} m";
 }
 
-LatLng toLatLng(Point point) {
+LatLng toLatLng(Point? point) {
   return LatLng(point?.lat ?? 0.0, point?.lon ?? 0.0);
 }
 
@@ -109,17 +109,17 @@ Position toPosition(LatLng point) {
   );
 }
 
-List<T> sortList<T>(List<T> data, [int compare(T a, T b)]) {
+List<T> sortList<T>(List<T> data, [int compare(T a, T b)?]) {
   data.sort(compare);
   return data;
 }
 
 /// Sort map on keys
-Map<K, V> sortMapKeys<K, V, T>(Map<K, V> map, [int compare(K a, K b)]) {
+Map<K, V?> sortMapKeys<K, V, T>(Map<K, V> map, [int compare(K a, K b)?]) {
   final keys = map.keys.toList(growable: false);
   if (compare == null) compare = (K a, K b) => "$a".compareTo("$b");
-  keys.sort((k1, k2) => compare(k1, k2));
-  LinkedHashMap<K, V> sortedMap = new LinkedHashMap();
+  keys.sort((k1, k2) => compare!(k1, k2));
+  LinkedHashMap<K, V?> sortedMap = new LinkedHashMap();
   keys.forEach((k1) {
     sortedMap[k1] = map[k1];
   });
@@ -127,12 +127,12 @@ Map<K, V> sortMapKeys<K, V, T>(Map<K, V> map, [int compare(K a, K b)]) {
 }
 
 /// Sort map on values.
-Map<K, V> sortMapValues<K, V, T>(Map<K, V> map, [T mapper(V value), int compare(T a, T b)]) {
+Map<K, V?> sortMapValues<K, V, T>(Map<K, V> map, [T? mapper(V? value)?, int compare(T? a, T? b)?]) {
   final keys = map.keys.toList(growable: false);
-  if (mapper == null) mapper = (V value) => value as T;
-  if (compare == null) compare = (T a, T b) => "$a".compareTo("$b");
-  keys.sort((k1, k2) => compare(mapper(map[k1]), mapper(map[k2])));
-  LinkedHashMap<K, V> sortedMap = new LinkedHashMap();
+  if (mapper == null) mapper = (V? value) => value as T?;
+  if (compare == null) compare = (T? a, T? b) => "$a".compareTo("$b");
+  keys.sort((k1, k2) => compare!(mapper!(map[k1]), mapper(map[k2])));
+  LinkedHashMap<K, V?> sortedMap = new LinkedHashMap();
   keys.forEach((k1) {
     sortedMap[k1] = map[k1];
   });
@@ -141,24 +141,24 @@ Map<K, V> sortMapValues<K, V, T>(Map<K, V> map, [T mapper(V value), int compare(
 
 bool isEmptyOrNull(value) => emptyAsNull(value) == null;
 
-T emptyAsNull<T>(T value) => value is String
+T? emptyAsNull<T>(T? value) => value is String
     ? (value.isNotEmpty == true ? value : null)
     : (value is Iterable ? (value.isNotEmpty == true ? value : null) : value);
 
-List<String> asUnitTemplates(String prefix, int count) {
+List<String> asUnitTemplates(String? prefix, int count) {
   final types = UnitType.values.where(
     (type) {
       final name = translateUnitType(type).toLowerCase();
       final match =
-          prefix.length >= name.length ? prefix.substring(0, min(name.length, prefix.length))?.trim() : prefix;
-      return name.startsWith(match.toLowerCase());
+          prefix!.length >= name.length ? prefix.substring(0, min(name.length, prefix.length))?.trim() : prefix;
+      return name.startsWith(match!.toLowerCase());
     },
   );
   final templates = types.fold<List<String>>(
     <String>[],
     (templates, type) {
       final name = translateUnitType(type);
-      final suffix = prefix.substring(min(name.length, prefix.length))?.trim();
+      final suffix = prefix!.substring(min(name.length, prefix.length)).trim();
       final offset = (suffix is num) ? int.parse(suffix) : 1;
       templates.addAll(
         List<String>.generate(count, (index) => "$name ${index + offset}"),
@@ -171,8 +171,8 @@ List<String> asUnitTemplates(String prefix, int count) {
 
 final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
 
-String toCallsign(UnitType type, String prefix, int number) {
-  var base;
+String toCallsign(UnitType type, String? prefix, int number) {
+  late var base;
   switch (type) {
     case UnitType.k9:
       base = 10;

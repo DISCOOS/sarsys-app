@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
@@ -19,17 +19,17 @@ part 'affiliation_model.g.dart';
 @JsonSerializable()
 class AffiliationModel extends Affiliation {
   AffiliationModel({
-    String uuid,
+    String? uuid,
     this.div,
     this.dep,
     this.org,
-    bool active,
+    bool? active,
     this.person,
-    AffiliationType type,
-    AffiliationStandbyStatus status,
+    AffiliationType? type,
+    AffiliationStandbyStatus? status,
   }) : super(
-          uuid: uuid,
-          person: person,
+          uuid: uuid!,
+          person: person!,
           org: org,
           div: div,
           dep: dep,
@@ -39,19 +39,19 @@ class AffiliationModel extends Affiliation {
         );
 
   @override
-  final PersonModel person;
+  final PersonModel? person;
 
   @override
   @JsonKey(fromJson: toOrgRef)
-  final AggregateRef<OrganisationModel> org;
+  final AggregateRef<OrganisationModel>? org;
 
   @override
   @JsonKey(fromJson: toDivRef)
-  final AggregateRef<DivisionModel> div;
+  final AggregateRef<DivisionModel>? div;
 
   @override
   @JsonKey(fromJson: toDepRef)
-  final AggregateRef<DepartmentModel> dep;
+  final AggregateRef<DepartmentModel>? dep;
 
   /// Factory constructor for creating a new `Affiliation` instance
   factory AffiliationModel.fromJson(Map<String, dynamic> json) => _$AffiliationModelFromJson(json);
@@ -61,21 +61,21 @@ class AffiliationModel extends Affiliation {
 
   @override
   Affiliation copyWith({
-    String uuid,
-    bool active,
-    Person person,
-    AffiliationType type,
-    AggregateRef<Division> div,
-    AggregateRef<Department> dep,
-    AggregateRef<Organisation> org,
-    AffiliationStandbyStatus status,
+    String? uuid,
+    bool? active,
+    Person? person,
+    AffiliationType? type,
+    AggregateRef<Division>? div,
+    AggregateRef<Department>? dep,
+    AggregateRef<Organisation>? org,
+    AffiliationStandbyStatus? status,
   }) =>
       AffiliationModel(
         uuid: uuid ?? this.uuid,
         type: type ?? this.type,
         status: status ?? this.status,
         active: active ?? this.active,
-        person: person ?? this.person,
+        person: person as PersonModel? ?? this.person,
         div: div?.cast<DivisionModel>() ?? this.div,
         dep: dep?.cast<DepartmentModel>() ?? this.dep,
         org: org?.cast<OrganisationModel>() ?? this.org,
@@ -91,12 +91,12 @@ class AffiliationModel extends Affiliation {
       type: type,
       status: status,
       active: active,
-      person: person ?? (keep ? this.person : null),
+      person: person as PersonModel? ?? (keep ? this.person : null),
     );
   }
 
   @override
-  AggregateRef<AffiliationModel> toRef() => uuid != null ? AggregateRef.fromType<AffiliationModel>(uuid) : null;
+  AggregateRef<AffiliationModel>? toRef() => uuid != null ? AggregateRef.fromType<AffiliationModel>(uuid) : null;
 }
 
 enum AffiliationConflictCode { duplicate_affiliations }

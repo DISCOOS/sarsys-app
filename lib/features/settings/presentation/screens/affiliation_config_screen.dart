@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
@@ -11,10 +11,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AffiliationConfigScreen extends StatefulWidget {
   const AffiliationConfigScreen({
-    @required this.organisation,
-    Key key,
+    required this.organisation,
+    Key? key,
   }) : super(key: key);
-  final String organisation;
+  final String? organisation;
 
   @override
   _AffiliationConfigScreenState createState() => _AffiliationConfigScreenState();
@@ -50,11 +50,11 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
               user: context.read<UserBloc>().user,
               value: _ensureAffiliation(),
               onChanged: (affiliation) => context.read<AppConfigBloc>().updateWith(
-                    divId: affiliation.div.uuid,
-                    depId: affiliation.dep.uuid,
+                    divId: affiliation.div!.uuid,
+                    depId: affiliation.dep!.uuid,
                   ),
             ),
-            if (context.read<UserBloc>().user.isAffiliated)
+            if (context.read<UserBloc>().user!.isAffiliated)
               Padding(
                   padding: const EdgeInsets.only(top: 24.0),
                   child: InputDecorator(
@@ -71,7 +71,7 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
                         'Din tilhørighet er styrt av $organisation. '
                         'Du kan derfor ikke endre denne manuelt. '
                         'Ta kontakt med $organisation hvis den er feil.',
-                        style: TextStyle(color: Theme.of(context).textTheme.caption.color),
+                        style: TextStyle(color: Theme.of(context).textTheme.caption!.color),
                       ),
                     ),
                   )),
@@ -81,5 +81,5 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
     );
   }
 
-  Affiliation _ensureAffiliation() => context.read<AffiliationBloc>().findUserAffiliation();
+  Affiliation _ensureAffiliation() => context.read<AffiliationBloc>().findUserAffiliation()!;
 }

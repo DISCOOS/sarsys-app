@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -8,27 +8,27 @@ import 'package:hive/hive.dart';
 
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 
-class AuthTokenRepository implements Repository<String, AuthToken> {
+class AuthTokenRepository implements Repository<String, AuthToken?> {
   AuthTokenRepository();
 
   @override
-  AuthToken operator [](String userId) => userId == null ? null : _tokens?.get(userId);
-  Box<AuthToken> _tokens;
+  AuthToken? operator [](String? userId) => userId == null ? null : _tokens?.get(userId);
+  Box<AuthToken>? _tokens;
 
   @override
-  bool get isEmpty => _tokens == null || _tokens.isOpen && _tokens.isEmpty;
+  bool get isEmpty => _tokens == null || _tokens!.isOpen && _tokens!.isEmpty;
 
   @override
   bool get isNotEmpty => !isEmpty;
 
   @override
-  int get length => isEmpty ? 0 : _tokens.length;
+  int get length => isEmpty ? 0 : _tokens!.length;
 
-  AuthToken get(String userId) => _tokens.get(userId);
+  AuthToken? get(String userId) => _tokens!.get(userId);
   Iterable<String> get keys => List.unmodifiable(_tokens?.keys ?? []);
-  Iterable<AuthToken> get values => List.unmodifiable(_tokens?.values ?? []);
+  Iterable<AuthToken> get values => List.unmodifiable((_tokens?.values ?? []) as Iterable<dynamic>);
 
-  bool containsKey(String userId) => _tokens?.keys?.contains(userId) ?? false;
+  bool containsKey(String? userId) => _tokens?.keys?.contains(userId) ?? false;
   bool containsValue(AuthToken token) => _tokens?.values?.contains(token) ?? false;
 
   bool get isReady => _tokens?.isOpen == true;
@@ -38,7 +38,7 @@ class AuthTokenRepository implements Repository<String, AuthToken> {
     }
   }
 
-  FutureOr<Box<AuthToken>> _open() async {
+  FutureOr<Box<AuthToken>?> _open() async {
     if (_tokens == null) {
       _tokens = await Hive.openBox(
         '$AuthTokenRepository',
@@ -50,29 +50,29 @@ class AuthTokenRepository implements Repository<String, AuthToken> {
 
   Future<List<AuthToken>> load() async {
     _tokens = await _open();
-    return values;
+    return values as FutureOr<List<AuthToken>>;
   }
 
   Future<AuthToken> put(AuthToken token) async => _put(token);
 
-  Future<AuthToken> delete(String userId) async {
+  Future<AuthToken?> delete(String? userId) async {
     _assert();
-    final token = _tokens.get(userId);
+    final token = _tokens!.get(userId);
     if (token != null) {
-      await _tokens.delete(userId);
+      await _tokens!.delete(userId);
     }
     return token;
   }
 
   Future<Iterable<AuthToken>> clear() async {
-    final tokens = _tokens.values.toList();
-    await _tokens.clear();
+    final tokens = _tokens!.values.toList();
+    await _tokens!.clear();
     return tokens;
   }
 
   Future<AuthToken> _put(AuthToken token) async {
     _assert();
-    await _tokens.put(
+    await _tokens!.put(
       token.userId,
       token,
     );

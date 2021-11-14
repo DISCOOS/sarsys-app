@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:convert';
 
@@ -21,14 +21,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class UnitsPage extends StatefulWidget {
-  final String query;
+  final String? query;
   final bool withActions;
-  final bool Function(Unit unit) where;
-  final void Function(Unit unit) onSelection;
-  final Comparator<Unit> compareTo;
+  final bool Function(Unit unit)? where;
+  final void Function(Unit unit)? onSelection;
+  final Comparator<Unit>? compareTo;
 
   const UnitsPage({
-    Key key,
+    Key? key,
     this.withActions = true,
     this.onSelection,
     this.query,
@@ -42,9 +42,9 @@ class UnitsPage extends StatefulWidget {
 
 class UnitsPageState extends State<UnitsPage> {
   static const STATE = "units_filter";
-  StreamGroup<dynamic> _group;
+  StreamGroup<dynamic>? _group;
 
-  Set<UnitStatus> _filter;
+  Set<UnitStatus>? _filter;
 
   @override
   void initState() {
@@ -60,7 +60,7 @@ class UnitsPageState extends State<UnitsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_group != null) _group.close();
+    if (_group != null) _group!.close();
     _group = StreamGroup.broadcast()
       ..add(context.read<UnitBloc>().stream)
       ..add(context.read<TrackingBloc>().stream)
@@ -69,7 +69,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   @override
   void dispose() {
-    _group.close();
+    _group!.close();
     _group = null;
     super.dispose();
   }
@@ -84,7 +84,7 @@ class UnitsPageState extends State<UnitsPage> {
           },
           child: Container(
             child: StreamBuilder(
-              stream: _group.stream,
+              stream: _group!.stream,
               initialData: context.read<UnitBloc>().state,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
@@ -93,7 +93,7 @@ class UnitsPageState extends State<UnitsPage> {
                     ? toRefreshable(
                         viewportConstraints,
                         message: snapshot.hasError
-                            ? snapshot.error
+                            ? snapshot.error as String?
                             : widget.query == null
                                 ? "Legg til enhet"
                                 : "Ingen enheter funnet",
@@ -114,27 +114,27 @@ class UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  List<Unit> _filteredUnits() {
+  List<Unit?> _filteredUnits() {
     return context
         .read<UnitBloc>()
         .units
         .values
-        .where((unit) => _filter.contains(unit.status))
-        .where((unit) => widget.where == null || widget.where(unit))
-        .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
+        .where((unit) => _filter!.contains(unit!.status))
+        .where((unit) => widget.where == null || widget.where!(unit!))
+        .where((unit) => widget.query == null || _prepare(unit!).contains(widget.query!.toLowerCase()))
         .toList()
           ..sort(
             (u1, u2) => widget.compareTo == null
-                ? u1.callsign.toLowerCase().compareTo(u2.callsign.toLowerCase())
-                : widget.compareTo(u1, u2),
+                ? u1!.callsign!.toLowerCase().compareTo(u2!.callsign!.toLowerCase())
+                : widget.compareTo!(u1!, u2!),
           );
   }
 
   String _prepare(Unit unit) => "${unit.searchable}".toLowerCase();
 
-  Widget _buildUnit(List<Unit> units, int index) {
-    var unit = units[index];
-    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking.uuid];
+  Widget _buildUnit(List<Unit?> units, int index) {
+    var unit = units[index]!;
+    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking!.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && isCommander
@@ -152,7 +152,7 @@ class UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  Widget _buildUnitTile(Unit unit, TrackingStatus status, Tracking tracking) {
+  Widget _buildUnitTile(Unit unit, TrackingStatus status, Tracking? tracking) {
     return Container(
       key: ObjectKey(unit.uuid),
       color: Colors.white,
@@ -213,7 +213,7 @@ class UnitsPageState extends State<UnitsPage> {
     if (widget.onSelection == null) {
       Navigator.pushNamed(context, UnitScreen.ROUTE, arguments: unit);
     } else {
-      widget.onSelection(unit);
+      widget.onSelection!(unit);
     }
   }
 
@@ -281,10 +281,10 @@ class UnitsPageState extends State<UnitsPage> {
 }
 
 class UnitAvatar extends StatelessWidget {
-  final Unit unit;
-  final Tracking tracking;
+  final Unit? unit;
+  final Tracking? tracking;
   const UnitAvatar({
-    Key key,
+    Key? key,
     this.unit,
     this.tracking,
   }) : super(key: key);
@@ -292,10 +292,10 @@ class UnitAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
-      backgroundColor: toUnitStatusColor(unit.status),
+      backgroundColor: toUnitStatusColor(unit!.status),
       child: Stack(
         children: <Widget>[
-          Center(child: Icon(toUnitIconData(unit.type))),
+          Center(child: Icon(toUnitIconData(unit!.type))),
           Positioned(
             left: 20,
             top: 20,
@@ -319,11 +319,11 @@ class UnitAvatar extends StatelessWidget {
   }
 }
 
-class UnitSearch extends SearchDelegate<Unit> {
+class UnitSearch extends SearchDelegate<Unit?> {
   static final _storage = Storage.secure;
   static const RECENT_KEY = "search/unit/recent";
 
-  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+  ValueNotifier<Set<String>?> _recent = ValueNotifier(null);
 
   UnitSearch() {
     _init();
@@ -367,9 +367,9 @@ class UnitSearch extends SearchDelegate<Unit> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return ValueListenableBuilder<Set<String>>(
+    return ValueListenableBuilder<Set<String>?>(
       valueListenable: _recent,
-      builder: (BuildContext context, Set<String> suggestions, Widget child) {
+      builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
         return _buildSuggestionList(
           context,
           suggestions?.where(_matches)?.toList() ?? [],
@@ -388,7 +388,7 @@ class UnitSearch extends SearchDelegate<Unit> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
@@ -414,9 +414,9 @@ class UnitSearch extends SearchDelegate<Unit> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final recent = _recent.value.toSet()..add(query);
+    final recent = _recent.value!.toSet()..add(query);
     _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     return UnitsPage(
       query: query,
       withActions: false,
@@ -426,16 +426,16 @@ class UnitSearch extends SearchDelegate<Unit> {
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     buildSuggestions(context);
   }
 }
 
-Future<Unit> selectUnit(
+Future<Unit?> selectUnit(
   BuildContext context, {
-  String query,
-  bool where(Unit unit),
-  Comparator<Unit> compareTo,
+  String? query,
+  bool where(Unit unit)?,
+  Comparator<Unit>? compareTo,
 }) async {
   return await showDialog<Unit>(
     context: context,

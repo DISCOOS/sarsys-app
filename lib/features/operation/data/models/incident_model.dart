@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -12,15 +12,15 @@ part 'incident_model.g.dart';
 @JsonSerializable()
 class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>> {
   IncidentModel({
-    @required String uuid,
-    @required String name,
-    @required String summary,
-    @required IncidentType type,
-    @required DateTime occurred,
-    @required IncidentStatus status,
-    @required List<String> operations,
-    @required IncidentResolution resolution,
-    bool exercise = false,
+    required String? uuid,
+    required String? name,
+    required String? summary,
+    required IncidentType? type,
+    required DateTime? occurred,
+    required IncidentStatus? status,
+    required List<String>? operations,
+    required IncidentResolution? resolution,
+    bool? exercise = false,
   }) : super(
           uuid: uuid,
           name: name,
@@ -57,15 +57,15 @@ class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>>
 
   /// Clone with author
   Incident copyWith({
-    String name,
-    bool exercise,
-    String summary,
-    IncidentType type,
-    DateTime occurred,
-    Passcodes passcodes,
-    IncidentStatus status,
-    List<String> operations,
-    IncidentResolution resolution,
+    String? name,
+    bool? exercise,
+    String? summary,
+    IncidentType? type,
+    DateTime? occurred,
+    Passcodes? passcodes,
+    IncidentStatus? status,
+    List<String>? operations,
+    IncidentResolution? resolution,
   }) {
     return IncidentModel(
       uuid: this.uuid,

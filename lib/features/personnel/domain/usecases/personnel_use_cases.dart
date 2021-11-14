@@ -1,5 +1,8 @@
-// @dart=2.11
 
+
+import 'dart:async';
+
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/affiliation/presentation/pages/affiliations_page.dart';
@@ -28,37 +31,37 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:uuid/uuid.dart';
 
-class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
-  final Position position;
-  final List<Device> devices;
-  final Affiliation affiliation;
-  OperationBloc get operationBloc => bloc.operationBloc;
-  AffiliationBloc get affiliationBloc => bloc.affiliationBloc;
-  User get user => operationBloc.userBloc.user;
+class PersonnelParams extends BlocParams<PersonnelBloc, Personnel?> {
+  final Position? position;
+  final List<Device>? devices;
+  final Affiliation? affiliation;
+  OperationBloc? get operationBloc => bloc.operationBloc;
+  AffiliationBloc? get affiliationBloc => bloc.affiliationBloc;
+  User get user => operationBloc!.userBloc!.user;
   PersonnelParams({
-    Personnel personnel,
+    Personnel? personnel,
     this.devices,
     this.position,
     this.affiliation,
-    PersonnelBloc bloc,
+    PersonnelBloc? bloc,
   }) : super(personnel, bloc: bloc);
 }
 
 /// Create personnel with tracking of given devices
-Future<dartz.Either<bool, Personnel>> createPersonnel({
-  List<Device> devices,
-  Affiliation affiliation,
+Future<dartz.Either<bool, Personnel>>? createPersonnel({
+  List<Device>? devices,
+  Affiliation? affiliation,
 }) =>
     CreatePersonnel()(PersonnelParams(
       devices: devices,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class CreatePersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
+  Future<dartz.Either<bool, Personnel?>> execute(params) async {
     assert(params.data == null, "Personnel should not be supplied");
     var result = await showDialog<PersonnelParams>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => PersonnelEditor(
         devices: params.devices,
       ),
@@ -67,25 +70,25 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 
     // Will create affiliation if not exists
     final affiliation = params.affiliation ??
-        params.context.read<AffiliationBloc>().findPersonnelAffiliation(
+        params.context!.read<AffiliationBloc>().findPersonnelAffiliation(
               result.data,
             );
 
     // Will create personnel and tracking
-    final personnel = await params.bloc.create(result.data.copyWith(
-      affiliation: affiliation,
+    final personnel = await params.bloc.create(result.data!.copyWith(
+      affiliation: affiliation!,
     ));
 
     // TODO: Move to use case replaceTracking
     // Wait for tracking is created
-    final tracking = await waitThroughStateWithData<TrackingCreated, Tracking>(
-      params.bus,
-      map: (state) => state.data,
-      test: (state) => state.data.uuid == personnel.tracking.uuid,
-    );
+    final tracking = await (waitThroughStateWithData<TrackingCreated, Tracking?>(
+      params.bus!,
+      map: (state) => state!.data,
+      test: (state) => state.data!.uuid == personnel!.tracking!.uuid,
+    ) as FutureOr<Tracking>);
 
     // Update tracking
-    await params.context.read<TrackingBloc>().replace(
+    await params.context!.read<TrackingBloc>().replace(
           tracking.uuid,
           devices: result.devices,
           position: result.position,
@@ -95,22 +98,22 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 }
 
 /// Transition personnel to mobilized state
-Future<dartz.Either<bool, Personnel>> mobilizePersonnel({
-  Personnel personnel,
+Future<dartz.Either<bool, Personnel>>? mobilizePersonnel({
+  Personnel? personnel,
 }) =>
     MobilizePersonnel()(PersonnelParams(
       personnel: personnel,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class MobilizePersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
+  Future<dartz.Either<bool, Personnel?>> execute(params) async {
     // Register new personnel?
     if (params.data == null) {
       // Only show selectable affiliations
       final existing = _selectables(params);
       final affiliation = await selectOrCreateAffiliation(
-        params.overlay.context,
+        params.overlay!.context,
         where: (affiliation) => !existing.contains(affiliation.uuid),
       );
       // User cancelled mobilization?
@@ -120,15 +123,15 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       // Create personnel from given affiliation?
       final personnel = _findPersonnel(params, affiliation);
       if (personnel == null) {
-        final person = params.context.read<AffiliationBloc>().persons[affiliation.person.uuid];
+        final person = params.context!.read<AffiliationBloc>().persons[affiliation.person!.uuid]!;
         return dartz.right(await params.bloc.create(PersonnelModel(
           uuid: Uuid().v4(),
           affiliation: affiliation.copyWith(
             person: person,
-          ),
+          ) as AffiliationModel,
           status: PersonnelStatus.alerted,
           tracking: TrackingUtils.newRef(),
-          operation: params.operationBloc.selected.toRef(),
+          operation: params.operationBloc!.selected!.toRef(),
         )));
       }
       // Re-mobilize personnel?
@@ -143,27 +146,27 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.alerted,
-      action: "Mobiliser ${params.data.name}",
+      action: "Mobiliser ${params.data!.name}",
       message: "Dette endre status til varlset. Vil du fortsette?",
     );
   }
 
-  Personnel _findPersonnel(PersonnelParams params, Affiliation affiliation) =>
-      params.bloc.repo.find(where: (p) => p.person?.uuid == affiliation.person.uuid).firstOrNull;
+  Personnel? _findPersonnel(PersonnelParams params, Affiliation affiliation) =>
+      params.bloc.repo.find(where: (p) => p!.person?.uuid == affiliation.person!.uuid).firstOrNull;
 
-  Iterable<String> _selectables(PersonnelParams params) =>
-      params.bloc.repo.values.where((p) => p.status != PersonnelStatus.retired).map((p) => p.affiliation.uuid);
+  Iterable<String?> _selectables(PersonnelParams params) =>
+      params.bloc.repo.values.where((p) => p!.status != PersonnelStatus.retired).map((p) => p!.affiliation!.uuid);
 }
 
 /// Mobilize current [user] if not already mobilized
-Future<dartz.Either<bool, Personnel>> mobilizeUser() => MobilizeUser()(PersonnelParams());
+Future<dartz.Either<bool, Personnel>>? mobilizeUser() => MobilizeUser()(PersonnelParams())!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> {
+class MobilizeUser extends UseCase<bool, Personnel?, PersonnelParams> {
   MobilizeUser() : super(failure: false);
 
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
-    if (params.operationBloc.isUnselected) {
+  Future<dartz.Either<bool, Personnel?>> execute(params) async {
+    if (params.operationBloc!.isUnselected) {
       return dartz.left(false);
     }
     assert(params.user != null, "UserBloc contains no user");
@@ -174,38 +177,38 @@ class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> {
 }
 
 /// Edit given personnel
-Future<dartz.Either<bool, Personnel>> editPersonnel(
-  Personnel personnel,
+Future<dartz.Either<bool, Personnel>>? editPersonnel(
+  Personnel? personnel,
 ) =>
     EditPersonnel()(PersonnelParams(
       personnel: personnel,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class EditPersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
+  Future<dartz.Either<bool, Personnel?>> execute(params) async {
     assert(params.data != null, "Personnel must be supplied");
     final result = await showDialog<PersonnelParams>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => PersonnelEditor(
         personnel: params.data,
         devices: params.devices,
-        affiliation: params.affiliationBloc.repo[params.data.affiliation.uuid],
+        affiliation: params.affiliationBloc!.repo[params.data!.affiliation!.uuid],
       ),
     );
     if (result == null) return dartz.Left(false);
 
     // Update personnel and affiliation
     // If was retired, tracking bloc will handle tracking
-    final personnel = await params.bloc.update(result.data);
+    final personnel = await (params.bloc.update(result.data) as FutureOr<Personnel>);
     if (result.affiliation != null) {
-      await params.context.read<AffiliationBloc>().update(result.affiliation);
+      await params.context!.read<AffiliationBloc>().update(result.affiliation!);
     }
 
     // Only update tracking if mobilized
     if (personnel.isMobilized) {
-      await params.context.read<TrackingBloc>().replace(
-            personnel.tracking.uuid,
+      await params.context!.read<TrackingBloc>().replace(
+            personnel.tracking!.uuid,
             devices: result.devices,
             position: result.position,
           );
@@ -215,24 +218,24 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 }
 
 /// Edit last known personnel location
-Future<dartz.Either<bool, Position>> editPersonnelLocation(
+Future<dartz.Either<bool, Position>>? editPersonnelLocation(
   Personnel personnel,
 ) =>
     EditPersonnelLocation()(PersonnelParams(
       personnel: personnel,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Position>);
 
 class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Position>> execute(params) async {
     assert(params.data != null, "Personnel must be supplied");
 
-    final tuuid = params.data.tracking.uuid;
-    final tracking = params.context.read<TrackingBloc>().repo[tuuid];
+    final tuuid = params.data!.tracking!.uuid;
+    final tracking = params.context!.read<TrackingBloc>().repo[tuuid!]!;
     assert(tracking != null, "Tracking not found: $tuuid");
 
     var position = await showDialog<Position>(
-      context: params.overlay.context,
+      context: params.overlay!.context,
       builder: (context) => PositionEditor(
         params.position,
         title: "Sett siste kjente posisjon",
@@ -241,7 +244,7 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
     if (position == null) return dartz.Left(false);
 
     // Update tracking with manual position
-    await params.context.read<TrackingBloc>().update(
+    await params.context!.read<TrackingBloc>().update(
           tracking.uuid,
           position: position,
         );
@@ -250,48 +253,48 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
 }
 
 /// Add given devices to tracking of given personnel
-Future<dartz.Either<bool, Pair<Personnel, Tracking>>> addToPersonnel(
+Future<dartz.Either<bool, Pair<Personnel, Tracking>>>? addToPersonnel(
   List<Device> devices, {
-  Personnel personnel,
+  Personnel? personnel,
 }) =>
     AddToPersonnel()(PersonnelParams(
       personnel: personnel,
       devices: devices,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Pair<Personnel, Tracking>>);
 
-class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelParams> {
+class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking?>, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Pair<Personnel, Tracking>>> execute(params) async {
+  Future<dartz.Either<bool, Pair<Personnel, Tracking?>>> execute(params) async {
     // Get or select unit?
-    Personnel personnel = await _getOrSelectPersonnel(
+    Personnel? personnel = await _getOrSelectPersonnel(
       params,
-      params.context.read<TrackingBloc>(),
+      params.context!.read<TrackingBloc>(),
     );
     if (personnel == null) return dartz.Left(false);
 
-    final tuuid = personnel.tracking.uuid;
-    final tracking = params.context.read<TrackingBloc>().repo[tuuid];
+    final tuuid = personnel.tracking!.uuid;
+    final tracking = params.context!.read<TrackingBloc>().repo[tuuid!]!;
     assert(tracking != null, "Tracking not found: $tuuid");
 
     // Add to tracking
-    final next = await params.context.read<TrackingBloc>().attach(
-          personnel.tracking.uuid,
+    final next = await params!.context!.read<TrackingBloc>().attach(
+          personnel.tracking!.uuid,
           devices: params.devices,
         );
     return dartz.Right(Pair.of(personnel, next));
   }
 
-  Future<Personnel> _getOrSelectPersonnel(PersonnelParams params, TrackingBloc bloc) async {
+  Future<Personnel?> _getOrSelectPersonnel(PersonnelParams params, TrackingBloc bloc) async {
     final personnel = params.data != null
         ? params.data
         : await selectPersonnel(
-            params.overlay.context,
+            params.overlay!.context,
             where: (personnel) =>
                 // Personnel is not tracking any devices?
-                bloc.trackings[personnel.tracking.uuid] == null ||
+                bloc.trackings[personnel.tracking!.uuid] == null ||
                 // Personnel is not tracking given devices?
-                !bloc.trackings[personnel.tracking.uuid].sources.any(
-                  (source) => params.devices?.any((device) => device.uuid == source.uuid) == true,
+                !bloc.trackings[personnel.tracking!.uuid]!.sources.any(
+                  (source) => params.devices?.any((device) => device!.uuid == source.uuid) == true,
                 ),
           );
     return personnel;
@@ -301,38 +304,38 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
 /// Remove given devices from tracking of personnel.
 /// If no devices are supplied, all devices tracked
 /// by personnel are removed
-Future<dartz.Either<bool, Tracking>> removeFromPersonnel(
-  Personnel personnel, {
-  List<Device> devices,
+Future<dartz.Either<bool, Tracking>>? removeFromPersonnel(
+  Personnel? personnel, {
+  List<Device>? devices,
 }) =>
     RemoveFromPersonnel()(PersonnelParams(
       personnel: personnel,
       devices: devices,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Tracking>);
 
-class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
+class RemoveFromPersonnel extends UseCase<bool, Tracking?, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Tracking>> execute(PersonnelParams params) async {
-    final personnel = params.data;
+  Future<dartz.Either<bool, Tracking?>> execute(PersonnelParams params) async {
+    final Personnel personnel = params.data!;
     final devices = params.devices ?? [];
 
     // Notify intent
     var proceed = await prompt(
-      params.overlay.context,
+      params.overlay!.context,
       "Bekreft fjerning",
-      "Dette vil fjerne ${devices.map((device) => device.name).join((', '))} fra ${personnel.name}",
+      "Dette vil fjerne ${devices.map((device) => device!.name).join((', '))} fra ${personnel.name}",
     );
     if (!proceed) return dartz.left(false);
 
     // Collect kept devices and personnel
-    final keepDevices = params.context
+    final keepDevices = params.context!
         .read<TrackingBloc>()
-        .devices(personnel.tracking.uuid)
+        .devices(personnel.tracking!.uuid)
         .where((test) => !devices.contains(test))
         .toList();
 
-    final tracking = await params.context.read<TrackingBloc>().replace(
-          personnel.tracking.uuid,
+    final tracking = await params.context!.read<TrackingBloc>().replace(
+          personnel.tracking!.uuid,
           devices: keepDevices,
         );
     return dartz.right(tracking);
@@ -340,16 +343,16 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
 }
 
 /// Register personnel as ingress on scene
-Future<dartz.Either<bool, Personnel>> ingressPersonnel(
+Future<dartz.Either<bool, Personnel>>? ingressPersonnel(
   Personnel personnel,
 ) =>
     IngressPersonnel()(PersonnelParams(
       personnel: personnel,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class IngressPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class IngressPersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
+  Future<dartz.Either<bool, Personnel?>> execute(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.enroute,
@@ -358,16 +361,16 @@ class IngressPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 }
 
 /// Check in personnel on scene
-Future<dartz.Either<bool, Personnel>> checkInPersonnel(
-  Personnel personnel,
+Future<dartz.Either<bool, Personnel>>? checkInPersonnel(
+  Personnel? personnel,
 ) =>
     CheckInPersonnel()(PersonnelParams(
       personnel: personnel,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class CheckInPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class CheckInPersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
+  Future<dartz.Either<bool, Personnel?>> execute(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.onscene,
@@ -376,16 +379,16 @@ class CheckInPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 }
 
 /// Check out personnel from on scene
-Future<dartz.Either<bool, Personnel>> checkOutPersonnel(
+Future<dartz.Either<bool, Personnel>>? checkOutPersonnel(
   Personnel personnel,
 ) =>
     CheckOutPersonnel()(PersonnelParams(
       personnel: personnel,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class CheckOutPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class CheckOutPersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
+  Future<dartz.Either<bool, Personnel?>> execute(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.leaving,
@@ -394,63 +397,63 @@ class CheckOutPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 }
 
 /// Transition personnel to retired state
-Future<dartz.Either<bool, Personnel>> retirePersonnel(
-  Personnel personnel,
+Future<dartz.Either<bool, Personnel>>? retirePersonnel(
+  Personnel? personnel,
 ) =>
     RetirePersonnel()(PersonnelParams(
       personnel: personnel,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, Personnel>);
 
-class RetirePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class RetirePersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
+  Future<dartz.Either<bool, Personnel?>>? execute(params) async {
     // User must use leaveOperation
-    if (params.user.userId != null && params.user.userId == params.data.userId) {
-      return leaveOperation();
+    if (params.user!.userId != null && params.user!.userId == params.data!.userId) {
+      return leaveOperation()!;
     }
 
     return await _transitionPersonnel(
       params,
       PersonnelStatus.retired,
-      action: "Dimitter ${params.data.name}",
+      action: "Dimitter ${params.data!.name}",
       message: "Dette vil stoppe sporing og dimmitere mannskapet. Vil du fortsette?",
     );
   }
 }
 
-Future<dartz.Either<bool, Personnel>> _transitionPersonnel(PersonnelParams params, PersonnelStatus status,
-    {String action, String message}) async {
+Future<dartz.Either<bool, Personnel?>> _transitionPersonnel(PersonnelParams params, PersonnelStatus status,
+    {String? action, String? message}) async {
   assert(params.data != null, "Personnel must be supplied");
   if (action != null) {
-    var response = await prompt(params.overlay.context, action, message);
+    var response = await prompt(params.overlay!.context, action, message);
     if (!response) return dartz.Left(false);
   }
   final personnel = await params.bloc.update(
-    params.data.copyWith(status: status),
+    params.data!.copyWith(status: status),
   );
   return dartz.Right(personnel);
 }
 
 /// Delete personnel
-Future<dartz.Either<bool, PersonnelState>> deletePersonnel(
-  Personnel personnel,
+Future<dartz.Either<bool, PersonnelState>>? deletePersonnel(
+  Personnel? personnel,
 ) =>
     DeletePersonnel()(PersonnelParams(
       personnel: personnel,
-    ));
+    ))!.then((value) => value as dartz.Either<bool, PersonnelState<dynamic>>);
 
 class DeletePersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
   @override
   Future<dartz.Either<bool, PersonnelState>> execute(params) async {
     assert(params.data != null, "Personnel must be supplied");
     var response = await prompt(
-      params.overlay.context,
-      "Slett ${params.data.name}",
+      params.overlay!.context,
+      "Slett ${params.data!.name}",
       "Dette vil slette alle data fra sporinger og fjerne mannskapet fra aksjonen. "
           "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.delete(params.data.uuid);
+    await params.bloc.delete(params.data!.uuid);
     return dartz.Right(params.bloc.state);
   }
 }

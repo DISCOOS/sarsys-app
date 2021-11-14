@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:math';
 
@@ -13,10 +13,10 @@ import 'package:flutter/material.dart';
 /// https://medium.com/aubergine-solutions/create-an-onboarding-page-indicator-in-3-minutes-in-flutter-a2bd97ceeaff
 class SteppedScreen extends StatefulWidget {
   const SteppedScreen({
-    Key key,
-    @required this.views,
-    @required this.isComplete,
-    @required this.onComplete,
+    Key? key,
+    required this.views,
+    required this.isComplete,
+    required this.onComplete,
     this.index = 0,
     this.onBack,
     this.onNext,
@@ -36,12 +36,12 @@ class SteppedScreen extends StatefulWidget {
   }) : super(key: key);
 
   final int index;
-  final List<Widget> views;
+  final List<Widget>? views;
   final String nextActionText;
   final String backActionText;
   final String cancelActionText;
   final String completeActionText;
-  final PageController controller;
+  final PageController? controller;
 
   final bool withProgress;
   final bool withBackAction;
@@ -49,12 +49,12 @@ class SteppedScreen extends StatefulWidget {
   final bool canScroll;
   final bool enableAutoScroll;
 
-  final ValueChanged<int> onBack;
-  final ValueChanged<int> onNext;
-  final ValueChanged<int> onCancel;
+  final ValueChanged<int>? onBack;
+  final ValueChanged<int>? onNext;
+  final ValueChanged<int>? onCancel;
   final ValueChanged<int> onComplete;
-  final bool Function(int index) hasBack;
-  final bool Function(int index) hasNext;
+  final bool Function(int index)? hasBack;
+  final bool Function(int index)? hasNext;
   final bool Function(int index) isComplete;
 
   @override
@@ -63,7 +63,7 @@ class SteppedScreen extends StatefulWidget {
 
 class _SteppedScreenState extends State<SteppedScreen> {
   int index = 0;
-  PageController controller;
+  PageController? controller;
 
   @override
   void initState() {
@@ -78,10 +78,10 @@ class _SteppedScreenState extends State<SteppedScreen> {
       controller?.dispose();
       controller = widget.controller ?? PageController(initialPage: widget.index);
     }
-    if (controller.page.toInt() != widget.index) {
-      controller.jumpToPage(widget.index);
+    if (controller!.page!.toInt() != widget.index) {
+      controller!.jumpToPage(widget.index);
     }
-    index = controller.page.toInt();
+    index = controller!.page!.toInt();
     super.didUpdateWidget(oldWidget);
   }
 
@@ -108,7 +108,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
                   padding: const EdgeInsets.only(top: 16.0),
                   child: PageView.builder(
                     pageSnapping: true,
-                    itemCount: widget.views.length,
+                    itemCount: widget.views!.length,
                     physics: widget.canScroll ? ClampingScrollPhysics() : NeverScrollableScrollPhysics(),
                     onPageChanged: (int page) {
                       getChangedPageAndMoveBar(page);
@@ -116,7 +116,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
                     controller: controller,
                     itemBuilder: (context, index) {
                       return KeyboardAvoider(
-                        child: widget.views[index],
+                        child: widget.views![index],
                         autoScroll: widget.enableAutoScroll,
                       );
                     },
@@ -148,7 +148,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
                       ? null
                       : () {
                           if (_hasBack(index)) {
-                            controller.animateToPage(
+                            controller!.animateToPage(
                               index = max(0, --index),
                               curve: Curves.linearToEaseOut,
                               duration: const Duration(milliseconds: 500),
@@ -169,7 +169,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          for (int i = 0; i < widget.views.length; i++)
+                          for (int i = 0; i < widget.views!.length; i++)
                             if (i == index) ...[circleBar(true)] else circleBar(false),
                         ],
                       ),
@@ -186,8 +186,8 @@ class _SteppedScreenState extends State<SteppedScreen> {
                       : (widget.isComplete(index) ? widget.completeActionText : widget.cancelActionText)),
                   onPressed: () async {
                     if (_hasNext(index)) {
-                      controller.animateToPage(
-                        index = min(widget.views.length - 1, ++index),
+                      controller!.animateToPage(
+                        index = min(widget.views!.length - 1, ++index),
                         curve: Curves.linearToEaseOut,
                         duration: const Duration(milliseconds: 500),
                       );
@@ -195,7 +195,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
                     } else if (widget.isComplete(index)) {
                       widget.onComplete(index);
                     } else {
-                      widget.onCancel(index);
+                      widget.onCancel!(index);
                     }
                   },
                 ),
@@ -228,17 +228,17 @@ class _SteppedScreenState extends State<SteppedScreen> {
 
   void _onBack(int index) {
     if (widget.onBack != null) {
-      widget.onBack(index);
+      widget.onBack!(index);
     }
   }
 
   void _onNext(int index) {
     if (widget.onNext != null) {
-      widget.onNext(index);
+      widget.onNext!(index);
     }
   }
 
   bool _hasNext(int index) =>
-      index < widget.views.length - 1 && (widget.hasNext == null ? true : widget.hasNext(index));
-  bool _hasBack(int index) => index > 0 && (widget.hasBack == null ? true : widget.hasBack(index));
+      index < widget.views!.length - 1 && (widget.hasNext == null ? true : widget.hasNext!(index));
+  bool _hasBack(int index) => index > 0 && (widget.hasBack == null ? true : widget.hasBack!(index));
 }

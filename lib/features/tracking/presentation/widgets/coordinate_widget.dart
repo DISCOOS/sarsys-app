@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
@@ -10,7 +10,7 @@ import 'package:timer_builder/timer_builder.dart';
 
 class CoordinateWidget extends StatelessWidget {
   const CoordinateWidget({
-    Key key,
+    Key? key,
     this.timestamp,
     this.point,
     this.onGoto,
@@ -22,15 +22,15 @@ class CoordinateWidget extends StatelessWidget {
     this.withNavigation = true,
   }) : super(key: key);
 
-  final Point point;
+  final Point? point;
   final bool isDense;
   final bool withIcons;
-  final double accuracy;
-  final DateTime timestamp;
+  final double? accuracy;
+  final DateTime? timestamp;
   final bool withNavigation;
-  final VoidCallback onComplete;
-  final MessageCallback onMessage;
-  final ValueChanged<Point> onGoto;
+  final VoidCallback? onComplete;
+  final MessageCallback? onMessage;
+  final ValueChanged<Point>? onGoto;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +88,7 @@ class CoordinateWidget extends StatelessWidget {
       children: <Widget>[
         Text('FEIL', style: Theme.of(context).textTheme.caption),
         Text.rich(
-          TextSpan(text: '±${accuracy.toStringAsFixed(1)}', style: Theme.of(context).textTheme.bodyText2, children: [
+          TextSpan(text: '±${accuracy!.toStringAsFixed(1)}', style: Theme.of(context).textTheme.bodyText2, children: [
             TextSpan(text: ' m', style: Theme.of(context).textTheme.caption),
           ]),
         ),
@@ -157,9 +157,9 @@ class CoordinateWidget extends StatelessWidget {
 
   Widget buildCopyableLocation(
     BuildContext context, {
-    String label,
-    IconData icon,
-    String formatter(Point point),
+    String? label,
+    IconData? icon,
+    required String? formatter(Point? point),
   }) =>
       buildCopyableText(
         context: context,
@@ -173,10 +173,10 @@ class CoordinateWidget extends StatelessWidget {
       );
 
   void _onComplete() {
-    if (onComplete != null) onComplete();
+    if (onComplete != null) onComplete!();
   }
 
-  void _onGoto(Point point) {
-    if (onGoto != null && point != null) onGoto(point);
+  void _onGoto(Point? point) {
+    if (onGoto != null && point != null) onGoto!(point);
   }
 }

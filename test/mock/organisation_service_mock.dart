@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -15,11 +15,11 @@ import 'package:SarSys/core/data/services/service.dart';
 
 class OrganisationBuilder {
   static Organisation create({
-    @required String name,
-    @required String prefix,
-    String uuid,
-    List<String> divisions,
-    bool active,
+    required String name,
+    required String prefix,
+    String? uuid,
+    List<String?>? divisions,
+    bool? active,
   }) {
     return OrganisationModel.fromJson(
       createAsJson(
@@ -33,11 +33,11 @@ class OrganisationBuilder {
   }
 
   static createAsJson({
-    @required String uuid,
-    @required String name,
-    @required String prefix,
-    bool active,
-    List<String> divisions,
+    required String uuid,
+    required String name,
+    required String prefix,
+    bool? active,
+    List<String?>? divisions,
   }) {
     return json.decode('{'
         '"uuid": "$uuid",'
@@ -50,14 +50,14 @@ class OrganisationBuilder {
 }
 
 class OrganisationServiceMock extends Mock implements OrganisationService {
-  final Map<String, StorageState<Organisation>> orgRepo = {};
+  final Map<String?, StorageState<Organisation>> orgRepo = {};
 
   Organisation add({
-    String uuid,
-    String name,
-    bool active,
-    String prefix,
-    List<String> divisions,
+    String? uuid,
+    String? name,
+    bool? active,
+    String? prefix,
+    List<String?>? divisions,
   }) {
     final org = OrganisationBuilder.create(
       uuid: uuid,
@@ -76,7 +76,7 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
     return org;
   }
 
-  StorageState<Organisation> remove(String uuid) {
+  StorageState<Organisation>? remove(String uuid) {
     return orgRepo.remove(uuid);
   }
 
@@ -111,9 +111,9 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
 
-    when(mock.create(any)).thenAnswer((_) async {
+    when(mock.create(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Organisation>;
-      if (!state.version.isFirst) {
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Aggregate has not version 0: $state",
         );
@@ -128,15 +128,15 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
       );
     });
 
-    when(mock.update(any)).thenAnswer((_) async {
+    when(mock.update(any!)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Organisation>;
       final uuid = next.value.uuid;
       if (orgRepo.containsKey(uuid)) {
-        final state = orgRepo[uuid];
-        final delta = next.version.value - state.version.value;
+        final state = orgRepo[uuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         orgRepo[uuid] = state.apply(
@@ -153,7 +153,7 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
       );
     });
 
-    when(mock.delete(any)).thenAnswer((_) async {
+    when(mock.delete(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Organisation>;
       final uuid = state.value.uuid;
       if (orgRepo.containsKey(uuid)) {

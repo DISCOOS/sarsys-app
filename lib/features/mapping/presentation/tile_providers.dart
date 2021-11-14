@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:io';
@@ -16,7 +16,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 class ManagedCacheTileProvider extends TileProvider {
   ManagedCacheTileProvider(
     this.cache, {
-    @required this.connectivity,
+    required this.connectivity,
   }) : _offline = connectivity.isOffline {
     connectivity.changes.listen((status) {
       _offline = status == ConnectivityStatus.offline;
@@ -36,7 +36,7 @@ class ManagedCacheTileProvider extends TileProvider {
   final ConnectivityService connectivity;
   final Map<ImageProvider, Tile> errorTiles = {};
 
-  StreamSubscription _subscription;
+  StreamSubscription? _subscription;
 
   bool _offline;
   bool get offline => _offline;
@@ -66,7 +66,7 @@ class ManagedCacheTileProvider extends TileProvider {
     }
   }
 
-  void onError(Tile tile, Object error) {
+  void onError(Tile tile, Object? error) {
     if (offline) {
       errorTiles[tile.imageProvider] = tile;
     } else {

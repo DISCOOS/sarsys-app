@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
@@ -13,7 +13,7 @@ abstract class OperationState<T> extends PushableBlocEvent<T> {
   OperationState(
     T data, {
     props = const [],
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
     bool isRemote = false,
   }) : super(
           data,
@@ -35,7 +35,7 @@ abstract class OperationState<T> extends PushableBlocEvent<T> {
   /// 1. Operation was selected
   /// 2. Operation was a status that should load data
   /// 3. [Operation.uuid] in [OperationState.data] is equal to [ouuid] given
-  bool shouldLoad(String ouuid,
+  bool shouldLoad(String? ouuid,
           {List<OperationStatus> include: const [
             OperationStatus.completed,
           ]}) =>
@@ -50,7 +50,7 @@ abstract class OperationState<T> extends PushableBlocEvent<T> {
   /// 1. Operation was unselected
   /// 2. Operation was changed to a status that should unload data
   /// 3. [Operation.uuid] in [OperationState.data] is equal to [ouuid] given
-  bool shouldUnload(String ouuid,
+  bool shouldUnload(String? ouuid,
           {List<OperationStatus> include: const [
             OperationStatus.completed,
           ]}) =>
@@ -69,21 +69,21 @@ class OperationsEmpty extends OperationState<void> {
   String toString() => '$runtimeType';
 }
 
-class OperationUnselected extends OperationState<Operation> {
-  OperationUnselected([Operation operation]) : super(operation);
+class OperationUnselected extends OperationState<Operation?> {
+  OperationUnselected([Operation? operation]) : super(operation);
 
   @override
   String toString() => '$runtimeType {operation: $data}';
 }
 
-class OperationsLoaded extends OperationState<Iterable<String>> {
+class OperationsLoaded extends OperationState<Iterable<String?>> {
   OperationsLoaded(
-    Iterable<String> uuids, {
+    Iterable<String?> uuids, {
     this.incidents,
     bool isRemote = false,
   }) : super(uuids, isRemote: isRemote, props: [incidents]);
 
-  final List<String> incidents;
+  final List<String?>? incidents;
 
   @override
   String toString() => '$runtimeType {'
@@ -95,8 +95,8 @@ class OperationsLoaded extends OperationState<Iterable<String>> {
 
 class OperationCreated extends OperationState<Operation> {
   final bool selected;
-  final Incident incident;
-  final List<String> units;
+  final Incident? incident;
+  final List<String>? units;
   OperationCreated(
     Operation data, {
     this.units,
@@ -115,8 +115,8 @@ class OperationCreated extends OperationState<Operation> {
 }
 
 class OperationIncidentUpdated extends OperationState<Incident> {
-  final Incident previous;
-  final Operation operation;
+  final Incident? previous;
+  final Operation? operation;
   OperationIncidentUpdated(
     Incident next,
     this.previous,
@@ -138,8 +138,8 @@ class OperationIncidentUpdated extends OperationState<Incident> {
 
 class OperationUpdated extends OperationState<Operation> {
   final bool selected;
-  final Incident incident;
-  final Operation previous;
+  final Incident? incident;
+  final Operation? previous;
   OperationUpdated(
     Operation next,
     this.previous, {
@@ -162,16 +162,16 @@ class OperationUpdated extends OperationState<Operation> {
       '}';
 }
 
-class OperationSelected extends OperationState<Operation> {
-  OperationSelected(Operation data) : super(data);
+class OperationSelected extends OperationState<Operation?> {
+  OperationSelected(Operation? data) : super(data);
 
   @override
   String toString() => '$runtimeType {operation: $data, isRemote: $isRemote}';
 }
 
-class OperationDeleted extends OperationState<Operation> {
+class OperationDeleted extends OperationState<Operation?> {
   OperationDeleted(
-    Operation data, {
+    Operation? data, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
 
@@ -179,8 +179,8 @@ class OperationDeleted extends OperationState<Operation> {
   String toString() => '$runtimeType {operation: $data, isRemote: $isRemote}';
 }
 
-class OperationsUnloaded extends OperationState<Iterable<Operation>> {
-  OperationsUnloaded(Iterable<Operation> operations) : super(operations);
+class OperationsUnloaded extends OperationState<Iterable<Operation?>> {
+  OperationsUnloaded(Iterable<Operation?> operations) : super(operations);
 
   @override
   String toString() => '$runtimeType {operations: $data, isRemote: $isRemote}';
@@ -192,7 +192,7 @@ class OperationsUnloaded extends OperationState<Iterable<Operation>> {
 class OperationBlocError extends OperationState<Object> {
   OperationBlocError(
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) : super(error, stackTrace: stackTrace);
 
   @override
@@ -205,9 +205,9 @@ class OperationBlocError extends OperationState<Object> {
 class OperationBlocException implements Exception {
   OperationBlocException(this.error, this.state, {this.command, this.stackTrace});
   final Object error;
-  final OperationState state;
-  final StackTrace stackTrace;
-  final OperationCommand command;
+  final OperationState? state;
+  final StackTrace? stackTrace;
+  final OperationCommand? command;
 
   @override
   String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
@@ -215,9 +215,9 @@ class OperationBlocException implements Exception {
 
 class OperationNotFoundBlocException extends OperationBlocException {
   OperationNotFoundBlocException(
-    String ouuid,
-    OperationState state, {
-    OperationCommand command,
-    StackTrace stackTrace,
+    String? ouuid,
+    OperationState? state, {
+    OperationCommand? command,
+    StackTrace? stackTrace,
   }) : super('Operation $ouuid not found locally', state, command: command, stackTrace: stackTrace);
 }

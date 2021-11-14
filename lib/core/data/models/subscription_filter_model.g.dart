@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'subscription_filter_model.dart';
@@ -10,7 +8,7 @@ part of 'subscription_filter_model.dart';
 
 SubscriptionFilterModel _$SubscriptionFilterModelFromJson(Map json) {
   return SubscriptionFilterModel(
-    pattern: json['pattern'] as String,
+    pattern: json['pattern'] as String?,
   );
 }
 

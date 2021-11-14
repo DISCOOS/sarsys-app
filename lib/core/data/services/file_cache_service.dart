@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:file/file.dart';
 import 'package:file/local.dart';
@@ -13,17 +13,17 @@ import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 class FileCacheService extends CacheManager implements Service {
   static const key = "libCachedImageTiles";
 
-  static FileCacheService _instance;
-  static int _mapCacheTTL;
-  static int _mapCacheCapacity;
+  static FileCacheService? _instance;
+  static int? _mapCacheTTL;
+  static int? _mapCacheCapacity;
 
   factory FileCacheService(AppConfig config) {
-    if (_instance == null || _mapCacheTTL != config.mapCacheTTL || _mapCacheCapacity != config.mapCacheCapacity) {
-      _instance = new FileCacheService._(config.mapCacheTTL, config.mapCacheCapacity);
+    if (_instance == null || _mapCacheTTL != config!.mapCacheTTL || _mapCacheCapacity != config.mapCacheCapacity) {
+      _instance = new FileCacheService._(config!.mapCacheTTL, config.mapCacheCapacity);
       _mapCacheTTL = config.mapCacheTTL;
       _mapCacheCapacity = config.mapCacheCapacity;
     }
-    return _instance;
+    return _instance!;
   }
 
   FileCacheService._(int ttl, int capacity)

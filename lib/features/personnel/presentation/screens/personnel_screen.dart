@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -34,7 +34,7 @@ class PersonnelScreen extends Screen<_PersonnelScreenState> {
 
   final Personnel personnel;
 
-  const PersonnelScreen({Key key, @required this.personnel}) : super(key: key);
+  const PersonnelScreen({Key? key, required this.personnel}) : super(key: key);
 
   @override
   _PersonnelScreenState createState() => _PersonnelScreenState(personnel);
@@ -50,12 +50,12 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
 
   final MapWidgetController _controller = MapWidgetController();
 
-  Personnel _personnel;
-  StreamGroup<dynamic> _group;
-  StreamSubscription<Tracking> _onMoved;
+  late Personnel _personnel;
+  StreamGroup<dynamic>? _group;
+  StreamSubscription<Tracking?>? _onMoved;
 
   /// Use current personnel name
-  String get title => _personnel?.name;
+  String? get title => _personnel?.name;
 
   @override
   void initState() {
@@ -68,11 +68,11 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_group != null) _group.close();
+    if (_group != null) _group!.close();
     _group = StreamGroup.broadcast()
       ..add(context.read<PersonnelBloc>().onChanged(widget.personnel))
       ..add(context.read<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid, skipPosition: true));
-    if (_onMoved != null) _onMoved.cancel();
+    if (_onMoved != null) _onMoved!.cancel();
     _onMoved = context.read<TrackingBloc>().onMoved(widget.personnel?.tracking?.uuid).listen(_onMove);
   }
 
@@ -97,7 +97,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               onMessage: showMessage,
               onDeleted: () => Navigator.pop(context),
               type: ActionGroupType.popupMenuButton,
-              unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+              unit: context.read<UnitBloc>().repo.findPersonnel(_personnel!.uuid).firstOrNull,
               onChanged: (personnel) => setState(() => _personnel = personnel),
             )
           ]
@@ -116,13 +116,13 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         children: [
           StreamBuilder(
             initialData: _personnel,
-            stream: _group.stream,
+            stream: _group!.stream,
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return Center(child: Text("Ingen data"));
               }
               if (snapshot.data is Personnel) {
-                _personnel = snapshot.data;
+                _personnel = snapshot.data as Personnel;
               }
               return _build(context);
             },
@@ -138,21 +138,21 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         withActions: false,
         personnel: _personnel,
         controller: _controller,
-        devices: context.read<TrackingBloc>().devices(_personnel.tracking?.uuid),
-        tracking: context.read<TrackingBloc>().trackings[_personnel.tracking?.uuid],
-        unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+        devices: context.read<TrackingBloc>().devices(_personnel!.tracking?.uuid),
+        tracking: context.read<TrackingBloc>().trackings[_personnel!.tracking?.uuid],
+        unit: context.read<UnitBloc>().repo.findPersonnel(_personnel!.uuid).firstOrNull,
         onGoto: (point) => jumpToPoint(context, center: point),
         onMessage: showMessage,
         onDeleted: () => Navigator.pop(context),
         onChanged: (personnel) => setState(() => _personnel = personnel),
       );
 
-  LatLng toCenter(Tracking event) {
+  LatLng? toCenter(Tracking? event) {
     final point = event?.position?.geometry;
     return point != null ? toLatLng(point) : null;
   }
 
-  void _onMove(Tracking event) {
+  void _onMove(Tracking? event) {
     if (mounted) {
       final center = toCenter(event);
       if (center != null) {

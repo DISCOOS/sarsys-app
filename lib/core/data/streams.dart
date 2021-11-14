@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:collection';
@@ -18,7 +18,7 @@ class StreamRequestQueue<K, V> {
   /// next time [process] is called based
   /// on [error].
   ///
-  final bool Function(Object, StackTrace) onError;
+  final bool Function(Object, StackTrace)? onError;
 
   /// Get response type [V]
   Type get type => typeOf<V>();
@@ -65,8 +65,8 @@ class StreamRequestQueue<K, V> {
   /// next time [process] is called based
   /// on [error].
   ///
-  void catchError(bool Function(Object, StackTrace) onError) => _onError = onError;
-  bool Function(Object, StackTrace) _onError;
+  void catchError(bool Function(Object?, StackTrace?) onError) => _onError = onError;
+  bool Function(Object?, StackTrace?)? _onError;
 
   /// Get number of pending [StreamRequest];
   int get length => _requests.length;
@@ -95,7 +95,7 @@ class StreamRequestQueue<K, V> {
   bool get isProcessing => isReady && !isIdle;
 
   /// Check if a [StreamRequest] with given [key] is queued
-  bool contains(K key) {
+  bool contains(K? key) {
     _checkState();
     return _requests.any((element) => element.key == key);
   }
@@ -108,7 +108,7 @@ class StreamRequestQueue<K, V> {
 
   /// Get [StreamRequest] from given [key].
   ///Returns [null] if not found.
-  StreamRequest<K, V> elementAt(K key) {
+  StreamRequest<K, V>? elementAt(K key) {
     return contains(key) ? _requests.elementAt(indexOf(key)) : null;
   }
 
@@ -136,7 +136,7 @@ class StreamRequestQueue<K, V> {
     _checkState();
 
     // Duplicates not allowed
-    final exists = contains(request.key);
+    final exists = contains(request.key as K?);
     if (!exists) {
       _requests.add(request);
       _onEventController.add(StreamRequestAdded(
@@ -185,8 +185,8 @@ class StreamRequestQueue<K, V> {
         _isIdle = false;
         while (_hasNext) {
           final request = await _next();
-          if (contains(request?.key)) {
-            _last = await _execute(request);
+          if (contains(request?.key as K?)) {
+            _last = await _execute(request as StreamRequest<K?, V?>);
             _lastAt = DateTime.now();
           }
         }
@@ -198,7 +198,7 @@ class StreamRequestQueue<K, V> {
     }
   }
 
-  void _pop(StreamRequest request, {bool force = false}) {
+  void _pop(StreamRequest? request, {bool force = false}) {
     if (isProcessing || force) {
       if (_started.remove(request)) {
         _requests.remove(request);
@@ -206,28 +206,28 @@ class StreamRequestQueue<K, V> {
     }
   }
 
-  Future<StreamRequest> _next() async {
-    var next = _peek();
+  Future<StreamRequest?> _next() async {
+    StreamRequest<K?, V?>? next = _peek();
     // Loop until valid request is found
-    while (next != null && (next.isTimedOut || !contains(next.key))) {
-      next = await _onTimeout(next);
+    while (next != null && (next.isTimedOut || !contains(next.key as K?))) {
+      next = await (_onTimeout(next) as FutureOr<StreamRequest<K?, V?>>);
     }
     return next;
   }
 
-  Future<StreamRequest> _onTimeout(StreamRequest next) async {
-    if (contains(next.key)) {
+  Future<StreamRequest?> _onTimeout(StreamRequest next) async {
+    if (contains(next.key as K?)) {
       if (next.fail) {
         _handleError(
           StreamRequestTimeoutException(this, next),
           StackTrace.current,
-          request: next,
+          request: next as StreamRequest<K?, V?>?,
         );
       } else {
         _pop(next, force: true);
         if (next.onResult?.isCompleted == false) {
           next.onResult?.complete(
-            await _onFallback(next),
+            await _onFallback(next as StreamRequest<K?, V?>),
           );
         }
       }
@@ -240,7 +240,7 @@ class StreamRequestQueue<K, V> {
     return _peek();
   }
 
-  StreamRequest<K, V> _peek() {
+  StreamRequest<K, V>? _peek() {
     final next = _hasNext ? _requests.first : null;
     if (next != null) {
       _started.add(next);
@@ -248,31 +248,31 @@ class StreamRequestQueue<K, V> {
     return next;
   }
 
-  Future<V> _onFallback(StreamRequest<K, V> request) =>
-      request.fallback == null ? Future<V>.value() : request.fallback();
+  Future<V?> _onFallback(StreamRequest<K?, V?> request) =>
+      request.fallback == null ? Future<V>.value() : request.fallback!();
 
   /// Get request currently processing
-  StreamRequest<K, V> get current => _current;
-  StreamRequest<K, V> _current;
+  StreamRequest<K?, V?>? get current => _current;
+  StreamRequest<K?, V?>? _current;
 
   /// [DateTime] when execution of current request was started
-  DateTime get currentAt => _currentAt;
-  DateTime _currentAt;
+  DateTime? get currentAt => _currentAt;
+  DateTime? _currentAt;
 
   /// Get last result
-  StreamResult<V> get last => _last;
-  StreamResult<V> _last;
+  StreamResult<V?>? get last => _last;
+  StreamResult<V?>? _last;
 
   /// [DateTime] when execution of current request was started
-  DateTime get lastAt => _lastAt;
-  DateTime _lastAt;
+  DateTime? get lastAt => _lastAt;
+  DateTime? _lastAt;
 
   /// Execute given [request]
-  Future<StreamResult<V>> _execute(StreamRequest<K, V> request) async {
+  Future<StreamResult<V?>> _execute(StreamRequest<K?, V?> request) async {
     try {
       _currentAt = DateTime.now();
       _current = request;
-      final result = await request.execute().timeout(
+      final result = await request.execute()!.timeout(
             request.reminder,
           );
       return _onComplete(
@@ -305,9 +305,9 @@ class StreamRequestQueue<K, V> {
     }
   }
 
-  Future<StreamResult<V>> _onComplete(
-    StreamRequest<K, V> request,
-    StreamResult<V> result,
+  Future<StreamResult<V?>> _onComplete(
+    StreamRequest<K?, V?> request,
+    StreamResult<V?> result,
   ) async {
     if (result.isStop) {
       // This will stop everything. Request will
@@ -357,12 +357,12 @@ class StreamRequestQueue<K, V> {
   /// state.
   ///
   void _handleError(
-    Object error,
-    StackTrace stackTrace, {
-    StreamRequest<K, V> request,
+    Object? error,
+    StackTrace? stackTrace, {
+    StreamRequest<K?, V?>? request,
   }) {
     if (_onError != null) {
-      final shouldStop = _onError(
+      final shouldStop = _onError!(
         error,
         stackTrace,
       );
@@ -375,8 +375,8 @@ class StreamRequestQueue<K, V> {
     );
     if (request != null) {
       if (request.onResult?.isCompleted == false) {
-        request.onResult.completeError(
-          error,
+        request.onResult!.completeError(
+          error!,
           stackTrace,
         );
       }
@@ -471,8 +471,8 @@ class StreamRequestTimeout extends StreamEvent {
 @Immutable()
 class StreamRequestFailed extends StreamEvent {
   StreamRequestFailed(this.request, this.error, this.stackTrace);
-  final Object error;
-  final StackTrace stackTrace;
+  final Object? error;
+  final StackTrace? stackTrace;
   final StreamRequest request;
 }
 
@@ -493,8 +493,8 @@ class StreamRequest<K, V> {
   static const Duration timeLimit = Duration(seconds: 30);
 
   StreamRequest({
-    @required this.execute,
-    K key,
+    required this.execute,
+    K? key,
     this.tag,
     this.fallback,
     this.onResult,
@@ -503,18 +503,18 @@ class StreamRequest<K, V> {
   }) : _key = key;
 
   final bool fail;
-  final Object tag;
+  final Object? tag;
   final Duration timeout;
-  final Completer<V> onResult;
-  final Future<V> Function() fallback;
+  final Completer<V>? onResult;
+  final Future<V> Function()? fallback;
   final DateTime created = DateTime.now();
-  final Future<StreamResult<V>> Function() execute;
+  final Future<StreamResult<V>>? Function() execute;
 
   Duration get reminder => timeout - DateTime.now().difference(created);
   bool get isTimedOut => timeout != null && DateTime.now().difference(created) > timeout;
 
   Object get key => _key ?? '${super.hashCode}';
-  final Object _key;
+  final Object? _key;
 
   @override
   int get hashCode => key.hashCode;
@@ -531,26 +531,26 @@ class StreamRequest<K, V> {
 class StreamResult<T> {
   StreamResult({
     this.tag,
-    bool stop,
+    bool? stop,
     this.value,
     this.error,
     this.stackTrace,
   }) : _stop = stop ?? false;
 
-  static StreamResult<T> none<T>({String tag}) => StreamResult<T>(tag: tag);
-  static StreamResult<T> stop<T>({String tag}) => StreamResult<T>(tag: tag, stop: true);
-  static StreamResult<T> failed<T>(Object error, {StackTrace stackTrace, String tag, bool stop}) => StreamResult<T>(
+  static StreamResult<T> none<T>({String? tag}) => StreamResult<T>(tag: tag);
+  static StreamResult<T> stop<T>({String? tag}) => StreamResult<T>(tag: tag, stop: true);
+  static StreamResult<T> failed<T>(Object error, {StackTrace? stackTrace, String? tag, bool? stop}) => StreamResult<T>(
         tag: tag,
         stop: stop,
         error: error,
         stackTrace: stackTrace,
       );
 
-  final T value;
-  final Object tag;
+  final T? value;
+  final Object? tag;
   final bool _stop;
-  final Object error;
-  final StackTrace stackTrace;
+  final Object? error;
+  final StackTrace? stackTrace;
 
   bool get isStop => _stop;
   bool get isComplete => !isStop;
@@ -569,12 +569,12 @@ class StreamRequestTimeoutException implements Exception {
 }
 
 /// Wait for given rule result from stream of results
-Future<T> waitThoughtStates<S extends BlocState, T>(
+Future<T> waitThoughtStates<S extends BlocState?, T>(
   BlocEventBus bus, {
-  @required List<Type> expected,
+  required List<Type> expected,
   bool fail = false,
-  FutureOr<T> Function() act,
-  bool Function(S event) test,
+  FutureOr<T> Function()? act,
+  bool? Function(S? event)? test,
   Duration timeout = const Duration(
     hours: 1,
   ),
@@ -584,7 +584,7 @@ Future<T> waitThoughtStates<S extends BlocState, T>(
         // Match expected events
         .where((event) => expected.contains(event.runtimeType))
         // Match against test if defined
-        .where((state) => test == null || test(state))
+        .where((state) => test == null || test(state as S?)!)
         // Match against expected number
         .take(expected.length)
         // Complete when last event is received
@@ -605,17 +605,17 @@ Future<T> waitThoughtStates<S extends BlocState, T>(
 }
 
 /// Wait for given rule result from stream of results
-FutureOr<T> waitThroughStateWithData<S extends BlocState, T>(
+FutureOr<T?> waitThroughStateWithData<S extends BlocState?, T>(
   BlocEventBus bus, {
-  @required T Function(S state) map,
+  required T Function(S? state) map,
   bool fail = false,
   Duration timeout = const Duration(
     milliseconds: 100,
   ),
-  bool Function(S state) test,
-  FutureOr<T> Function(T value) act,
+  bool Function(S state)? test,
+  FutureOr<T> Function(T? value)? act,
 }) async {
-  T value;
+  T? value;
   try {
     final state = await bus.events
         .firstWhere(
@@ -624,7 +624,7 @@ FutureOr<T> waitThroughStateWithData<S extends BlocState, T>(
         .timeout(timeout);
 
     // Map state to value
-    value = map(state);
+    value = map(state as S?);
 
     // Act on value?
     if (act != null) {

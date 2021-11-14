@@ -1,13 +1,13 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:flutter/foundation.dart';
 
 class ActivityProfile {
   const ActivityProfile({
-    @required this.name,
-    @required this.options,
-    @required this.isTrackable,
+    required this.name,
+    required this.options,
+    required this.isTrackable,
   });
   final String name;
   final bool isTrackable;
@@ -74,9 +74,9 @@ class ActivityProfile {
   );
 
   ActivityProfile copyWith({
-    String name,
-    bool isTrackable,
-    LocationOptions options,
+    String? name,
+    bool? isTrackable,
+    LocationOptions? options,
   }) =>
       ActivityProfile(
         name: name ?? this.name,

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -13,57 +13,57 @@ abstract class PersonnelCommand<S, T> extends BlocCommand<S, T> {
   PersonnelCommand(
     S data, {
     props = const [],
-    Completer<T> callback,
+    Completer<T>? callback,
   }) : super(data, props, callback);
 }
 
-class LoadPersonnels extends PersonnelCommand<String, List<Personnel>> {
-  LoadPersonnels(String ouuid) : super(ouuid);
+class LoadPersonnels extends PersonnelCommand<String?, List<Personnel>> {
+  LoadPersonnels(String? ouuid) : super(ouuid);
 
   @override
   String toString() => '$runtimeType {ouuid: $data}';
 }
 
-class MobilizeUser extends PersonnelCommand<String, Personnel> {
-  MobilizeUser(String ouuid, this.user) : super(ouuid);
+class MobilizeUser extends PersonnelCommand<String?, Personnel> {
+  MobilizeUser(String? ouuid, this.user) : super(ouuid);
   final User user;
 
   @override
   String toString() => '$runtimeType {ouuid: $data, user: $user}';
 }
 
-class CreatePersonnel extends PersonnelCommand<Personnel, Personnel> {
+class CreatePersonnel extends PersonnelCommand<Personnel?, Personnel> {
   CreatePersonnel(
     this.ouuid,
-    Personnel data, {
-    Completer<Personnel> callback,
+    Personnel? data, {
+    Completer<Personnel>? callback,
   }) : super(data, callback: callback);
 
-  final String ouuid;
+  final String? ouuid;
 
   @override
   String toString() => '$runtimeType {ouuid: $ouuid, personnel: $data}';
 }
 
-class UpdatePersonnel extends PersonnelCommand<Personnel, Personnel> {
+class UpdatePersonnel extends PersonnelCommand<Personnel?, Personnel> {
   UpdatePersonnel(
-    Personnel data, {
-    Completer<Personnel> callback,
+    Personnel? data, {
+    Completer<Personnel>? callback,
   }) : super(data, callback: callback);
 
   @override
   String toString() => '$runtimeType {personnel: $data}';
 }
 
-class DeletePersonnel extends PersonnelCommand<Personnel, Personnel> {
-  DeletePersonnel(Personnel data) : super(data);
+class DeletePersonnel extends PersonnelCommand<Personnel?, Personnel> {
+  DeletePersonnel(Personnel? data) : super(data);
 
   @override
   String toString() => '$runtimeType {personnel: $data}';
 }
 
-class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
-  UnloadPersonnels(String ouuid) : super(ouuid);
+class UnloadPersonnels extends PersonnelCommand<String?, List<Personnel>> {
+  UnloadPersonnels(String? ouuid) : super(ouuid);
 
   @override
   String toString() => '$runtimeType {ouuid: $data}';

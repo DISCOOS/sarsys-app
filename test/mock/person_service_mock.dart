@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -21,12 +21,12 @@ import 'package:SarSys/core/data/services/service.dart';
 
 class PersonBuilder {
   static Person create({
-    @required String fname,
-    @required String lname,
-    @required String phone,
-    @required String email,
-    @required String userId,
-    String uuid,
+    required String fname,
+    required String lname,
+    required String phone,
+    required String email,
+    required String? userId,
+    String? uuid,
     bool temporary = false,
   }) {
     return PersonModel.fromJson(
@@ -43,12 +43,12 @@ class PersonBuilder {
   }
 
   static createAsJson({
-    @required String uuid,
-    @required String fname,
-    @required String lname,
-    @required String phone,
-    @required String email,
-    @required String userId,
+    required String uuid,
+    required String fname,
+    required String lname,
+    required String phone,
+    required String email,
+    required String? userId,
     bool temporary = false,
   }) {
     return json.decode('{'
@@ -66,15 +66,15 @@ class PersonBuilder {
 class PersonServiceMock extends Mock implements PersonService {
   PersonServiceMock(this.states);
   final Box<StorageState<Person>> states;
-  final Map<String, StorageState<Person>> personRepo = {};
+  final Map<String?, StorageState<Person>> personRepo = {};
 
   Future<Person> add({
-    String uuid,
-    String fname,
-    String lname,
-    String phone,
-    String email,
-    String userId,
+    String? uuid,
+    String? fname,
+    String? lname,
+    String? phone,
+    String? email,
+    String? userId,
     bool storage = true,
     bool temporary = false,
   }) async {
@@ -119,7 +119,7 @@ class PersonServiceMock extends Mock implements PersonService {
     return person;
   }
 
-  StorageState<Person> remove(String uuid) {
+  StorageState<Person>? remove(String uuid) {
     return personRepo.remove(uuid);
   }
 
@@ -141,13 +141,13 @@ class PersonServiceMock extends Mock implements PersonService {
       await _doThrottle();
       if (personRepo.containsKey(uuid)) {
         return ServiceResponse.ok(
-          body: personRepo[uuid],
+          body: personRepo[uuid] as StorageState<Person>?,
         );
       }
       return ServiceResponse.notFound(
         message: "Person not found: $uuid",
       );
-    });
+    } as Future<ServiceResponse<StorageState<Person>>> Function(Invocation));
 
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
@@ -155,7 +155,7 @@ class PersonServiceMock extends Mock implements PersonService {
     when(mock.create(any)).thenAnswer((_) async {
       await _doThrottle();
       final state = _.positionalArguments[0] as StorageState<Person>;
-      if (!state.version.isFirst) {
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Aggregate has not version 0: $state",
         );
@@ -189,11 +189,11 @@ class PersonServiceMock extends Mock implements PersonService {
       final next = _.positionalArguments[0] as StorageState<Person>;
       final uuid = next.value.uuid;
       if (personRepo.containsKey(uuid)) {
-        final state = personRepo[uuid];
-        final delta = next.version.value - state.version.value;
+        final state = personRepo[uuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         personRepo[uuid] = state.apply(
@@ -216,29 +216,29 @@ class PersonServiceMock extends Mock implements PersonService {
       final uuid = state.value.uuid;
       if (personRepo.containsKey(uuid)) {
         return ServiceResponse.ok(
-          body: personRepo.remove(uuid),
+          body: personRepo.remove(uuid) as StorageState<Person>?,
         );
       }
       return ServiceResponse.notFound(
         message: "Person not found: $uuid",
       );
-    });
+    } as Future<ServiceResponse<StorageState<Person>>> Function(Invocation));
     return mock;
   }
 
-  static Person findExistingUser(Person person, Map<String, StorageState<Person>> personRepo) => person.userId != null
-      ? personRepo.values.map((s) => s.value).where((p) => p.userId == person.userId).firstOrNull
+  static Person? findExistingUser(Person person, Map<String?, StorageState<Person>> personRepo) => person.userId != null
+      ? personRepo.values.map((s) => s.value).where((p) => p!.userId == person.userId).firstOrNull
       : null;
 
   static Future _doThrottle() async {
     if (_throttle != null) {
-      return Future.delayed(_throttle);
+      return Future.delayed(_throttle!);
     }
     Future.value();
   }
 
-  static Duration _throttle;
-  Duration throttle(Duration duration) {
+  static Duration? _throttle;
+  Duration? throttle(Duration duration) {
     final previous = _throttle;
     _throttle = duration;
     return previous;

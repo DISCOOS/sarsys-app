@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -17,20 +17,20 @@ part 'operation_model.g.dart';
 @JsonSerializable()
 class OperationModel extends Operation implements JsonObject<Map<String, dynamic>> {
   OperationModel({
-    @required String uuid,
-    @required String name,
-    @required Location ipp,
-    @required Author author,
-    @required Location meetup,
-    @required OperationType type,
-    @required Passcodes passcodes,
-    @required String justification,
-    @required OperationStatus status,
-    @required List<TalkGroup> talkgroups,
-    @required OperationResolution resolution,
-    @required AggregateRef<Incident> incident,
-    @required AggregateRef<Personnel> commander,
-    String reference,
+    required String? uuid,
+    required String? name,
+    required Location? ipp,
+    required Author? author,
+    required Location? meetup,
+    required OperationType? type,
+    required Passcodes? passcodes,
+    required String? justification,
+    required OperationStatus? status,
+    required List<TalkGroup>? talkgroups,
+    required OperationResolution? resolution,
+    required AggregateRef<Incident>? incident,
+    required AggregateRef<Personnel>? commander,
+    String? reference,
   }) : super(
           ipp: ipp,
           uuid: uuid,
@@ -76,7 +76,7 @@ class OperationModel extends Operation implements JsonObject<Map<String, dynamic
   }
 
   /// Clone with author
-  Operation withAuthor(String userId) {
+  Operation withAuthor(String? userId) {
     var now = DateTime.now();
     return OperationModel(
       ipp: this.ipp,
@@ -92,27 +92,27 @@ class OperationModel extends Operation implements JsonObject<Map<String, dynamic
       incident: incident ?? this.incident,
       commander: commander ?? this.commander,
       author: Author(userId: userId, timestamp: now),
-      talkgroups: this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
+      talkgroups: this.talkgroups!.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
     );
   }
 
   /// Clone with author
   Operation copyWith({
-    String name,
-    Location ipp,
-    bool exercise,
-    Author author,
-    Location meetup,
-    String reference,
-    DateTime occurred,
-    OperationType type,
-    Passcodes passcodes,
-    String justification,
-    OperationStatus status,
-    List<TalkGroup> talkGroups,
-    OperationResolution resolution,
-    AggregateRef<Incident> incident,
-    AggregateRef<Personnel> commander,
+    String? name,
+    Location? ipp,
+    bool? exercise,
+    Author? author,
+    Location? meetup,
+    String? reference,
+    DateTime? occurred,
+    OperationType? type,
+    Passcodes? passcodes,
+    String? justification,
+    OperationStatus? status,
+    List<TalkGroup>? talkGroups,
+    OperationResolution? resolution,
+    AggregateRef<Incident>? incident,
+    AggregateRef<Personnel>? commander,
   }) {
     return OperationModel(
       uuid: this.uuid,
@@ -128,13 +128,13 @@ class OperationModel extends Operation implements JsonObject<Map<String, dynamic
       commander: commander ?? this.commander,
       reference: reference ?? this.reference,
       resolution: resolution ?? this.resolution,
-      ipp: ipp ?? Location.fromJson(this.ipp.toJson()),
+      ipp: ipp ?? Location.fromJson(this.ipp!.toJson()),
       justification: justification ?? this.justification,
-      meetup: meetup ?? Location.fromJson(this.meetup.toJson()),
-      talkgroups: talkGroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
+      meetup: meetup ?? Location.fromJson(this.meetup!.toJson()),
+      talkgroups: talkGroups ?? this.talkgroups!.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
     );
   }
 
   @override
-  AggregateRef<OperationModel> toRef() => uuid != null ? AggregateRef.fromType<OperationModel>(uuid) : null;
+  AggregateRef<OperationModel>? toRef() => uuid != null ? AggregateRef.fromType<OperationModel>(uuid) : null;
 }

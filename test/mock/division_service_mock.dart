@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -15,12 +15,12 @@ import 'package:SarSys/core/data/services/service.dart';
 
 class DivisionBuilder {
   static Division create(
-    String orguuid, {
-    @required String name,
-    @required String suffix,
-    String divuuid,
-    bool active,
-    List<String> departments,
+    String? orguuid, {
+    required String name,
+    required String suffix,
+    String? divuuid,
+    bool? active,
+    List<String?>? departments,
   }) {
     return DivisionModel.fromJson(
       createAsJson(
@@ -35,12 +35,12 @@ class DivisionBuilder {
   }
 
   static createAsJson(
-    String orguuid, {
-    String divuuid,
-    String name,
-    bool active,
-    String suffix,
-    List<String> departments,
+    String? orguuid, {
+    String? divuuid,
+    String? name,
+    bool? active,
+    String? suffix,
+    List<String?>? departments,
   }) {
     return json.decode('{'
         '"uuid": "$divuuid",'
@@ -54,15 +54,15 @@ class DivisionBuilder {
 }
 
 class DivisionServiceMock extends Mock implements DivisionService {
-  final Map<String, StorageState<Division>> divRepo = {};
+  final Map<String?, StorageState<Division>> divRepo = {};
 
   Division add(
-    String orguuid, {
-    String name,
-    String suffix,
-    List<String> departments,
-    String divuuid,
-    bool active,
+    String? orguuid, {
+    String? name,
+    String? suffix,
+    List<String?>? departments,
+    String? divuuid,
+    bool? active,
   }) {
     final div = DivisionBuilder.create(
       orguuid,
@@ -81,7 +81,7 @@ class DivisionServiceMock extends Mock implements DivisionService {
     return div;
   }
 
-  StorageState<Division> remove(String uuid) {
+  StorageState<Division>? remove(String uuid) {
     return divRepo.remove(uuid);
   }
 
@@ -119,9 +119,9 @@ class DivisionServiceMock extends Mock implements DivisionService {
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
 
-    when(mock.create(any)).thenAnswer((_) async {
+    when(mock.create(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Division>;
-      if (!state.version.isFirst) {
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Division has not version 0: $state",
         );
@@ -136,15 +136,15 @@ class DivisionServiceMock extends Mock implements DivisionService {
       );
     });
 
-    when(mock.update(any)).thenAnswer((_) async {
+    when(mock.update(any!)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Division>;
       final uuid = next.value.uuid;
       if (divRepo.containsKey(uuid)) {
-        final state = divRepo[uuid];
-        final delta = next.version.value - state.version.value;
+        final state = divRepo[uuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         divRepo[uuid] = state.apply(
@@ -161,7 +161,7 @@ class DivisionServiceMock extends Mock implements DivisionService {
       );
     });
 
-    when(mock.delete(any)).thenAnswer((_) async {
+    when(mock.delete(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Division>;
       final uuid = state.value.uuid;
       if (divRepo.containsKey(uuid)) {

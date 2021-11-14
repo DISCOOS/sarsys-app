@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'organisation_service.dart';
@@ -10,7 +8,7 @@ part of 'organisation_service.dart';
 
 // ignore_for_file: always_put_control_body_on_new_line, always_specify_types, prefer_const_declarations
 class _$OrganisationServiceImpl extends OrganisationServiceImpl {
-  _$OrganisationServiceImpl([ChopperClient client]) {
+  _$OrganisationServiceImpl([ChopperClient? client]) {
     if (client == null) return;
     this.client = client;
   }
@@ -19,7 +17,7 @@ class _$OrganisationServiceImpl extends OrganisationServiceImpl {
   final definitionType = OrganisationServiceImpl;
 
   @override
-  Future<Response<String>> create(String uuid, Organisation body) {
+  Future<Response<String>> create(String? uuid, Organisation body) {
     final $url = '/organisations';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
@@ -28,7 +26,7 @@ class _$OrganisationServiceImpl extends OrganisationServiceImpl {
 
   @override
   Future<Response<StorageState<Organisation>>> update(
-      String uuid, Organisation body) {
+      String? uuid, Organisation body) {
     final $url = '/organisations/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
@@ -36,7 +34,7 @@ class _$OrganisationServiceImpl extends OrganisationServiceImpl {
   }
 
   @override
-  Future<Response<void>> delete(String uuid) {
+  Future<Response<void>> delete(String? uuid) {
     final $url = '/organisations/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
@@ -44,7 +42,7 @@ class _$OrganisationServiceImpl extends OrganisationServiceImpl {
 
   @override
   Future<Response<PagedList<StorageState<Organisation>>>> getAll(
-      int offset, int limit) {
+      int? offset, int? limit) {
     final $url = '/organisations';
     final $params = <String, dynamic>{'offset': offset, 'limit': limit};
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
@@ -33,10 +33,10 @@ mixin ServiceProviderSingleChildWidget on SingleChildWidget {}
 class ServiceProvider<T> extends Provider<T> with ServiceProviderSingleChildWidget {
   /// {@macro serviceprovider}
   ServiceProvider({
-    Key key,
-    @required Create<T> create,
-    Widget child,
-    bool lazy,
+    Key? key,
+    required Create<T> create,
+    Widget? child,
+    bool? lazy,
   }) : super(
           key: key,
           create: create,
@@ -50,9 +50,9 @@ class ServiceProvider<T> extends Provider<T> with ServiceProviderSingleChildWidg
   /// Repositories should always be created using the default constructor
   /// within the [builder].
   ServiceProvider.value({
-    Key key,
-    @required T value,
-    Widget child,
+    Key? key,
+    required T value,
+    Widget? child,
   }) : super.value(
           key: key,
           value: value,
@@ -148,9 +148,9 @@ class MultiServiceProvider extends StatelessWidget {
 
   /// {@macro multiserviceprovider}
   const MultiServiceProvider({
-    Key key,
-    @required this.providers,
-    @required this.child,
+    Key? key,
+    required this.providers,
+    required this.child,
   })  : assert(providers != null),
         assert(child != null),
         super(key: key);

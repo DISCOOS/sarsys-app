@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -8,7 +8,7 @@ import 'package:SarSys/core/presentation/widgets/stream_widget.dart';
 import 'package:SarSys/core/data/services/provider.dart';
 
 class ConnectivityStatusWidget extends StatelessWidget {
-  const ConnectivityStatusWidget(this.service, {Key key}) : super(key: key);
+  const ConnectivityStatusWidget(this.service, {Key? key}) : super(key: key);
 
   final ConnectivityService service;
 
@@ -63,11 +63,11 @@ class ConnectivityStatusWidget extends StatelessWidget {
     );
   }
 
-  ListTile _buildSection(BuildContext context, String title, {Widget subtitle}) {
+  ListTile _buildSection(BuildContext context, String title, {Widget? subtitle}) {
     return ListTile(
       title: Text(
         title,
-        style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
       ),
       subtitle: subtitle,
     );

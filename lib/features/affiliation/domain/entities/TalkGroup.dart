@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/utils/data.dart';
 import 'package:equatable/equatable.dart';
@@ -9,18 +9,18 @@ part 'TalkGroup.g.dart';
 
 @JsonSerializable()
 class TalkGroup extends Equatable {
-  final String id;
-  final String name;
-  final TalkGroupType type;
+  final String? id;
+  final String? name;
+  final TalkGroupType? type;
 
   TalkGroup({
-    @required this.id,
-    @required this.name,
-    @required this.type,
+    required this.id,
+    required this.name,
+    required this.type,
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         name,
         type,
       ];

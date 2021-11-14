@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
@@ -35,8 +35,8 @@ class OperationPage extends StatefulWidget {
   final ActionCallback onMessage;
 
   const OperationPage({
-    Key key,
-    @required this.onMessage,
+    Key? key,
+    required this.onMessage,
   }) : super(key: key);
 
   @override
@@ -46,18 +46,18 @@ class OperationPage extends StatefulWidget {
 class _OperationPageState extends State<OperationPage> {
   final _controller = ScrollController();
 
-  TextStyle labelStyle;
-  TextStyle valueStyle;
-  TextStyle unitStyle;
-  TextStyle codeStyle;
+  TextStyle? labelStyle;
+  TextStyle? valueStyle;
+  TextStyle? unitStyle;
+  TextStyle? codeStyle;
 
-  StreamGroup<dynamic> _group;
+  StreamGroup<dynamic>? _group;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _group?.close();
-    _group = StreamGroup<BlocState>.broadcast()
+    _group = StreamGroup<BlocState?>.broadcast()
       ..add(context.read<UnitBloc>().stream)
       ..add(context.read<OperationBloc>().stream)
       ..add(context.read<PersonnelBloc>().stream);
@@ -72,16 +72,16 @@ class _OperationPageState extends State<OperationPage> {
 
   @override
   Widget build(BuildContext context) {
-    labelStyle = Theme.of(context).textTheme.bodyText2.copyWith(fontWeight: FontWeight.w400);
-    valueStyle = Theme.of(context).textTheme.headline5.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
-    unitStyle = Theme.of(context).textTheme.headline5.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
+    labelStyle = Theme.of(context).textTheme.bodyText2!.copyWith(fontWeight: FontWeight.w400);
+    valueStyle = Theme.of(context).textTheme.headline5!.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
+    unitStyle = Theme.of(context).textTheme.headline5!.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
     codeStyle = TextStyle(fontFamily: 'PTMono', fontSize: 18.0);
     return RefreshIndicator(
       onRefresh: () async {
         context.read<OperationBloc>().load();
       },
       child: StreamBuilder<BlocState>(
-        stream: _group.stream,
+        stream: _group!.stream as Stream<BlocState<dynamic>>?,
         initialData: context.read<OperationBloc>().state,
         builder: (context, snapshot) {
           final operation = context.read<OperationBloc>().selected;
@@ -95,7 +95,7 @@ class _OperationPageState extends State<OperationPage> {
                     )
                   : _buildDashboard(
                       context,
-                      context.read<OperationBloc>().incidents.get(operation.incident.uuid),
+                      context.read<OperationBloc>().incidents.get(operation.incident!.uuid!),
                       operation,
                     ),
             ),
@@ -105,7 +105,7 @@ class _OperationPageState extends State<OperationPage> {
     );
   }
 
-  ListView _buildDashboard(BuildContext context, Incident incident, Operation operation) {
+  ListView _buildDashboard(BuildContext context, Incident? incident, Operation operation) {
     return ListView(
       shrinkWrap: true,
       controller: _controller,
@@ -129,12 +129,12 @@ class _OperationPageState extends State<OperationPage> {
     );
   }
 
-  User get user => context.read<OperationBloc>().userBloc.user;
-  bool isAuthor(Operation operation) => context.read<OperationBloc>().userBloc.isAuthor(operation);
+  User get user => context.read<OperationBloc>().userBloc!.user;
+  bool isAuthor(Operation operation) => context.read<OperationBloc>().userBloc!.isAuthor(operation);
 
   Widget _buildMapTile(BuildContext context, Operation operation) {
-    final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
-    final meetup = operation.meetup != null ? toLatLng(operation.meetup.point) : null;
+    final ipp = operation.ipp != null ? toLatLng(operation.ipp!.point) : null;
+    final meetup = operation.meetup != null ? toLatLng(operation.meetup!.point) : null;
     final fitBounds = LatLngBounds(ipp, meetup);
     return Container(
       height: 240.0,
@@ -169,13 +169,13 @@ class _OperationPageState extends State<OperationPage> {
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: _buildValueTile(emptyAsNull(operation.reference) ?? 'Ingen', label: "Referanse"),
+          child: _buildValueTile(emptyAsNull(operation.reference!) ?? 'Ingen', label: "Referanse"),
         ),
       ],
     );
   }
 
-  Row _buildGeneral(Incident incident) {
+  Row _buildGeneral(Incident? incident) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -317,7 +317,7 @@ class _OperationPageState extends State<OperationPage> {
       label: "Kode mannskap",
       useCodeStyle: true,
     );
-    bool isCommander = user.isCommander || isAuthor(operation);
+    bool isCommander = user!.isCommander || isAuthor(operation);
     return Row(
       children: <Widget>[
         Expanded(
@@ -328,7 +328,7 @@ class _OperationPageState extends State<OperationPage> {
                   useCodeStyle: true,
                   label: "Kode aksjonsledelse",
                 )
-              : user.isLeader
+              : user!.isLeader
                   ? _buildEscalateButton()
                   : _buildNotLeaderNotice(),
         ),
@@ -336,7 +336,7 @@ class _OperationPageState extends State<OperationPage> {
         Expanded(
           flex: 2,
           child: Container(
-            height: OperationPage.HEIGHT * (isCommander || !user.isLeader ? 1.0 : 1.2),
+            height: OperationPage.HEIGHT * (isCommander || !user!.isLeader ? 1.0 : 1.2),
             child: personnel,
           ),
         ),
@@ -357,7 +357,7 @@ class _OperationPageState extends State<OperationPage> {
             Spacer(),
             ElevatedButton(
               onPressed: () async {
-                final result = await escalateToCommand();
+                final result = await escalateToCommand()!;
                 result.any((r) {
                   setState(() {});
                   return r;
@@ -410,15 +410,15 @@ class _OperationPageState extends State<OperationPage> {
   }
 
   Widget _buildValueTile(
-    String value, {
-    String label,
-    String subtitle,
-    String unit,
-    IconData icon,
-    double height,
-    GestureTapCallback onIconTap,
-    GestureTapCallback onValueTap,
-    GestureTapCallback onValueLongPress,
+    String? value, {
+    String? label,
+    String? subtitle,
+    String? unit,
+    IconData? icon,
+    double? height,
+    GestureTapCallback? onIconTap,
+    GestureTapCallback? onValueTap,
+    GestureTapCallback? onValueLongPress,
     bool useCodeStyle = false,
   }) {
     Widget tile = GestureDetector(
@@ -432,17 +432,17 @@ class _OperationPageState extends State<OperationPage> {
           Wrap(
             children: [
               if (useCodeStyle)
-                Text(value, style: codeStyle, overflow: TextOverflow.ellipsis)
+                Text(value!, style: codeStyle, overflow: TextOverflow.ellipsis)
               else
-                Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
+                Text(value!, style: valueStyle, overflow: TextOverflow.ellipsis),
               if (unit != null && unit.isNotEmpty) Text(unit, style: unitStyle, overflow: TextOverflow.ellipsis),
             ],
           ),
           if (emptyAsNull(subtitle) != null)
             Text(
-              subtitle,
+              subtitle!,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 14, color: Colors.grey),
+              style: Theme.of(context).textTheme.subtitle2!.copyWith(fontSize: 14, color: Colors.grey),
             )
         ],
       ),
@@ -479,7 +479,7 @@ class _OperationPageState extends State<OperationPage> {
             SizedBox(
               child: Text(
                 "Naviger",
-                style: labelStyle.copyWith(fontSize: 12),
+                style: labelStyle!.copyWith(fontSize: 12),
                 softWrap: true,
               ),
             )
@@ -519,19 +519,19 @@ class _OperationPageState extends State<OperationPage> {
 
 class OperationActionGroup extends StatelessWidget {
   OperationActionGroup({
-    @required this.operation,
-    @required this.type,
+    required this.operation,
+    required this.type,
     this.onDeleted,
     this.onMessage,
     this.onChanged,
     this.onCompleted,
   });
   final Operation operation;
-  final VoidCallback onDeleted;
+  final VoidCallback? onDeleted;
   final ActionGroupType type;
-  final MessageCallback onMessage;
-  final ValueChanged<Operation> onChanged;
-  final ValueChanged<Operation> onCompleted;
+  final MessageCallback? onMessage;
+  final ValueChanged<Operation?>? onChanged;
+  final ValueChanged<Operation>? onCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -571,7 +571,7 @@ class OperationActionGroup extends StatelessWidget {
       );
 
   void _onEdit() async {
-    final result = await editOperation(operation);
+    final result = await editOperation(operation)!;
     if (result.isRight()) {
       final actual = result.toIterable().first;
       if (actual != operation) {
@@ -612,7 +612,7 @@ class OperationActionGroup extends StatelessWidget {
   }
 
   Widget _buildCancelAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     return Tooltip(
       message: "Kansellèr aksjon",
       child: TextButton.icon(
@@ -652,7 +652,7 @@ class OperationActionGroup extends StatelessWidget {
     BuildContext context,
     OperationResolution resolution,
   ) async {
-    var incident = context.read<OperationBloc>().selected.copyWith(
+    var incident = context.read<OperationBloc>().selected!.copyWith(
           resolution: resolution,
           status: OperationStatus.completed,
         );
@@ -663,18 +663,18 @@ class OperationActionGroup extends StatelessWidget {
   }
 
   void _onMessage(String message) {
-    if (onMessage != null) onMessage(message);
+    if (onMessage != null) onMessage!(message);
   }
 
   void _onChanged([incident]) {
-    if (onChanged != null) onChanged(incident);
+    if (onChanged != null) onChanged!(incident);
   }
 
   void _onCompleted([incident]) {
-    if (onCompleted != null) onCompleted(incident ?? this.operation);
+    if (onCompleted != null) onCompleted!(incident ?? this.operation);
   }
 
   void _onDeleted() {
-    if (onDeleted != null) onDeleted();
+    if (onDeleted != null) onDeleted!();
   }
 }

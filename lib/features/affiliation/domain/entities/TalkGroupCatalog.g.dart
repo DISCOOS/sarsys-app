@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'TalkGroupCatalog.dart';
@@ -10,7 +8,7 @@ part of 'TalkGroupCatalog.dart';
 
 TalkGroupCatalog _$TalkGroupCatalogFromJson(Map json) {
   return TalkGroupCatalog(
-    name: json['name'] as String,
+    name: json['name'] as String?,
     groups: const FleetMapTalkGroupConverter().fromJson(json['groups'] as List),
   );
 }

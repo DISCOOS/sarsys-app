@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'operation_model.dart';
@@ -10,38 +8,27 @@ part of 'operation_model.dart';
 
 OperationModel _$OperationModelFromJson(Map json) {
   return OperationModel(
-    uuid: json['uuid'] as String,
-    name: json['name'] as String,
+    uuid: json['uuid'] as String?,
+    name: json['name'] as String?,
     ipp: json['ipp'] == null
         ? null
-        : Location.fromJson((json['ipp'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : Location.fromJson(Map<String, dynamic>.from(json['ipp'] as Map)),
     author: json['author'] == null
         ? null
-        : Author.fromJson((json['author'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : Author.fromJson(Map<String, dynamic>.from(json['author'] as Map)),
     meetup: json['meetup'] == null
         ? null
-        : Location.fromJson((json['meetup'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : Location.fromJson(Map<String, dynamic>.from(json['meetup'] as Map)),
     type: _$enumDecodeNullable(_$OperationTypeEnumMap, json['type']),
     passcodes: json['passcodes'] == null
         ? null
-        : Passcodes.fromJson((json['passcodes'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    justification: json['justification'] as String,
+        : Passcodes.fromJson(
+            Map<String, dynamic>.from(json['passcodes'] as Map)),
+    justification: json['justification'] as String?,
     status: _$enumDecodeNullable(_$OperationStatusEnumMap, json['status']),
-    talkgroups: (json['talkgroups'] as List)
-        ?.map((e) => e == null
-            ? null
-            : TalkGroup.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
+    talkgroups: (json['talkgroups'] as List<dynamic>?)
+        ?.map((e) => TalkGroup.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
     resolution:
         _$enumDecodeNullable(_$OperationResolutionEnumMap, json['resolution']),
     incident: json['incident'] == null
@@ -50,12 +37,14 @@ OperationModel _$OperationModelFromJson(Map json) {
     commander: json['commander'] == null
         ? null
         : AggregateRef.fromJson(json['commander']),
-    reference: json['reference'] as String,
+    reference: json['reference'] as String?,
   );
 }
 
 Map<String, dynamic> _$OperationModelToJson(OperationModel instance) {
-  final val = <String, dynamic>{};
+  final val = <String, dynamic>{
+    'uuid': instance.uuid,
+  };
 
   void writeNotNull(String key, dynamic value) {
     if (value != null) {
@@ -63,7 +52,6 @@ Map<String, dynamic> _$OperationModelToJson(OperationModel instance) {
     }
   }
 
-  writeNotNull('uuid', instance.uuid);
   writeNotNull('name', instance.name);
   writeNotNull('ipp', instance.ipp?.toJson());
   writeNotNull('author', instance.author?.toJson());
@@ -80,36 +68,41 @@ Map<String, dynamic> _$OperationModelToJson(OperationModel instance) {
   return val;
 }
 
-T _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
-T _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
+K? _$enumDecodeNullable<K, V>(
+  Map<K, V> enumValues,
   dynamic source, {
-  T unknownValue,
+  K? unknownValue,
 }) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
 }
 
 const _$OperationTypeEnumMap = {

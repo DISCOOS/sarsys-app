@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'subscription_type_model.dart';
@@ -10,26 +8,20 @@ part of 'subscription_type_model.dart';
 
 SubscriptionTypeModel _$SubscriptionTypeModelFromJson(Map json) {
   return SubscriptionTypeModel(
-    name: json['name'] as String,
-    statePatches: json['statePatches'] as bool,
-    changedState: json['changedState'] as bool,
-    previousState: json['previousState'] as bool,
+    name: json['name'] as String?,
+    statePatches: json['statePatches'] as bool?,
+    changedState: json['changedState'] as bool?,
+    previousState: json['previousState'] as bool?,
     match: _$enumDecodeNullable(_$FilterMatchEnumMap, json['match']) ??
         FilterMatch.any,
-    events: (json['events'] as List)
-        ?.map((e) => e == null
-            ? null
-            : SubscriptionEventModel.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
-    filters: (json['filters'] as List)
-        ?.map((e) => e == null
-            ? null
-            : SubscriptionFilterModel.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
+    events: (json['events'] as List<dynamic>?)
+        ?.map((e) => SubscriptionEventModel.fromJson(
+            Map<String, dynamic>.from(e as Map)))
+        .toList(),
+    filters: (json['filters'] as List<dynamic>?)
+        ?.map((e) => SubscriptionFilterModel.fromJson(
+            Map<String, dynamic>.from(e as Map)))
+        .toList(),
   );
 }
 
@@ -44,45 +36,50 @@ Map<String, dynamic> _$SubscriptionTypeModelToJson(
   }
 
   writeNotNull('name', instance.name);
-  writeNotNull('match', _$FilterMatchEnumMap[instance.match]);
-  writeNotNull('events', instance.events?.map((e) => e?.toJson())?.toList());
-  writeNotNull('filters', instance.filters?.map((e) => e?.toJson())?.toList());
+  val['match'] = _$FilterMatchEnumMap[instance.match];
+  val['events'] = instance.events.map((e) => e.toJson()).toList();
+  val['filters'] = instance.filters.map((e) => e.toJson()).toList();
   writeNotNull('changedState', instance.changedState);
   writeNotNull('statePatches', instance.statePatches);
   writeNotNull('previousState', instance.previousState);
   return val;
 }
 
-T _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
-T _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
+K? _$enumDecodeNullable<K, V>(
+  Map<K, V> enumValues,
   dynamic source, {
-  T unknownValue,
+  K? unknownValue,
 }) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
 }
 
 const _$FilterMatchEnumMap = {

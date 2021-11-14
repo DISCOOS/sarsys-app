@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:collection';
 import 'dart:convert';
@@ -18,9 +18,9 @@ class FleetMapService extends Service {
 
   static final _singleton = FleetMapService._internal();
 
-  final Map<String, FleetMap> _fleetMaps = LinkedHashMap();
+  final Map<String?, FleetMap> _fleetMaps = LinkedHashMap();
 
-  Map<String, dynamic> _assets = {};
+  Map<String, dynamic>? _assets = {};
 
   factory FleetMapService() {
     return _singleton;
@@ -31,14 +31,14 @@ class FleetMapService extends Service {
   }
 
   Future<void> init() async {
-    if (_assets.isEmpty) {
+    if (_assets!.isEmpty) {
       _assets = json.decode(await rootBundle.loadString(ASSET));
     }
   }
 
-  FleetMap _loadOrg(String prefix) {
+  FleetMap? _loadOrg(String? prefix) {
     assert(_assets != null, 'Not initialized');
-    final org = (_assets["organisations"] as List)?.firstWhere(
+    final org = (_assets!["organisations"] as List?)?.firstWhere(
       (org) => (org as Map<String, dynamic>).elementAt('prefix') == prefix,
       orElse: () => null,
     );
@@ -51,14 +51,14 @@ class FleetMapService extends Service {
     return _fleetMaps[prefix];
   }
 
-  FleetMap fetchFleetMap(String prefix) {
+  FleetMap? fetchFleetMap(String? prefix) {
     if (!_fleetMaps.containsKey(prefix)) {
       _loadOrg(prefix);
     }
     return _fleetMaps[prefix];
   }
 
-  List<TalkGroup> fetchTalkGroups(String prefix, String catalog) {
+  List<TalkGroup>? fetchTalkGroups(String prefix, String catalog) {
     if (!_fleetMaps.containsKey(prefix)) {
       _loadOrg(prefix);
     }
@@ -71,7 +71,7 @@ class FleetMapService extends Service {
         ?.groups;
   }
 
-  List<TalkGroupCatalog> fetchTalkGroupCatalogs(String prefix) {
+  List<TalkGroupCatalog>? fetchTalkGroupCatalogs(String prefix) {
     if (!_fleetMaps.containsKey(prefix)) {
       _loadOrg(prefix);
     }
@@ -79,7 +79,7 @@ class FleetMapService extends Service {
     return org?.catalogs?.toList();
   }
 
-  List<OperationalFunction> fetchFunctions(String prefix) {
+  List<OperationalFunction>? fetchFunctions(String prefix) {
     if (!_fleetMaps.containsKey(prefix)) {
       _loadOrg(prefix);
     }

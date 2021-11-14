@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,16 +31,16 @@ import 'package:SarSys/core/presentation/widgets/action_group.dart';
 
 class DeviceTile extends StatelessWidget {
   const DeviceTile({
-    Key key,
-    @required this.device,
+    Key? key,
+    required this.device,
     this.status,
     this.units,
     this.personnel,
   }) : super(key: key);
   final Device device;
-  final TrackingStatus status;
-  final Map<String, Unit> units;
-  final Map<String, Personnel> personnel;
+  final TrackingStatus? status;
+  final Map<String?, Unit?>? units;
+  final Map<String?, Personnel?>? personnel;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +49,7 @@ class DeviceTile extends StatelessWidget {
         );
     String title = _toDeviceTitle(
       context,
-      person,
+      person!,
       device,
     );
 
@@ -85,7 +85,7 @@ class DeviceTile extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Chip(
-                  label: Text(_toUsage(units, personnel, device)),
+                  label: Text(_toUsage(units!, personnel, device)),
                   labelPadding: EdgeInsets.only(right: 4.0),
                   backgroundColor: Colors.grey[100],
                   avatar: Icon(
@@ -103,8 +103,8 @@ class DeviceTile extends StatelessWidget {
 
 class DeviceChip extends StatelessWidget {
   const DeviceChip({
-    Key key,
-    @required this.device,
+    Key? key,
+    required this.device,
   }) : super(key: key);
 
   final Device device;
@@ -113,12 +113,12 @@ class DeviceChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.caption;
     final person = context.read<AffiliationBloc>().persons.findUser(
-          device.networkId,
+          device!.networkId,
         );
     final name = _toDeviceTitle(
       context,
-      person,
-      device,
+      person!,
+      device!,
     );
     return Chip(
       key: ObjectKey(device),
@@ -128,12 +128,12 @@ class DeviceChip extends StatelessWidget {
         children: <Widget>[
           CircleAvatar(
             child: Icon(
-              toDeviceIconData(device.type),
+              toDeviceIconData(device!.type),
               size: 14.0,
               color: Colors.white,
             ),
             maxRadius: 10.0,
-            backgroundColor: toPositionStatusColor(device.position),
+            backgroundColor: toPositionStatusColor(device!.position),
           ),
           SizedBox(width: 6.0),
           if (name != null) Text(name, style: style),
@@ -146,11 +146,11 @@ class DeviceChip extends StatelessWidget {
 
 class DeviceWidget extends StatelessWidget {
   DeviceWidget({
-    Key key,
-    @required this.unit,
-    @required this.device,
-    @required this.tracking,
-    @required this.onMessage,
+    Key? key,
+    required this.unit,
+    required this.device,
+    required this.tracking,
+    required this.onMessage,
     this.person,
     this.personnel,
     this.organisation,
@@ -162,25 +162,25 @@ class DeviceWidget extends StatelessWidget {
     this.withHeader = true,
     this.withActions = true,
     this.withActivity = true,
-    MapWidgetController controller,
+    MapWidgetController? controller,
   })  : this.controller = controller ?? MapWidgetController(),
         super(key: key);
 
-  final Unit unit;
+  final Unit? unit;
   final bool withMap;
   final Device device;
-  final Person person;
+  final Person? person;
   final bool withHeader;
   final bool withActions;
   final bool withActivity;
-  final Tracking tracking;
-  final Personnel personnel;
-  final ActionCallback onMessage;
-  final ValueChanged<Point> onGoto;
-  final ValueChanged<Device> onChanged;
-  final ValueChanged<Device> onCompleted;
-  final VoidCallback onDeleted;
-  final Organisation organisation;
+  final Tracking? tracking;
+  final Personnel? personnel;
+  final ActionCallback? onMessage;
+  final ValueChanged<Point>? onGoto;
+  final ValueChanged<Device>? onChanged;
+  final ValueChanged<Device>? onCompleted;
+  final VoidCallback? onDeleted;
+  final Organisation? organisation;
   final MapWidgetController controller;
 
   static const HEIGHT = 82.0;
@@ -270,7 +270,7 @@ class DeviceWidget extends StatelessWidget {
 
   List<Widget> _buildData(BuildContext context, TextTheme theme) {
     final bloc = context.read<AffiliationBloc>();
-    final entity = _getEntity(bloc, person, device);
+    final entity = _getEntity(bloc, person!, device);
     final org = organisation ?? bloc.orgs[entity?.org?.uuid];
 
     return [
@@ -305,14 +305,14 @@ class DeviceWidget extends StatelessWidget {
   ListTile _buildHeader(TextTheme theme, BuildContext context) => ListTile(
       selected: true,
       title: Text('Apparat', style: theme.headline6),
-      subtitle: Text('${device.name}'),
+      subtitle: Text('${device!.name}'),
       trailing: IconButton(
         icon: Icon(Icons.close),
         onPressed: () => _onComplete(device),
       ));
 
   Widget _buildMap(BuildContext context) {
-    final center = device.position?.toLatLng();
+    final center = device!.position?.toLatLng();
     return Padding(
       padding: const EdgeInsets.all(8.0).copyWith(top: 0.0),
       child: Material(
@@ -324,7 +324,7 @@ class DeviceWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(CORNER),
             child: GestureDetector(
               child: MapWidget(
-                key: ObjectKey(device.uuid),
+                key: ObjectKey(device!.uuid),
                 center: center,
                 zoom: 16.0,
                 readZoom: true,
@@ -359,9 +359,9 @@ class DeviceWidget extends StatelessWidget {
   Widget _buildLocationInfo(BuildContext context, TextTheme theme) => Column(
         children: [
           CoordinateWidget(
-            point: device.position?.geometry,
-            timestamp: device.position?.timestamp,
-            accuracy: device.position?.acc,
+            point: device!.position?.geometry,
+            timestamp: device!.position?.timestamp,
+            accuracy: device!.position?.acc,
             onGoto: (point) => navigateToLatLng(context, toLatLng(point)),
             onMessage: onMessage,
             withIcons: true,
@@ -373,10 +373,10 @@ class DeviceWidget extends StatelessWidget {
 
   Widget buildCopyableLocation(
     BuildContext context, {
-    Point point,
-    String label,
-    IconData icon,
-    String formatter(Point location),
+    Point? point,
+    String? label,
+    IconData? icon,
+    required String formatter(Point? location),
   }) =>
       buildCopyableText(
         context: context,
@@ -388,8 +388,8 @@ class DeviceWidget extends StatelessWidget {
         onTap: () => _onGoto(point),
       );
 
-  void _onGoto(Point location) {
-    if (onGoto != null && location != null) onGoto(location);
+  void _onGoto(Point? location) {
+    if (onGoto != null && location != null) onGoto!(location);
   }
 
   Row _buildTypeAndStatusInfo(BuildContext context) => Row(
@@ -399,7 +399,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Type",
               icon: Icon(Icons.headset_mic),
-              value: translateDeviceType(device.type),
+              value: translateDeviceType(device!.type),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -409,7 +409,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Status",
               icon: Icon(Icons.live_help),
-              value: translateDeviceStatus(device.status),
+              value: translateDeviceStatus(device!.status),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -424,7 +424,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Alias",
               icon: Icon(Icons.info),
-              value: device.alias ?? '-',
+              value: device!.alias ?? '-',
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -435,12 +435,12 @@ class DeviceWidget extends StatelessWidget {
                 context: context,
                 label: "Nummer",
                 icon: Icon(Icons.phone),
-                value: device.number ?? "Ukjent",
+                value: device!.number ?? "Ukjent",
                 onMessage: onMessage,
                 onComplete: _onComplete,
               ),
               onTap: () {
-                final number = device.number ?? '';
+                final number = device!.number ?? '';
                 if (number.isNotEmpty) launch("tel:$number");
               },
             ),
@@ -465,7 +465,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Funksjon",
               icon: Icon(Icons.functions),
-              value: context.read<AffiliationBloc>().findFunction(device.number)?.name ?? 'Ingen',
+              value: context.read<AffiliationBloc>().findFunction(device!.number)?.name ?? 'Ingen',
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -473,7 +473,7 @@ class DeviceWidget extends StatelessWidget {
         ],
       );
 
-  Widget _buildOwnerInfo(BuildContext context, String name, Icon icon) {
+  Widget _buildOwnerInfo(BuildContext context, String? name, Icon icon) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -490,7 +490,7 @@ class DeviceWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildAffiliationInfo(BuildContext context, String name, Icon icon) {
+  Widget _buildAffiliationInfo(BuildContext context, String? name, Icon icon) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -516,7 +516,7 @@ class DeviceWidget extends StatelessWidget {
             context: context,
             label: "Aktivitet",
             icon: Icon(Icons.local_activity),
-            value: translateActivityType(device.position?.activity?.type),
+            value: translateActivityType(device!.position?.activity?.type),
           ),
         ),
         Expanded(
@@ -524,7 +524,7 @@ class DeviceWidget extends StatelessWidget {
             context: context,
             label: "Avstand sporet",
             icon: Icon(MdiIcons.tapeMeasure),
-            value: formatDistance(TrackingUtils.distance(track, tail: track.length)),
+            value: formatDistance(TrackingUtils.distance(track as List<Position?>, tail: track.length)),
             onMessage: onMessage,
             onComplete: _onComplete,
           ),
@@ -533,11 +533,11 @@ class DeviceWidget extends StatelessWidget {
     );
   }
 
-  Iterable<Position> _toTrack(Tracking tracking) {
+  Iterable<Position?> _toTrack(Tracking? tracking) {
     return (tracking != null
             ? TrackingUtils.find(
                 tracking.tracks,
-                device.uuid,
+                device!.uuid,
               )?.positions
             : null) ??
         [];
@@ -545,8 +545,8 @@ class DeviceWidget extends StatelessWidget {
 
   Row _buildEffortInfo(BuildContext context) {
     final track = _toTrack(tracking);
-    final effort = TrackingUtils.effort(track);
-    final distance = TrackingUtils.distance(track, tail: track.length);
+    final effort = TrackingUtils.effort(track as List<Position?>);
+    final distance = TrackingUtils.distance(track, tail: track.length)!;
     return Row(
       children: <Widget>[
         Expanded(
@@ -574,14 +574,14 @@ class DeviceWidget extends StatelessWidget {
   }
 
   void _onComplete([device]) {
-    if (onCompleted != null) onCompleted(device ?? this.device);
+    if (onCompleted != null) onCompleted!(device ?? this.device);
   }
 }
 
 class DeviceActionGroup extends StatelessWidget {
   DeviceActionGroup({
-    @required this.type,
-    @required this.device,
+    required this.type,
+    required this.device,
     this.unit,
     this.personnel,
     this.onDeleted,
@@ -589,14 +589,14 @@ class DeviceActionGroup extends StatelessWidget {
     this.onChanged,
     this.onCompleted,
   });
-  final Unit unit;
+  final Unit? unit;
   final Device device;
-  final Personnel personnel;
-  final VoidCallback onDeleted;
+  final Personnel? personnel;
+  final VoidCallback? onDeleted;
   final ActionGroupType type;
-  final MessageCallback onMessage;
-  final ValueChanged<Device> onChanged;
-  final ValueChanged<Device> onCompleted;
+  final MessageCallback? onMessage;
+  final ValueChanged<Device>? onChanged;
+  final ValueChanged<Device>? onCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -629,7 +629,7 @@ class DeviceActionGroup extends StatelessWidget {
           child: _buildAddToUnitAction(context),
           onPressed: _onAddToUnit,
         ),
-      if (device.manual == true && context.read<UserBloc>().user.isAdmin)
+      if (device!.manual == true && context.read<UserBloc>().user!.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,
@@ -650,7 +650,7 @@ class DeviceActionGroup extends StatelessWidget {
       );
 
   void _onEdit() async {
-    final result = await editDevice(device);
+    final result = await editDevice(device)!;
     if (result.isRight()) {
       final actual = result.toIterable().first;
       if (actual != device) {
@@ -674,16 +674,16 @@ class DeviceActionGroup extends StatelessWidget {
       );
 
   Future _onAddToUnit() async {
-    final result = await addToPersonnel([device], personnel: personnel);
+    final result = await addToPersonnel([device], personnel: personnel)!;
     if (result.isRight()) {
       var actual = result.toIterable().first;
-      _onMessage("${device.name} er tilknyttet ${actual.left.name}");
+      _onMessage("${device!.name} er tilknyttet ${actual.left.name}");
       _onChanged(device);
     }
   }
 
   Widget _buildRemoveFromUnitAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     return Tooltip(
       message: "Fjern apparat fra unit",
       child: TextButton.icon(
@@ -704,15 +704,15 @@ class DeviceActionGroup extends StatelessWidget {
   }
 
   Future _onRemoveFromUnit() async {
-    final result = await removeFromUnit(unit, devices: [device]);
+    final result = await removeFromUnit(unit, devices: [device!])!;
     if (result.isRight()) {
-      _onMessage("${device.name} er fjernet fra ${unit.name}");
+      _onMessage("${device!.name} er fjernet fra ${unit!.name}");
       _onChanged(device);
     }
   }
 
   Widget _buildRemoveFromPersonnelAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     return Tooltip(
       message: "Fjern apparat fra mannskap",
       child: TextButton.icon(
@@ -733,15 +733,15 @@ class DeviceActionGroup extends StatelessWidget {
   }
 
   Future _onRemoveFromPersonnel() async {
-    final result = await removeFromPersonnel(personnel, devices: [device]);
+    final result = await removeFromPersonnel(personnel, devices: [device!])!;
     if (result.isRight()) {
-      _onMessage("${device.name} er fjernet fra ${unit.name}");
+      _onMessage("${device!.name} er fjernet fra ${unit!.name}");
       _onChanged(device);
     }
   }
 
   Widget _buildDeleteAction(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     return Tooltip(
       message: "Slett apparat lagt til manuelt",
       child: TextButton.icon(
@@ -752,9 +752,9 @@ class DeviceActionGroup extends StatelessWidget {
             style: button.copyWith(color: Colors.red),
           ),
           onPressed: () async {
-            final result = await deleteDevice(device);
+            final result = await deleteDevice(device)!;
             if (result.isRight()) {
-              _onMessage("${device.name} er slettet");
+              _onMessage("${device!.name} er slettet");
               _onDelete();
             }
           }),
@@ -762,37 +762,37 @@ class DeviceActionGroup extends StatelessWidget {
   }
 
   void _onDelete() async {
-    final result = await deleteDevice(device);
+    final result = await deleteDevice(device)!;
     if (result.isRight()) {
-      _onMessage("${device.name} er slettet");
+      _onMessage("${device!.name} er slettet");
       _onDeleted();
       _onCompleted();
     }
   }
 
   void _onMessage(String message) {
-    if (onMessage != null) onMessage(message);
+    if (onMessage != null) onMessage!(message);
   }
 
   void _onChanged([personnel]) {
-    if (onChanged != null) onChanged(personnel);
+    if (onChanged != null) onChanged!(personnel);
   }
 
   void _onCompleted([personnel]) {
-    if (onCompleted != null) onCompleted(personnel ?? this.device);
+    if (onCompleted != null) onCompleted!(personnel ?? this.device);
   }
 
   void _onDeleted() {
-    if (onDeleted != null) onDeleted();
+    if (onDeleted != null) onDeleted!();
   }
 }
 
 Affiliation _getEntity(AffiliationBloc bloc, Person person, Device device) {
   return person == null
-      ? bloc.findEntity(device.number)
+      ? bloc.findEntity(device!.number)
       : bloc.findAffiliates(person).firstWhere(
-            (a) => a.isOrganized,
-            orElse: () => bloc.findEntity(device.number),
+            (a) => a!.isOrganized,
+            orElse: () => bloc.findEntity(device!.number),
           );
 }
 
@@ -802,18 +802,18 @@ String _toDeviceTitle(BuildContext context, Person person, Device device) {
   final name = person?.fname ?? device.alias ?? bloc.orgs[entity?.org?.uuid]?.fleetMap?.alias;
   final alias = device.type != DeviceType.app
       ? device.alias ?? device.number
-      : device.uuid.substring(
-          device.uuid.length - 5,
+      : device.uuid!.substring(
+          device.uuid!.length - 5,
         );
   final title = '${[name, alias].where((e) => e != null).toSet().join(' | ')}';
   return title;
 }
 
 String _toUsage(
-  Map<String, Unit> units,
-  Map<String, Personnel> personnel,
+  Map<String?, Unit?> units,
+  Map<String?, Personnel?>? personnel,
   Device device,
 ) {
-  final name = units[device.uuid]?.name ?? personnel[device.uuid]?.formal ?? '';
+  final name = units[device.uuid]?.name ?? personnel![device.uuid]?.formal ?? '';
   return "$name ${formatSince(device?.position?.timestamp, defaultValue: "ingen")}";
 }

@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'AggregateRef.dart';
@@ -10,7 +8,7 @@ part of 'AggregateRef.dart';
 
 AggregateRef<T> _$AggregateRefFromJson<T extends Aggregate<dynamic>>(Map json) {
   return AggregateRef<T>(
-    uuid: json['uuid'] as String,
+    uuid: json['uuid'] as String?,
   );
 }
 

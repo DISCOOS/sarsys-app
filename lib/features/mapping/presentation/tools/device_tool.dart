@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:flutter/cupertino.dart';
@@ -24,17 +24,17 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
   final User user;
   final TrackingBloc bloc;
   final bool Function() _active;
-  final MapController controller;
-  final ActionCallback onMessage;
+  final MapController? controller;
+  final ActionCallback? onMessage;
 
   @override
   bool active() => _active();
 
   DeviceTool(
     this.bloc, {
-    @required this.user,
-    @required this.controller,
-    @required bool Function() active,
+    required this.user,
+    required this.controller,
+    required bool Function() active,
     this.onMessage,
   }) : _active = active;
 
@@ -48,7 +48,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
 
   @override
   LatLng toPoint(Device device) {
-    return toLatLng(device?.position?.geometry);
+    return toLatLng(device.position?.geometry);
   }
 
   void _show(BuildContext context, List<Device> devices) {
@@ -93,7 +93,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
               stream: context.read<DeviceBloc>().onChanged(device),
               builder: (context, snapshot) {
                 if (snapshot.data is Device) {
-                  device = snapshot.data;
+                  device = snapshot.data!;
                 }
                 final unit = bloc.units.find(device);
                 final personnel = bloc.personnels.find(device);
@@ -107,7 +107,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
                   onMessage: onMessage,
                   onGoto: (point) => _goto(context, point),
                   onCompleted: (_) => Navigator.pop(context),
-                  withActions: bloc.operationBloc.isAuthorizedAs(UserRole.commander),
+                  withActions: bloc.operationBloc!.isAuthorizedAs(UserRole.commander),
                 );
               },
             ),
@@ -117,11 +117,11 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
     );
   }
 
-  Tracking _ensureTracking(Unit unit, Personnel personnel) =>
-      bloc.trackings[unit?.tracking?.uuid] ?? bloc.trackings[personnel?.tracking?.uuid];
+  Tracking? _ensureTracking(Unit? unit, Personnel? personnel) =>
+      bloc.trackings[unit?.tracking.uuid] ?? bloc.trackings[personnel?.tracking.uuid];
 
   void _goto(BuildContext context, Point point) {
-    controller.move(toLatLng(point), controller.zoom);
+    controller!.move(toLatLng(point), controller!.zoom);
     Navigator.pop(context);
   }
 }

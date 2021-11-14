@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -30,18 +30,18 @@ abstract class PositionListServiceImpl extends StatefulService<PositionList, Pos
           decoder: (json) => PositionListModel.fromJson({
             'features': json['entries'],
           }),
-          reducer: (value) => JsonUtils.toJson<Position>(value),
+          reducer: (value) => JsonUtils.toJson<Position?>(value),
         );
-  static PositionListServiceImpl newInstance([ChopperClient client]) => _$PositionListServiceImpl(client);
+  static PositionListServiceImpl newInstance([ChopperClient? client]) => _$PositionListServiceImpl(client);
 
   @override
   Future<Response<StorageState<PositionList>>> onGetFromIds(
-    List<String> ids, {
+    List<String?> ids, {
     List<String> options = const [],
   }) async {
     final suuid = ids[1];
     final response = await getAll(ids[0], suuid, options: options);
-    final state = response.body;
+    final state = response.body!;
     return response.copyWith(
       body: state.replace(
         state.value.cloneWith(id: suuid),
@@ -53,8 +53,8 @@ abstract class PositionListServiceImpl extends StatefulService<PositionList, Pos
   Future<Response<StorageState<PositionList>>> getAll(
     @Path() tuuid,
     @Path() suuid, {
-    @Query('offset') int offset,
-    @Query('limit') int limit,
+    @Query('offset') int? offset,
+    @Query('limit') int? limit,
     @Query('option') List<String> options = const ['truncate:-20:m'],
   });
 }

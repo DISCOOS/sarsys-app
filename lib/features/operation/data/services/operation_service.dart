@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,6 +15,7 @@ import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'operation_service.chopper.dart';
 
 /// Service for consuming the operations endpoint
@@ -51,7 +52,7 @@ class OperationService extends StatefulServiceDelegate<Operation, OperationModel
   void dispose() {
     _controller.close();
     OperationMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -92,9 +93,9 @@ class OperationMessage extends MessageModel {
         }
       });
 
-  OperationMessageType get type {
+  OperationMessageType? get type {
     final type = data.elementAt('type');
-    return OperationMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return OperationMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -103,7 +104,7 @@ abstract class OperationServiceImpl extends StatefulService<Operation, Operation
   OperationServiceImpl()
       : super(
           decoder: (json) => OperationModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<OperationModel>(value, remove: const [
+          reducer: (value) => JsonUtils.toJson<OperationModel?>(value, remove: const [
             'units',
             'incident',
             'messages',
@@ -114,17 +115,17 @@ abstract class OperationServiceImpl extends StatefulService<Operation, Operation
           ]),
         );
 
-  static OperationServiceImpl newInstance([ChopperClient client]) => _$OperationServiceImpl(client);
+  static OperationServiceImpl newInstance([ChopperClient? client]) => _$OperationServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Operation> state) => create(
-        state.value.incident.uuid,
+        state.value.incident!.uuid,
         state.value,
       );
 
   @Post(path: '/incidents/{iuuid}/operations')
   Future<Response<String>> create(
-    @Path() String iuuid,
+    @Path() String? iuuid,
     @Body() Operation body,
   );
 
@@ -136,30 +137,30 @@ abstract class OperationServiceImpl extends StatefulService<Operation, Operation
 
   @Patch(path: '/operations/{uuid}')
   Future<Response<StorageState<Operation>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Operation body,
   );
 
   @override
   Future<Response<StorageState<Operation>>> onDelete(StorageState<Operation> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Operation>>);
 
   @Delete(path: '/operations/{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
   Future<Response<PagedList<StorageState<Operation>>>> onGetPage(
-    int offset,
-    int limit,
+    int? offset,
+    int? limit,
     List<String> options,
   ) =>
       fetch(offset, limit);
 
   @Get(path: '/operations')
   Future<Response<PagedList<StorageState<Operation>>>> fetch(
-    @Query('offset') int offset,
-    @Query('limit') int limit,
+    @Query('offset') int? offset,
+    @Query('limit') int? limit,
   );
 }

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:convert';
 
@@ -33,7 +33,7 @@ class OperationsScreen extends Screen<OperationsScreenState> {
 class OperationsScreenState extends ScreenState<OperationsScreen, void> {
   static const FILTER = "operations_filter";
 
-  Set<OperationStatus> _filter;
+  Set<OperationStatus>? _filter;
 
   OperationsScreenState()
       : super(
@@ -62,7 +62,7 @@ class OperationsScreenState extends ScreenState<OperationsScreen, void> {
   }
 
   @override
-  FloatingActionButton buildFAB(BuildContext context) {
+  FloatingActionButton? buildFAB(BuildContext context) {
     return context.read<OperationBloc>().isAuthorizedAs(UserRole.commander)
         ? FloatingActionButton(
             onPressed: () => _create(context),
@@ -74,7 +74,7 @@ class OperationsScreenState extends ScreenState<OperationsScreen, void> {
   }
 
   Future _create(BuildContext context) async {
-    var result = await createOperation();
+    var result = await createOperation()!;
     result.fold((_) => null, (operation) => jumpToOperation(context, operation));
   }
 
@@ -124,12 +124,12 @@ class OperationsPage extends StatefulWidget {
     OperationStatus.onscene,
   };
 
-  final String query;
-  final Set<OperationStatus> filter;
+  final String? query;
+  final Set<OperationStatus>? filter;
 
   const OperationsPage({
-    Key key,
-    @required this.filter,
+    Key? key,
+    required this.filter,
     this.query,
   }) : super(key: key);
 
@@ -138,13 +138,13 @@ class OperationsPage extends StatefulWidget {
 }
 
 class _OperationsPageState extends State<OperationsPage> {
-  StreamGroup<dynamic> _group;
+  StreamGroup<dynamic>? _group;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _group?.close();
-    _group = StreamGroup<BlocState>.broadcast()
+    _group = StreamGroup<BlocState?>.broadcast()
       ..add(context.read<UserBloc>().stream)
       ..add(context.read<UnitBloc>().stream)
       ..add(context.read<OperationBloc>().stream)
@@ -166,7 +166,7 @@ class _OperationsPageState extends State<OperationsPage> {
           setState(() {});
         },
         child: StreamBuilder(
-          stream: _group.stream,
+          stream: _group!.stream,
           initialData: context.read<OperationBloc>().state,
           builder: (context, snapshot) {
             if (snapshot.hasData == false) return Container();
@@ -181,7 +181,7 @@ class _OperationsPageState extends State<OperationsPage> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 96.0),
                       child: Column(
-                        children: cards,
+                        children: cards as List<Widget>,
                       ),
                     ),
                   );
@@ -195,23 +195,23 @@ class _OperationsPageState extends State<OperationsPage> {
     return snapshot.hasData ? _filteredOperations().map((operation) => _buildCard(operation)).toList() : [];
   }
 
-  List<Operation> _filteredOperations() {
+  List<Operation?> _filteredOperations() {
     final incidents = context.read<OperationBloc>().incidents;
     final operations = context.read<OperationBloc>().operations;
     final found = operations
-        .where((operation) => widget.filter.contains(operation?.status))
-        .where((operation) => widget.query == null || _prepare(operation).contains(widget.query.toLowerCase()))
+        .where((operation) => widget.filter!.contains(operation?.status))
+        .where((operation) => widget.query == null || _prepare(operation!).contains(widget.query!.toLowerCase()))
         .toList();
     return found
       ..sort(
-        (Operation o1, Operation o2) =>
-            incidents[o2.incident.uuid]?.occurred?.compareTo(incidents[o1.incident.uuid]?.occurred) ?? 0,
+        (Operation? o1, Operation? o2) =>
+            incidents[o2!.incident!.uuid!]?.occurred?.compareTo(incidents[o1!.incident!.uuid!]!.occurred!) ?? 0,
       );
   }
 
   String _prepare(Operation operation) => "${operation.searchable}".toLowerCase();
 
-  Widget _buildCard(Operation operation) {
+  Widget _buildCard(Operation? operation) {
     final title = Theme.of(context).textTheme.headline6;
     final caption = Theme.of(context).textTheme.caption;
 
@@ -221,7 +221,7 @@ class _OperationsPageState extends State<OperationsPage> {
         builder: (context, snapshot) {
           if (snapshot.hasData == false) return Container();
           final isCurrent = context.read<OperationBloc>().selected == operation;
-          final incident = context.read<OperationBloc>().incidents[operation.incident.uuid];
+          final incident = context.read<OperationBloc>().incidents[operation!.incident!.uuid!];
           final isUserMobilized = context.read<PersonnelBloc>().isUserMobilized;
           final isMobilized = isCurrent && isUserMobilized;
           final isAuthorized = isMobilized || context.read<UserBloc>().isAuthorized(operation);
@@ -329,11 +329,11 @@ class _OperationsPageState extends State<OperationsPage> {
         });
   }
 
-  ListTile _buildCardHeader(BuildContext context, Operation operation, TextStyle title, TextStyle caption) {
+  ListTile _buildCardHeader(BuildContext context, Operation operation, TextStyle? title, TextStyle? caption) {
     return ListTile(
       selected: context.read<OperationBloc>().selected == operation,
       title: Text(
-        operation.name,
+        operation.name!,
         style: title,
       ),
       subtitle: Text(
@@ -347,8 +347,8 @@ class _OperationsPageState extends State<OperationsPage> {
     );
   }
 
-  Padding _buildCardStatus(Operation operation, TextStyle caption) {
-    final incident = context.read<OperationBloc>().incidents[operation.incident.uuid];
+  Padding _buildCardStatus(Operation operation, TextStyle? caption) {
+    final incident = context.read<OperationBloc>().incidents[operation.incident!.uuid!];
     return Padding(
       padding: EdgeInsets.only(top: 8.0, right: (incident?.exercise == true ? 24.0 : 0.0)),
       child: Column(
@@ -370,17 +370,17 @@ class _OperationsPageState extends State<OperationsPage> {
   bool get hasRoles => context.read<UserBloc>()?.hasRoles == true;
 
   String _toDescription(Operation operation) {
-    String meetup = operation.meetup.description;
-    return "${_replaceLast(operation.justification)}.\n"
-        "Oppmøte ${toUTM(operation.meetup.point)}"
+    String? meetup = operation.meetup!.description;
+    return "${_replaceLast(operation.justification!)}.\n"
+        "Oppmøte ${toUTM(operation.meetup!.point)}"
         "${meetup == null ? "." : ", $meetup."}";
   }
 
   String _replaceLast(String text) => text.replaceFirst(r'.', "", text.length - 1);
 
   Widget _buildMapTile(Operation operation) {
-    final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
-    final meetup = operation.meetup != null ? toLatLng(operation.meetup.point) : null;
+    final ipp = operation.ipp != null ? toLatLng(operation.ipp!.point) : null;
+    final meetup = operation.meetup != null ? toLatLng(operation.meetup!.point) : null;
     final fitBounds = (ipp == null || meetup == null) == false ? LatLngBounds(ipp, meetup) : null;
     return ClipRect(
       child: GestureDetector(
@@ -405,13 +405,13 @@ class _OperationsPageState extends State<OperationsPage> {
   }
 }
 
-class OperationSearch extends SearchDelegate<Operation> {
+class OperationSearch extends SearchDelegate<Operation?> {
   static final _storage = Storage.secure;
   static const RECENT_KEY = "search/operation/recent";
 
-  final Set<OperationStatus> filter;
+  final Set<OperationStatus>? filter;
 
-  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+  ValueNotifier<Set<String>?> _recent = ValueNotifier(null);
 
   OperationSearch(this.filter) {
     _init();
@@ -456,9 +456,9 @@ class OperationSearch extends SearchDelegate<Operation> {
   @override
   Widget buildSuggestions(BuildContext context) {
     return query.isEmpty
-        ? ValueListenableBuilder<Set<String>>(
+        ? ValueListenableBuilder<Set<String>?>(
             valueListenable: _recent,
-            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+            builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
               return _buildSuggestionList(
                 context,
                 suggestions?.where(_matches)?.toList() ?? [],
@@ -478,7 +478,7 @@ class OperationSearch extends SearchDelegate<Operation> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
@@ -509,9 +509,9 @@ class OperationSearch extends SearchDelegate<Operation> {
 
   OperationsPage _buildResults(BuildContext context, {bool store = false}) {
     if (store) {
-      final recent = _recent.value.toSet()..add(query);
+      final recent = _recent.value!.toSet()..add(query);
       _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-      _recent.value = recent.toSet() ?? [];
+      _recent.value = (recent.toSet() ?? []) as Set<String>?;
     }
     return OperationsPage(
       query: query,
@@ -522,7 +522,7 @@ class OperationSearch extends SearchDelegate<Operation> {
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     buildSuggestions(context);
   }
 }

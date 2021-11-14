@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -26,12 +26,12 @@ import 'person_service_mock.dart';
 
 class AffiliationBuilder {
   static Affiliation create({
-    String uuid,
-    String puuid,
-    String userId,
-    String orguuid,
-    String divuuid,
-    String depuuid,
+    String? uuid,
+    String? puuid,
+    String? userId,
+    String? orguuid,
+    String? divuuid,
+    String? depuuid,
     bool active = true,
     AffiliationType type = AffiliationType.volunteer,
     AffiliationStandbyStatus status = AffiliationStandbyStatus.available,
@@ -52,14 +52,14 @@ class AffiliationBuilder {
   }
 
   static createAsJson({
-    @required String uuid,
-    @required AffiliationType type,
-    @required AffiliationStandbyStatus status,
-    String puuid,
-    String userId,
-    String orguuid,
-    String divuuid,
-    String depuuid,
+    required String uuid,
+    required AffiliationType type,
+    required AffiliationStandbyStatus status,
+    String? puuid,
+    String? userId,
+    String? orguuid,
+    String? divuuid,
+    String? depuuid,
     bool active = true,
   }) {
     return json.decode('{'
@@ -80,16 +80,16 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     this.states,
     this.persons,
   );
-  final PersonServiceMock persons;
+  final PersonServiceMock? persons;
   final Box<StorageState<Affiliation>> states;
-  final Map<String, StorageState<Affiliation>> affiliationRepo = {};
+  final Map<String?, StorageState<Affiliation>> affiliationRepo = {};
 
   Future<Affiliation> add({
-    String uuid,
-    String puuid,
-    String orguuid,
-    String divuuid,
-    String depuuid,
+    String? uuid,
+    String? puuid,
+    String? orguuid,
+    String? divuuid,
+    String? depuuid,
     bool active = true,
     bool storage = true,
     AffiliationType type = AffiliationType.member,
@@ -129,7 +129,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     return affiliation;
   }
 
-  StorageState<Affiliation> remove(String uuid) {
+  StorageState<Affiliation>? remove(String uuid) {
     return affiliationRepo.remove(uuid);
   }
 
@@ -137,7 +137,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     return states.close();
   }
 
-  static Future<AffiliationService> build(PersonServiceMock persons) async {
+  static Future<AffiliationService> build(PersonServiceMock? persons) async {
     final box = await Hive.openBox<StorageState<Affiliation>>(
       StatefulRepository.toBoxName<AffiliationRepositoryImpl>(),
       encryptionCipher: await Storage.hiveCipher<Affiliation>(),
@@ -164,35 +164,35 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     when(mock.create(any)).thenAnswer((_) async {
       await _doThrottle();
       final state = _.positionalArguments[0] as StorageState<Affiliation>;
-      if (!state.version.isFirst) {
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Aggregate has not version 0: $state",
         );
       }
       final affiliation = _toAffiliation(state);
-      final puuid = affiliation.person.uuid;
+      final puuid = affiliation.person!.uuid;
       // Onboard person?
       if (affiliation.isAffiliate) {
-        if (persons.personRepo.containsKey(puuid)) {
+        if (persons!.personRepo.containsKey(puuid)) {
           await persons.update(
-            persons.personRepo[puuid].apply(
-              affiliation.person,
+            persons.personRepo[puuid]!.apply(
+              affiliation.person!,
               replace: true,
               isRemote: false,
             ),
           );
         }
-        final existing = _findDuplicateUsers(persons, affiliation.person);
+        final existing = _findDuplicateUsers(persons, affiliation.person!);
         final duplicates = _findDuplicateAffiliations(persons, affiliationRepo.values, affiliation, puuid);
         if (existing.isNotEmpty) {
           return ServiceResponse.asConflict(
             conflict: ConflictModel(
               type: ConflictType.exists,
-              base: existing.first.value.toJson(),
+              base: existing.first.value!.toJson(),
               mine: duplicates,
               yours: [affiliation.toJson()],
               code: enumName(PersonConflictCode.duplicate_user_id),
-              error: 'Person ${affiliation.person.uuid} have duplicate userId',
+              error: 'Person ${affiliation.person!.uuid} have duplicate userId',
             ),
           );
         }
@@ -203,12 +203,12 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
               mine: duplicates,
               yours: [affiliation.toJson()],
               code: enumName(AffiliationConflictCode.duplicate_affiliations),
-              error: 'Person ${affiliation.person.uuid} have duplicate affiliations',
+              error: 'Person ${affiliation.person!.uuid} have duplicate affiliations',
             ),
           );
         }
         await persons.create(StorageState<Person>.created(
-          affiliation.person,
+          affiliation.person!,
           StateVersion.first,
         ));
       }
@@ -227,11 +227,11 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
       final affiliation = _toAffiliation(next);
       final uuid = affiliation.uuid;
       if (affiliationRepo.containsKey(uuid)) {
-        final state = affiliationRepo[uuid];
-        final delta = next.version.value - state.version.value;
+        final state = affiliationRepo[uuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         affiliationRepo[uuid] = state.apply(
@@ -266,7 +266,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
 
   static List<StorageState<Person>> _findDuplicateUsers(PersonServiceMock persons, Person person) {
     return persons.personRepo.values
-        .where((s) => person.uuid != s.value.uuid && person.userId != null && person.userId == s.value.userId)
+        .where((s) => person!.uuid != s.value!.uuid && person.userId != null && person.userId == s.value!.userId)
         .toList();
   }
 
@@ -274,14 +274,14 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     PersonServiceMock persons,
     Iterable<StorageState<Affiliation>> affiliations,
     Affiliation affiliation,
-    String puuid,
+    String? puuid,
   ) {
     // Ensure we are updated with remote streams
     final auuid = affiliation.uuid;
 
     // Ensure person
     final person = persons.personRepo[puuid];
-    final userId = person?.value?.userId ?? affiliation.person.userId;
+    final userId = person?.value?.userId ?? affiliation.person!.userId;
     final orguuid = affiliation.org?.uuid;
     final divuuid = affiliation.div?.uuid;
     final depuuid = affiliation.dep?.uuid;
@@ -295,7 +295,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
           final a = s.value;
           // Different affiliation and same person?
           if (a.uuid != auuid) {
-            final existing = persons.personRepo[a.person.uuid];
+            final existing = persons.personRepo[a.person!.uuid];
             if (existing != null) {
               if (isSamePerson(existing.value, puuid, userId)) {
                 final testOrg = a.org?.uuid;
@@ -318,20 +318,20 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
         .toList();
   }
 
-  static bool isSamePerson(Person person, String puuid, String userId) =>
-      puuid != null && person.uuid == puuid || userId != null && person.userId == userId;
+  static bool isSamePerson(Person person, String? puuid, String? userId) =>
+      puuid != null && person!.uuid == puuid || userId != null && person!.userId == userId;
 
   static StorageState<Affiliation> _withPerson(
-      Map<String, StorageState<Affiliation>> affiliationRepo, uuid, PersonServiceMock persons) {
-    final state = affiliationRepo[uuid];
+      Map<String?, StorageState<Affiliation>> affiliationRepo, uuid, PersonServiceMock? persons) {
+    final state = affiliationRepo[uuid]!;
     final affiliation = state.value;
-    final next = affiliation.person?.uuid == null ? null : persons.personRepo[affiliation.person.uuid];
-    return state.replace(affiliation.copyWith(person: next?.value));
+    final next = affiliation.person?.uuid == null ? null : persons!.personRepo[affiliation.person!.uuid];
+    return state.replace(affiliation.copyWith(person: next!.value));
   }
 
   static Affiliation _toAffiliation(StorageState<Affiliation> state) {
     final affiliation = state.value;
-    final json = affiliation.toJson();
+    final Map<String, dynamic> json = affiliation.toJson();
     assert(
       json.hasPath('person/uuid'),
       "Aggregate reference 'person' does not contain value 'uuid'",
@@ -341,13 +341,13 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
 
   static Future _doThrottle() async {
     if (_throttle != null) {
-      return Future.delayed(_throttle);
+      return Future.delayed(_throttle!);
     }
     return Future.value();
   }
 
-  static Duration _throttle;
-  Duration throttle(Duration duration) {
+  static Duration? _throttle;
+  Duration? throttle(Duration duration) {
     final previous = _throttle;
     _throttle = duration;
     return previous;

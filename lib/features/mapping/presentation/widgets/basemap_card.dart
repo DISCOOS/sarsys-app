@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:io';
 
@@ -6,20 +6,20 @@ import 'package:SarSys/core/domain/models/BaseMap.dart';
 import 'package:flutter/material.dart';
 
 class BaseMapCard extends StatelessWidget {
-  final BaseMap map;
+  final BaseMap? map;
 
   BaseMapCard({this.map});
 
   Image toImage() {
     String basePath = "assets/mapspreview";
     // TODO: Check if file exists in filesystem before returning
-    if (map.previewFile != null && !map.offline) {
+    if (map!.previewFile != null && !map!.offline!) {
       // Online maps preview image is distributed in assets
       // Should be moved to documents folder if list of online maps is a downloadable config
-      return Image(image: AssetImage("$basePath/${map.previewFile}"));
-    } else if (map.previewFile != null && map.offline) {
+      return Image(image: AssetImage("$basePath/${map!.previewFile}"));
+    } else if (map!.previewFile != null && map!.offline!) {
       // Offline maps must be read from SDCard
-      return Image.file(File(map.previewFile));
+      return Image.file(File(map!.previewFile!));
     } else {
       return Image(image: AssetImage("$basePath/missing.png"));
     }
@@ -49,7 +49,7 @@ class BaseMapCard extends StatelessWidget {
                 ),
               ),
               Text(
-                map.description ?? map.name,
+                map!.description ?? map!.name!,
                 softWrap: true,
                 textAlign: TextAlign.center,
               ),

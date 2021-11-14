@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
@@ -15,27 +15,27 @@ import 'package:jaguar_jwt/jaguar_jwt.dart';
 import '../blocs/harness.dart';
 
 class UserServiceMock extends Mock implements UserCredentialsService {
-  static String get username => _username;
-  static String _username;
+  static String? get username => _username;
+  static String? _username;
 
-  static String get password => _password;
-  static String _password;
+  static String? get password => _password;
+  static String? _password;
 
-  static String get division => _division;
-  static String _division;
+  static String? get division => _division;
+  static String? _division;
 
-  static String get department => _department;
-  static String _department;
+  static String? get department => _department;
+  static String? _department;
 
   static Duration get maxAge => _maxAge;
   static Duration _maxAge = const Duration(minutes: 5);
 
-  ConnectivityService get connectivity => _connectivity;
-  static ConnectivityService _connectivity;
+  ConnectivityService? get connectivity => _connectivity;
+  static ConnectivityService? _connectivity;
 
   void setCredentials({
-    String username,
-    String password,
+    String? username,
+    String? password,
     Duration maxAge = const Duration(minutes: 5),
   }) {
     UserServiceMock._username = username ?? UserServiceMock._username;
@@ -43,12 +43,12 @@ class UserServiceMock extends Mock implements UserCredentialsService {
     UserServiceMock._maxAge = maxAge ?? UserServiceMock._maxAge;
   }
 
-  AuthToken invalidateToken() {
+  AuthToken? invalidateToken() {
     final token = _token;
     if (_token != null) {
-      final user = _token.toUser();
+      final user = _token!.toUser();
       _token = createToken(
-        _token.userId,
+        _token!.userId,
         user.roles.first,
         email: user.email,
         division: user.div,
@@ -59,17 +59,17 @@ class UserServiceMock extends Mock implements UserCredentialsService {
     return token;
   }
 
-  AuthToken get token => _token;
-  static AuthToken _token;
+  AuthToken? get token => _token;
+  static AuthToken? _token;
 
   static UserServiceMock build({
-    @required UserRole role,
-    @required String userId,
-    @required String username,
-    @required String password,
-    @required String division,
-    @required String department,
-    @required ConnectivityServiceMock connectivity,
+    required UserRole role,
+    required String? userId,
+    required String? username,
+    required String? password,
+    required String? division,
+    required String? department,
+    required ConnectivityServiceMock? connectivity,
   }) {
     final UserServiceMock mock = UserServiceMock();
     UserServiceMock._username = username;
@@ -87,10 +87,10 @@ class UserServiceMock extends Mock implements UserCredentialsService {
     ).thenAnswer((_) async {
       final requestedUserId = _.namedArguments[Symbol('userId')];
       // ignore: invalid_use_of_protected_member
-      if (requestedUserId != null && requestedUserId == _token?.userId && _token.isValid) {
+      if (requestedUserId != null && requestedUserId == _token?.userId && _token!.isValid) {
         return ServiceResponse.ok(body: _token);
       } else if (_credentialsMatch(_)) {
-        final domain = UserService.toDomain(UserServiceMock.username);
+        final domain = UserService.toDomain(UserServiceMock.username!);
         _token = createToken(
           userId ?? UserServiceMock.username,
           role,
@@ -113,7 +113,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
     );
     when(mock.refresh(any)).thenAnswer((_) async {
       final token = _.positionalArguments[0] as AuthToken;
-      final user = _token.toUser();
+      final user = _token!.toUser();
       _token = createToken(
         token.userId,
         token.toUser().roles.first,
@@ -124,7 +124,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       );
       return ServiceResponse.ok(body: _token);
     });
-    when(mock.logout(any)).thenAnswer((_) async {
+    when(mock.logout(any!)).thenAnswer((_) async {
       final token = _.positionalArguments[0] as AuthToken;
       if (token.userId == _token?.userId) {
         _token = null;
@@ -156,7 +156,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       ),
     ).thenAnswer((_) async {
       UserRole actual = toRole(configRepo, role);
-      final domain = UserService.toDomain(username);
+      final domain = UserService.toDomain(username!);
       _token = createToken(
         username,
         actual,
@@ -167,7 +167,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
     });
     when(mock.refresh(any)).thenAnswer((_) async {
       final token = _.positionalArguments[0] as AuthToken;
-      final user = _token.toUser();
+      final user = _token!.toUser();
       _token = createToken(
         token.userId,
         user.roles.first,
@@ -178,7 +178,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       );
       return ServiceResponse.ok(body: _token);
     });
-    when(mock.logout(any)).thenAnswer((_) async {
+    when(mock.logout(any!)).thenAnswer((_) async {
       final token = _.positionalArguments[0] as AuthToken;
       if (token.userId == _token?.userId) {
         _token = null;
@@ -189,11 +189,11 @@ class UserServiceMock extends Mock implements UserCredentialsService {
   }
 
   static AuthToken createToken(
-    String userId,
-    UserRole role, {
-    String email,
-    String division,
-    String department,
+    String? userId,
+    UserRole? role, {
+    String? email,
+    String? division,
+    String? department,
     Duration maxAge = const Duration(minutes: 5),
   }) {
     final key = 's3cr3t';

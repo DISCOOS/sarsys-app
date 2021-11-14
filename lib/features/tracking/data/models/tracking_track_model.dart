@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:math';
 
@@ -14,10 +14,10 @@ part 'tracking_track_model.g.dart';
 @JsonSerializable()
 class TrackingTrackModel extends TrackingTrack {
   TrackingTrackModel({
-    @required String id,
-    @required TrackStatus status,
-    @required this.source,
-    @required List<Position> positions,
+    required String? id,
+    required TrackStatus? status,
+    required this.source,
+    required List<Position?>? positions,
   }) : super(
           id: id,
           status: status,
@@ -35,15 +35,15 @@ class TrackingTrackModel extends TrackingTrack {
   Map<String, dynamic> toJson() => _$TrackingTrackModelToJson(this);
 
   TrackingTrack cloneWith({
-    String id,
-    TrackStatus status,
-    TrackingSource source,
-    List<Position> positions,
+    String? id,
+    TrackStatus? status,
+    TrackingSource? source,
+    List<Position?>? positions,
   }) =>
       TrackingTrackModel(
         id: id ?? this.id,
         status: status ?? this.status,
-        source: source ?? this.source,
+        source: source as TrackingSourceModel? ?? this.source,
         positions: positions ?? this.positions,
       );
 
@@ -52,6 +52,6 @@ class TrackingTrackModel extends TrackingTrack {
         id: id,
         status: status,
         source: source,
-        positions: positions.skip(max(0, positions.length - count)).toList(),
+        positions: positions!.skip(max(0, positions!.length - count)).toList(),
       );
 }

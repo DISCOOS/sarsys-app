@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/data/services/service.dart';
@@ -15,18 +15,18 @@ class NavigationService extends Service {
 
   static bool get isReady => _navigatorKey?.currentState != null;
 
-  OverlayState get overlay => navigatorKey.currentState.overlay;
-  BuildContext get context => navigatorKey.currentContext;
+  OverlayState? get overlay => navigatorKey.currentState!.overlay;
+  BuildContext? get context => navigatorKey.currentContext;
 
-  AppController get controller => Provider.of<AppController>(context);
+  AppController get controller => Provider.of<AppController>(context!);
 
-  void overlayPop() => Navigator.pop(navigatorKey.currentState.overlay.context);
+  void overlayPop() => Navigator.pop(navigatorKey.currentState!.overlay!.context);
 
-  Future<T> pushReplacementNamed<T extends Object>(
+  Future<T?> pushReplacementNamed<T extends Object>(
     String path, {
-    Object arguments,
+    Object? arguments,
   }) =>
-      navigatorKey.currentState.pushReplacementNamed<T, T>(
+      navigatorKey.currentState!.pushReplacementNamed<T, T>(
         path,
         arguments: arguments,
       );

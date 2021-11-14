@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'Security.dart';
@@ -10,11 +8,11 @@ part of 'Security.dart';
 
 Security _$SecurityFromJson(Map json) {
   return Security(
-    pin: json['pin'] as String,
+    pin: json['pin'] as String?,
     type: _$enumDecodeNullable(_$SecurityTypeEnumMap, json['type']),
     mode: _$enumDecodeNullable(_$SecurityModeEnumMap, json['mode']),
-    locked: json['locked'] as bool ?? true,
-    trusted: json['trusted'] as bool,
+    locked: json['locked'] as bool? ?? true,
+    trusted: json['trusted'] as bool?,
     heartbeat: json['heartbeat'] == null
         ? null
         : DateTime.parse(json['heartbeat'] as String),
@@ -33,42 +31,47 @@ Map<String, dynamic> _$SecurityToJson(Security instance) {
   writeNotNull('pin', instance.pin);
   writeNotNull('trusted', instance.trusted);
   writeNotNull('type', _$SecurityTypeEnumMap[instance.type]);
-  writeNotNull('heartbeat', instance.heartbeat?.toIso8601String());
+  val['heartbeat'] = instance.heartbeat.toIso8601String();
   writeNotNull('mode', _$SecurityModeEnumMap[instance.mode]);
   writeNotNull('locked', instance.locked);
   return val;
 }
 
-T _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
-T _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
+K? _$enumDecodeNullable<K, V>(
+  Map<K, V> enumValues,
   dynamic source, {
-  T unknownValue,
+  K? unknownValue,
 }) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
 }
 
 const _$SecurityTypeEnumMap = {

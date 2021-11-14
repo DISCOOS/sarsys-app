@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
@@ -12,15 +12,15 @@ import 'package:SarSys/core/domain/usecase/core.dart';
 
 class AppParams<T> extends BlocParams<AppConfigBloc, AppConfig> {
   AppParams({
-    AppConfig config,
-    AppConfigBloc bloc,
-  }) : super(config, bloc: bloc);
+    AppConfig? config,
+    AppConfigBloc? bloc,
+  }) : super(config!, bloc: bloc);
 
-  UserBloc get users => context.read<UserBloc>();
+  UserBloc get users => context!.read<UserBloc>();
 }
 
 /// Configure app
-Future<dartz.Either<bool, AppConfig>> configureApp() => ConfigureApp()(AppParams());
+Future<dartz.Either<bool, AppConfig>>? configureApp() => ConfigureApp()(AppParams())!.then((value) => value as dartz.Either<bool, AppConfig>);
 
 class ConfigureApp extends UseCase<bool, AppConfig, AppParams> {
   ConfigureApp() : super(failure: false, isModal: true);
@@ -42,7 +42,7 @@ class ConfigureApp extends UseCase<bool, AppConfig, AppParams> {
     final config = await waitThroughStateWithData<AppConfigState, AppConfig>(
       params.bloc.bus,
       fail: true,
-      map: (state) => state.data,
+      map: (state) => state!.data,
       timeout: Duration(minutes: 1),
       test: (state) => state.data is AppConfig,
     );
@@ -53,9 +53,9 @@ class ConfigureApp extends UseCase<bool, AppConfig, AppParams> {
       fail: true,
       expected: [AffiliationsLoaded],
       timeout: Duration(minutes: 1),
-      test: (state) => params.bloc.isOnline ? state.isRemote : state.isLocal,
+      test: (state) => params.bloc.isOnline ? state!.isRemote : state!.isLocal,
     );
 
-    return dartz.right(config);
+    return dartz.right(config!);
   }
 }

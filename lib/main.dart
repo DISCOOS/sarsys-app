@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/navigation_service.dart';
@@ -72,11 +72,11 @@ Widget _createApp(
   );
 }
 
-Catcher _catcher;
+Catcher? _catcher;
 
 // Convenience method for running apps with Catcher
 void runAppWithCatcher(Widget app, AppController controller) {
-  final sentryDns = controller.bloc<AppConfigBloc>().config.sentryDns;
+  final sentryDns = controller.bloc<AppConfigBloc>()!.config!.sentryDns;
 
   // Catch unhandled bloc and repository exceptions
   Bloc.observer = controller.observer;
@@ -92,7 +92,7 @@ void runAppWithCatcher(Widget app, AppController controller) {
 
 void updateCatcherConfig(AppConfig config) {
   if (_catcher != null) {
-    _catcher.updateConfig(
+    _catcher!.updateConfig(
       debugConfig: _toCatcherDebugConfig(config.sentryDns),
       releaseConfig: _toCatcherReleaseConfig(config.sentryDns),
     );
@@ -103,8 +103,8 @@ CatcherOptions _toCatcherReleaseConfig(String sentryDns) {
   return CatcherOptions(
     ScreenReportMode(),
     [SentryHandler(SentryClient(SentryOptions(dsn: sentryDns)))],
-    explicitExceptionReportModesMap: _catcherExplicitReportModesMap,
-    explicitExceptionHandlersMap: _catcherExplicitExceptionHandlersMap,
+    explicitExceptionReportModesMap: _catcherExplicitReportModesMap as Map<String, ReportMode>,
+    explicitExceptionHandlersMap: _catcherExplicitExceptionHandlersMap as Map<String, ReportHandler>,
     localizationOptions: [_catcherLocalizationOptions],
   );
 }
@@ -113,8 +113,8 @@ CatcherOptions _toCatcherDebugConfig(String sentryDns) {
   return CatcherOptions(
     ScreenReportMode(),
     [SentryHandler(SentryClient(SentryOptions(dsn: sentryDns))), ConsoleHandler(enableStackTrace: true)],
-    explicitExceptionReportModesMap: _catcherExplicitReportModesMap,
-    explicitExceptionHandlersMap: _catcherExplicitExceptionHandlersMap,
+    explicitExceptionReportModesMap: _catcherExplicitReportModesMap as Map<String, ReportMode>,
+    explicitExceptionHandlersMap: _catcherExplicitExceptionHandlersMap as Map<String, ReportHandler>,
     localizationOptions: [_catcherLocalizationOptions],
   );
 }
@@ -165,13 +165,13 @@ var _catcherIgnorerExceptions = [
   "HandshakeException: Connection terminated during handshake",
 ];
 
-final Map<String, ReportMode> _catcherExplicitReportModesMap = Map.fromIterable(
+final Map<String?, ReportMode> _catcherExplicitReportModesMap = Map.fromIterable(
   _catcherIgnorerExceptions,
   key: (e) => e,
   value: (_) => SilentReportMode(),
 );
 
-final Map<String, ReportHandler> _catcherExplicitExceptionHandlersMap = Map.fromIterable(
+final Map<String?, ReportHandler> _catcherExplicitExceptionHandlersMap = Map.fromIterable(
   _catcherIgnorerExceptions,
   key: (e) => e,
   value: (_) => ConsoleHandler(),

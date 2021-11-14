@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -25,10 +25,10 @@ const PASSCODE = 'T123';
 
 class OperationBuilder {
   static Operation create(
-    String userId, {
+    String? userId, {
     int since = 0,
-    String ouuid,
-    String iuuid,
+    String? ouuid,
+    String? iuuid,
     String passcode = PASSCODE,
   }) {
     return OperationModel.fromJson(
@@ -38,16 +38,16 @@ class OperationBuilder {
         since: since,
         userId: userId,
         passcode: passcode,
-      ),
+      )!,
     );
   }
 
-  static Map<String, dynamic> createOperationAsJson({
-    int since,
-    String iuuid,
-    String ouuid,
-    String userId,
-    String passcode,
+  static Map<String, dynamic>? createOperationAsJson({
+    int? since,
+    String? iuuid,
+    String? ouuid,
+    String? userId,
+    String? passcode,
   }) {
     final rnd = math.Random();
     return json.decode(
@@ -84,21 +84,21 @@ class OperationBuilder {
     return json.encode(Passcodes.random(6).toJson());
   }
 
-  static createPasscodesAsJson(String passcode) {
+  static createPasscodesAsJson(String? passcode) {
     return json.encode(Passcodes(commander: passcode, personnel: passcode).toJson());
   }
 
-  static createAuthor(String userId) => json.encode(Author.now(userId));
+  static createAuthor(String? userId) => json.encode(Author.now(userId));
 }
 
 class OperationServiceMock extends Mock implements OperationService {
-  static final Map<String, StorageState<Operation>> _operationRepo = {};
+  static final Map<String?, StorageState<Operation>> _operationRepo = {};
 
   Operation add(
-    String userId, {
+    String? userId, {
     int since = 0,
-    String iuuid,
-    String ouuid,
+    String? iuuid,
+    String? ouuid,
     String passcode = PASSCODE,
   }) {
     final operation = OperationBuilder.create(
@@ -117,7 +117,7 @@ class OperationServiceMock extends Mock implements OperationService {
     return operation;
   }
 
-  StorageState<Operation> remove(uuid) {
+  StorageState<Operation>? remove(uuid) {
     return _operationRepo.remove(uuid);
   }
 
@@ -141,7 +141,7 @@ class OperationServiceMock extends Mock implements OperationService {
               since: since,
               userId: user.userId,
               passcode: passcode,
-            ),
+            )!,
           ),
           StateVersion.first,
           isRemote: true,
@@ -150,8 +150,8 @@ class OperationServiceMock extends Mock implements OperationService {
 
   static OperationService build(
     UserRepository users, {
-    @required final UserRole role,
-    @required final String passcode,
+    required final UserRole role,
+    required final String passcode,
     List<String> iuuids = const [],
     final int count = 0,
   }) {
@@ -165,7 +165,7 @@ class OperationServiceMock extends Mock implements OperationService {
     iuuids.forEach((iuuid) {
       if (iuuid.startsWith('a:')) {
         _operationRepo.addEntries([
-          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
+          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user!, passcode),
           for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
         ]);
       }
@@ -179,7 +179,7 @@ class OperationServiceMock extends Mock implements OperationService {
       if (_operationRepo.isEmpty) {
         var user = await users.load();
         _operationRepo.addEntries([
-          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
+          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user!, passcode),
           for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
         ]);
       }
@@ -191,13 +191,13 @@ class OperationServiceMock extends Mock implements OperationService {
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
 
-    when(mock.create(any)).thenAnswer((_) async {
+    when(mock.create(any!)).thenAnswer((_) async {
       final user = await users.load();
       if (user == null) {
         return ServiceResponse.unauthorized();
       }
       final state = _.positionalArguments[0] as StorageState<Operation>;
-      if (!state.version.isFirst) {
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Aggregate has not version 0: $state",
         );
@@ -232,15 +232,15 @@ class OperationServiceMock extends Mock implements OperationService {
       );
     });
 
-    when(mock.update(any)).thenAnswer((_) async {
+    when(mock.update(any!)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Operation>;
       final uuid = next.value.uuid;
       if (_operationRepo.containsKey(uuid)) {
-        final state = _operationRepo[uuid];
-        final delta = next.version.value - state.version.value;
+        final state = _operationRepo[uuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         _operationRepo[uuid] = state.apply(
@@ -257,7 +257,7 @@ class OperationServiceMock extends Mock implements OperationService {
       );
     });
 
-    when(mock.delete(any)).thenAnswer((_) async {
+    when(mock.delete(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Operation>;
       final uuid = state.value.uuid;
       if (_operationRepo.containsKey(uuid)) {

@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'Address.dart';
@@ -10,9 +8,9 @@ part of 'Address.dart';
 
 Address _$AddressFromJson(Map json) {
   return Address(
-    lines: (json['lines'] as List)?.map((e) => e as String)?.toList(),
-    postalCode: json['postalCode'] as String,
-    countryCode: json['countryCode'] as String,
+    lines: (json['lines'] as List<dynamic>?)?.map((e) => e as String).toList(),
+    postalCode: json['postalCode'] as String?,
+    countryCode: json['countryCode'] as String?,
   );
 }
 

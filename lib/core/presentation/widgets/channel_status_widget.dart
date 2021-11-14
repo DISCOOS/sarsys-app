@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/material.dart';
 
@@ -8,7 +8,7 @@ import 'package:SarSys/core/presentation/widgets/stream_widget.dart';
 import 'package:SarSys/core/data/services/provider.dart';
 
 class MessageChannelStatusWidget extends StatelessWidget {
-  const MessageChannelStatusWidget(this.channel, {Key key}) : super(key: key);
+  const MessageChannelStatusWidget(this.channel, {Key? key}) : super(key: key);
 
   final MessageChannel channel;
 
@@ -84,11 +84,11 @@ class MessageChannelStatusWidget extends StatelessWidget {
             : Icon(Icons.warning, color: Colors.orange),
       );
 
-  ListTile _buildSection(BuildContext context, String title, {Widget subtitle}) {
+  ListTile _buildSection(BuildContext context, String title, {Widget? subtitle}) {
     return ListTile(
       title: Text(
         title,
-        style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
       ),
       subtitle: subtitle,
     );

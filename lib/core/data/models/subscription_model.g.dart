@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'subscription_model.dart';
@@ -10,17 +8,14 @@ part of 'subscription_model.dart';
 
 SubscriptionModel _$SubscriptionModelFromJson(Map json) {
   return SubscriptionModel(
-    maxCount: json['maxCount'] as int,
+    maxCount: json['maxCount'] as int?,
     minPeriod: json['minPeriod'] == null
         ? null
         : Duration(microseconds: json['minPeriod'] as int),
-    types: (json['types'] as List)
-        ?.map((e) => e == null
-            ? null
-            : SubscriptionTypeModel.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
+    types: (json['types'] as List<dynamic>?)
+        ?.map((e) =>
+            SubscriptionTypeModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
   );
 }
 
@@ -35,6 +30,6 @@ Map<String, dynamic> _$SubscriptionModelToJson(SubscriptionModel instance) {
 
   writeNotNull('maxCount', instance.maxCount);
   writeNotNull('minPeriod', instance.minPeriod?.inMicroseconds);
-  writeNotNull('types', instance.types?.map((e) => e?.toJson())?.toList());
+  val['types'] = instance.types.map((e) => e.toJson()).toList();
   return val;
 }

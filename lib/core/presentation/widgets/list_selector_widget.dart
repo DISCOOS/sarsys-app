@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/material.dart';
 
@@ -9,19 +9,19 @@ class ListSelectorWidget<T> extends StatelessWidget {
   final String title;
   final IconData icon;
   final List<T> items;
-  final TextStyle style;
+  final TextStyle? style;
   final SelectedCallback<T> onSelected;
   final ItemWidgetBuilder<T> itemBuilder;
 
   const ListSelectorWidget({
-    Key key,
-    @required this.style,
-    @required this.size,
-    @required this.icon,
-    @required this.title,
-    @required this.items,
-    @required this.itemBuilder,
-    @required this.onSelected,
+    Key? key,
+    required this.style,
+    required this.size,
+    required this.icon,
+    required this.title,
+    required this.items,
+    required this.itemBuilder,
+    required this.onSelected,
   }) : super(key: key);
 
   @override

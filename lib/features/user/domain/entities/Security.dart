@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/utils/data.dart';
 import 'package:equatable/equatable.dart';
@@ -14,11 +14,11 @@ class Security extends Equatable {
     this.mode,
     this.locked,
     this.trusted,
-    DateTime heartbeat,
+    DateTime? heartbeat,
   }) : heartbeat = heartbeat ?? DateTime.now();
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         pin,
         type,
         locked,
@@ -26,15 +26,15 @@ class Security extends Equatable {
         heartbeat,
       ];
 
-  final String pin;
+  final String? pin;
 
-  final bool trusted;
-  final SecurityType type;
+  final bool? trusted;
+  final SecurityType? type;
   final DateTime heartbeat;
-  final SecurityMode mode;
+  final SecurityMode? mode;
 
   @JsonKey(defaultValue: true)
-  final bool locked;
+  final bool? locked;
 
   factory Security.fromPin(
     String pin, {
@@ -59,12 +59,12 @@ class Security extends Equatable {
   Security renew() => cloneWith(heartbeat: DateTime.now());
 
   Security cloneWith({
-    String pin,
-    bool locked,
-    bool trusted,
-    SecurityType type,
-    SecurityMode mode,
-    DateTime heartbeat,
+    String? pin,
+    bool? locked,
+    bool? trusted,
+    SecurityType? type,
+    SecurityMode? mode,
+    DateTime? heartbeat,
   }) =>
       Security(
         pin: pin ?? this.pin,

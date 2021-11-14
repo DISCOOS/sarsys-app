@@ -1,5 +1,3 @@
-// @dart=2.11
-
 import 'dart:async';
 
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
@@ -13,11 +11,11 @@ import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 
-class DivisionRepositoryImpl extends StatefulRepository<String, Division, DivisionService>
+class DivisionRepositoryImpl extends StatefulRepository<String?, Division, DivisionService>
     implements DivisionRepository {
   DivisionRepositoryImpl(
     DivisionService service, {
-    @required ConnectivityService connectivity,
+    required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
@@ -25,32 +23,32 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
 
   /// Get [Division.uuid] from [value]
   @override
-  String toKey(Division value) {
+  String? toKey(Division? value) {
     return value?.uuid;
   }
 
   /// Create [Division] from json
-  Division fromJson(Map<String, dynamic> json) => DivisionModel.fromJson(json);
+  Division fromJson(Map<String, dynamic>? json) => DivisionModel.fromJson(json!);
 
   /// Load divisions
   @override
-  Future<List<Division>> load({
+  Future<List<Division?>> load({
     bool force = true,
-    Completer<Iterable<Division>> onRemote,
+    Completer<Iterable<Division>>? onRemote,
   }) async {
     await prepare(
       force: force ?? false,
     );
     return _load(
       onRemote: onRemote,
-    );
+    ) as FutureOr<List<Division?>>;
   }
 
   /// GET ../divisions
   Iterable<Division> _load({
-    Completer<Iterable<Division>> onRemote,
+    Completer<Iterable<Division>>? onRemote,
   }) {
-    return requestQueue.load(
+    return requestQueue!.load(
       service.getList,
       shouldEvict: true,
       onResult: onRemote,
@@ -58,13 +56,13 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
   }
 
   @override
-  Future<Iterable<Division>> onReset({Iterable<Division> previous = const []}) => Future.value(_load());
+  Future<Iterable<Division>> onReset({Iterable<Division>? previous = const []}) => Future.value(_load());
 
   @override
   Future<StorageState<Division>> onCreate(StorageState<Division> state) async {
     var response = await service.create(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
     throw DivisionServiceException(
       'Failed to create Division ${state.value}',
@@ -73,7 +71,7 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
     );
   }
 
-  Future<StorageState<Division>> onUpdate(StorageState<Division> state) async {
+  Future<StorageState<Division>?> onUpdate(StorageState<Division> state) async {
     var response = await service.update(state);
     if (response.isOK) {
       return response.body;
@@ -85,8 +83,8 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
     );
   }
 
-  Future<StorageState<Division>> onDelete(StorageState<Division> state) async {
-    var response = await service.delete(state);
+  Future<StorageState<Division>?> onDelete(StorageState<Division> state) async {
+    ServiceResponse<StorageState<Division>> response = await service.delete(state);
     if (response.isOK) {
       return response.body;
     }
@@ -101,8 +99,8 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
 class DivisionServiceException implements Exception {
   DivisionServiceException(this.error, {this.response, this.stackTrace});
   final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
+  final StackTrace? stackTrace;
+  final ServiceResponse? response;
 
   @override
   String toString() {

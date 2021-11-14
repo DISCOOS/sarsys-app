@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -13,11 +13,11 @@ abstract class PersonRepository implements StatefulRepository<String, Person, Pe
   /// Get [Operation.uuid] from [value]
   @override
   String toKey(Person value) {
-    return value?.uuid;
+    return value.uuid;
   }
 
   /// Find Person with given userId
-  Person findUser(String userId);
+  Person? findUser(String? userId);
 
   /// Find persons matching given query
   Iterable<Person> find({bool where(Person person)});
@@ -25,13 +25,13 @@ abstract class PersonRepository implements StatefulRepository<String, Person, Pe
   /// Init from local storage, overwrite states
   /// with given persons if given. Returns
   /// number of states after initialisation
-  Future<int> init({List<Person> persons});
+  Future<int> init({List<Person>? persons});
 
   /// Load given persons
   Future<Iterable<Person>> fetch({
     bool replace = false,
-    Iterable<String> uuids,
-    Completer<Iterable<Person>> onRemote,
+    Iterable<String>? uuids,
+    Completer<Iterable<Person>>? onRemote,
   });
 
   /// Check if state transitioned into a
@@ -39,7 +39,7 @@ abstract class PersonRepository implements StatefulRepository<String, Person, Pe
   /// conflict
   static bool isDuplicateUser(StorageTransition<Person> transition) =>
       transition.isConflict &&
-      transition.conflict.isCode(
+      transition.conflict!.isCode(
         PersonConflictCode.duplicate_user_id,
       );
 }
@@ -47,7 +47,7 @@ abstract class PersonRepository implements StatefulRepository<String, Person, Pe
 class PersonServiceException extends ServiceException {
   PersonServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(error, response: response, stackTrace: stackTrace);
 }

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:meta/meta.dart';
 import 'package:chopper/chopper.dart';
@@ -11,10 +11,10 @@ import 'package:SarSys/core/data/storage.dart';
 
 import 'package:SarSys/core/domain/models/core.dart';
 
-abstract class StatefulService<D extends JsonObject, R> extends JsonService<StorageState<D>, R> {
+abstract class StatefulService<D extends JsonObject?, R> extends JsonService<StorageState<D?>, R> {
   StatefulService({
-    @required JsonReducer reducer,
-    @required JsonDecoder<D> decoder,
+    required JsonReducer reducer,
+    required JsonDecoder<D> decoder,
     bool isPaged = true,
     String dataField = 'data',
     String entriesField = 'entries',
@@ -36,16 +36,16 @@ abstract class StatefulService<D extends JsonObject, R> extends JsonService<Stor
   final JsonDecoder<D> _decoder;
 
   @override
-  JsonDecoder<StorageState<D>> get decoder => _toStateful;
+  JsonDecoder<StorageState<D?>> get decoder => _toStateful;
 
-  StorageState<D> _toStateful(dynamic json) {
+  StorageState<D?> _toStateful(dynamic json) {
     final value = _decoder(
       Map.from(json).elementAt(_dataField),
     );
     final version = StateVersion(
-      json[versionField] as int,
+      json[versionField] as int?,
     );
-    return version.isFirst ? toCreated(value, version) : toUpdated(value, version);
+    return version.isFirst ? toCreated(value!, version) : toUpdated(value!, version);
   }
 
   @visibleForOverriding
@@ -93,33 +93,33 @@ abstract class StatefulService<D extends JsonObject, R> extends JsonService<Stor
     throw UnimplementedError();
   }
 
-  Future<Response<PagedList<StorageState<D>>>> onSearch(String filter, int offset, int limit, List<String> options) {
+  Future<Response<PagedList<StorageState<D>>>> onSearch(String filter, int? offset, int? limit, List<String> options) {
     throw UnimplementedError();
   }
 
   @visibleForOverriding
-  Future<Response<StorageState<D>>> onGetFromId(String id, {List<String> options = const []}) {
+  Future<Response<StorageState<D>>> onGetFromId(String? id, {List<String> options = const []}) {
     throw UnimplementedError();
   }
 
   @visibleForOverriding
-  Future<Response<StorageState<D>>> onGetFromIds(List<String> ids, {List<String> options = const []}) {
+  Future<Response<StorageState<D>>> onGetFromIds(List<String?> ids, {List<String> options = const []}) {
     throw UnimplementedError();
   }
 
   @visibleForOverriding
-  Future<Response<PagedList<StorageState<D>>>> onGetPage(int offset, int limit, List<String> options) {
+  Future<Response<PagedList<StorageState<D>>>> onGetPage(int? offset, int? limit, List<String> options) {
     throw UnimplementedError();
   }
 
   @visibleForOverriding
-  Future<Response<PagedList<StorageState<D>>>> onGetPageFromId(String id, int offset, int limit, List<String> options) {
+  Future<Response<PagedList<StorageState<D>>>> onGetPageFromId(String? id, int? offset, int? limit, List<String> options) {
     throw UnimplementedError();
   }
 
   @visibleForOverriding
   Future<Response<PagedList<StorageState<D>>>> onGetPageFromIds(
-      List<String> ids, int offset, int limit, List<String> options) {
+      List<String> ids, int? offset, int? limit, List<String> options) {
     throw UnimplementedError();
   }
 
@@ -131,21 +131,21 @@ abstract class StatefulService<D extends JsonObject, R> extends JsonService<Stor
       );
 
   @protected
-  StorageState<D> toUpdated(D value, StateVersion version) => StorageState.updated(
+  StorageState<D> toUpdated(D value, StateVersion? version) => StorageState.updated(
         value,
         version,
         isRemote: true,
       );
 
   @protected
-  StorageState<D> toDeleted(D value, StateVersion version) => StorageState.deleted(
+  StorageState<D> toDeleted(D value, StateVersion? version) => StorageState.deleted(
         value,
         version,
         isRemote: true,
       );
 }
 
-abstract class StatefulServiceDelegate<D extends JsonObject, R> extends Service {
+abstract class StatefulServiceDelegate<D extends JsonObject?, R> extends Service {
   StatefulService<D, R> get delegate;
 }
 
@@ -228,8 +228,8 @@ mixin StatefulUpdateWithId<D extends JsonObject, R> on StatefulServiceDelegate<D
   }
 }
 mixin StatefulUpdateWithIds<D extends JsonObject, R> on StatefulServiceDelegate<D, R> {
-  Future<ServiceResponse<StorageState<D>>> updateWithIds(List<String> ids, StorageState<D> state) async {
-    return Api.from<StorageState<D>, StorageState<D>>(
+  Future<ServiceResponse<StorageState<D?>>> updateWithIds(List<String> ids, StorageState<D> state) async {
+    return Api.from<StorageState<D>, StorageState<D?>>(
       await delegate.onUpdateWithIds(
         ids,
         state,
@@ -293,8 +293,8 @@ mixin StatefulDeleteWithIds<D extends JsonObject, R> on StatefulServiceDelegate<
 mixin StatefulSearch<D extends JsonObject, R> on StatefulServiceDelegate<D, R> {
   Future<ServiceResponse<List<StorageState<D>>>> search(
     String filter, {
-    int offset = 0,
-    int limit = 20,
+    int? offset = 0,
+    int? limit = 20,
     List<String> options = const [],
   }) async {
     return Api.from<PagedList<StorageState<D>>, List<StorageState<D>>>(
@@ -309,7 +309,7 @@ mixin StatefulSearch<D extends JsonObject, R> on StatefulServiceDelegate<D, R> {
 }
 
 mixin StatefulGetFromId<D extends JsonObject, R> on StatefulServiceDelegate<D, R> {
-  Future<ServiceResponse<StorageState<D>>> getFromId(String id, {List<String> options = const []}) async {
+  Future<ServiceResponse<StorageState<D>>> getFromId(String? id, {List<String> options = const []}) async {
     return Api.from<StorageState<D>, StorageState<D>>(
       await delegate.onGetFromId(id, options: options),
     );
@@ -329,11 +329,11 @@ mixin StatefulGetList<D extends JsonObject, R> on StatefulServiceDelegate<D, R> 
       options,
     );
     while (response.is200) {
-      body.addAll(response.body);
-      if (response.page.hasNext) {
+      body.addAll(response.body!);
+      if (response.page!.hasNext) {
         response = await getPage(
-          response.page.next,
-          response.page.limit,
+          response.page!.next,
+          response.page!.limit,
           options,
         );
       } else {
@@ -343,7 +343,7 @@ mixin StatefulGetList<D extends JsonObject, R> on StatefulServiceDelegate<D, R> 
     return response;
   }
 
-  Future<ServiceResponse<List<StorageState<D>>>> getPage(int offset, int limit, List<String> options) async {
+  Future<ServiceResponse<List<StorageState<D>>>> getPage(int? offset, int? limit, List<String> options) async {
     return Api.from<PagedList<StorageState<D>>, List<StorageState<D>>>(
       await delegate.onGetPage(offset, limit, options),
     );
@@ -352,7 +352,7 @@ mixin StatefulGetList<D extends JsonObject, R> on StatefulServiceDelegate<D, R> 
 
 mixin StatefulGetListFromId<S extends StatefulService<D, R>, D extends JsonObject, R> on StatefulServiceDelegate<D, R> {
   Future<ServiceResponse<List<StorageState<D>>>> getListFromId(
-    String id, {
+    String? id, {
     int offset = 0,
     int limit = 20,
     List<String> options = const [],
@@ -365,12 +365,12 @@ mixin StatefulGetListFromId<S extends StatefulService<D, R>, D extends JsonObjec
       options,
     );
     while (response.is200) {
-      items.addAll(response.body);
-      if (response.page.hasNext) {
+      items.addAll(response.body!);
+      if (response.page!.hasNext) {
         response = await getPageFromId(
           id,
-          response.page.next,
-          response.page.limit,
+          response.page!.next,
+          response.page!.limit,
           options,
         );
       } else {
@@ -381,9 +381,9 @@ mixin StatefulGetListFromId<S extends StatefulService<D, R>, D extends JsonObjec
   }
 
   Future<ServiceResponse<List<StorageState<D>>>> getPageFromId(
-    String id,
-    int offset,
-    int limit,
+    String? id,
+    int? offset,
+    int? limit,
     List<String> options,
   ) async {
     return Api.from<PagedList<StorageState<D>>, List<StorageState<D>>>(
@@ -393,7 +393,7 @@ mixin StatefulGetListFromId<S extends StatefulService<D, R>, D extends JsonObjec
 }
 
 mixin StatefulGetFromIds<D extends JsonObject, R> on StatefulServiceDelegate<D, R> {
-  Future<ServiceResponse<StorageState<D>>> getFromIds(List<String> ids, {List<String> options = const []}) async {
+  Future<ServiceResponse<StorageState<D>>> getFromIds(List<String?> ids, {List<String> options = const []}) async {
     return Api.from<StorageState<D>, StorageState<D>>(
       await delegate.onGetFromIds(ids, options: options),
     );
@@ -410,19 +410,19 @@ mixin StatefulGetListFromIds<S extends StatefulService<D, R>, D extends JsonObje
   }) async {
     final items = <StorageState<D>>[];
     var response = await getPageFromIds(
-      ids?.toPage(offset: offset, limit: limit)?.toList(),
+      ids.toPage(offset: offset, limit: limit).toList(),
       offset,
       limit,
       options,
     );
     while (response.is200) {
-      items.addAll(response.body);
+      items.addAll(response.body!);
       offset += limit;
       if (offset < ids.length) {
         response = await getPageFromIds(
           ids,
-          response.page.next,
-          response.page.limit,
+          response.page!.next,
+          response.page!.limit,
           options,
         );
       } else {
@@ -434,8 +434,8 @@ mixin StatefulGetListFromIds<S extends StatefulService<D, R>, D extends JsonObje
 
   Future<ServiceResponse<List<StorageState<D>>>> getPageFromIds(
     List<String> ids,
-    int offset,
-    int limit,
+    int? offset,
+    int? limit,
     List<String> options,
   ) async {
     return Api.from<PagedList<StorageState<D>>, List<StorageState<D>>>(

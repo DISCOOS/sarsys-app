@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'OperationalFunction.dart';
@@ -10,8 +8,8 @@ part of 'OperationalFunction.dart';
 
 OperationalFunction _$OperationalFunctionFromJson(Map json) {
   return OperationalFunction(
-    name: json['name'] as String,
-    pattern: json['pattern'] as String,
+    name: json['name'] as String?,
+    pattern: json['pattern'] as String?,
   );
 }
 

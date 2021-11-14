@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'tracking_service.dart';
@@ -10,7 +8,7 @@ part of 'tracking_service.dart';
 
 // ignore_for_file: always_put_control_body_on_new_line, always_specify_types, prefer_const_declarations
 class _$TrackingServiceImpl extends TrackingServiceImpl {
-  _$TrackingServiceImpl([ChopperClient client]) {
+  _$TrackingServiceImpl([ChopperClient? client]) {
     if (client == null) return;
     this.client = client;
   }
@@ -19,7 +17,7 @@ class _$TrackingServiceImpl extends TrackingServiceImpl {
   final definitionType = TrackingServiceImpl;
 
   @override
-  Future<Response<StorageState<Tracking>>> update(String uuid, Tracking body) {
+  Future<Response<StorageState<Tracking>>> update(String? uuid, Tracking body) {
     final $url = '/trackings/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
@@ -37,7 +35,7 @@ class _$TrackingServiceImpl extends TrackingServiceImpl {
 
   @override
   Future<Response<PagedList<StorageState<Tracking>>>> getAll(
-      dynamic ouuid, int offset, int limit,
+      dynamic ouuid, int? offset, int? limit,
       {List<String> expand = const []}) {
     final $url = '/operations/$ouuid/trackings';
     final $params = <String, dynamic>{

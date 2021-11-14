@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
@@ -11,10 +11,10 @@ import 'package:meta/meta.dart';
 
 abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   AppConfig({
-    @required String uuid,
-    @required this.udid,
-    @required this.sentryDns,
-    @required this.version,
+    required String uuid,
+    required this.udid,
+    required this.sentryDns,
+    required this.version,
     this.demo,
     this.demoRole,
     this.onboarded = false,
@@ -33,7 +33,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     this.locationAccuracy = Defaults.locationAccuracy,
     this.locationFastestInterval = Defaults.locationFastestInterval,
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
-    List<String> units = const <String>[],
+    List<String>? units = const <String>[],
     this.keepScreenOn = Defaults.keepScreenOn,
     this.callsignReuse = Defaults.callsignReuse,
     this.idpHints = Defaults.idpHints,
@@ -76,10 +76,10 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
           securityLockAfter,
           locationDebug,
         ]);
-  final String udid;
-  final int version;
-  final bool demo;
-  final String demoRole;
+  final String? udid;
+  final int? version;
+  final bool? demo;
+  final String? demoRole;
   final String sentryDns;
   final bool onboarded;
   final bool firstSetup;
@@ -103,45 +103,45 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   final List<String> idpHints;
   final SecurityType securityType;
   final SecurityMode securityMode;
-  final List<String> trustedDomains;
+  final List<String?> trustedDomains;
   final int securityLockAfter;
   final bool locationDebug;
 
   AppConfig copyWith({
-    String uuid,
-    String udid,
-    int version,
-    bool demo,
-    String sentry,
-    String demoRole,
-    bool onboarded,
-    bool firstSetup,
-    String orgId,
-    String divId,
-    String depId,
-    List<String> talkGroups,
-    String talkGroupCatalog,
-    bool storage,
-    bool locationAlways,
-    bool locationWhenInUse,
-    bool activityRecognition,
-    int mapCacheTTL,
-    bool mapRetinaMode,
-    int mapCacheCapacity,
-    bool locationAllowSharing,
-    bool locationStoreLocally,
-    String locationAccuracy,
-    int locationFastestInterval,
-    int locationSmallestDisplacement,
-    bool keepScreenOn,
-    bool callsignReuse,
-    List<String> units,
-    List<String> idpHints,
-    SecurityType securityType,
-    SecurityMode securityMode,
-    List<String> trustedDomains,
-    int securityLockAfter,
-    bool locationDebug,
+    String? uuid,
+    String? udid,
+    int? version,
+    bool? demo,
+    String? sentry,
+    String? demoRole,
+    bool? onboarded,
+    bool? firstSetup,
+    String? orgId,
+    String? divId,
+    String? depId,
+    List<String>? talkGroups,
+    String? talkGroupCatalog,
+    bool? storage,
+    bool? locationAlways,
+    bool? locationWhenInUse,
+    bool? activityRecognition,
+    int? mapCacheTTL,
+    bool? mapRetinaMode,
+    int? mapCacheCapacity,
+    bool? locationAllowSharing,
+    bool? locationStoreLocally,
+    String? locationAccuracy,
+    int? locationFastestInterval,
+    int? locationSmallestDisplacement,
+    bool? keepScreenOn,
+    bool? callsignReuse,
+    List<String>? units,
+    List<String>? idpHints,
+    SecurityType? securityType,
+    SecurityMode? securityMode,
+    List<String?>? trustedDomains,
+    int? securityLockAfter,
+    bool? locationDebug,
   });
 
   DemoParams toDemoParams() => DemoParams(demo, role: toRole());

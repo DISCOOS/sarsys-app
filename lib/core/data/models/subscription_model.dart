@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -12,7 +12,7 @@ class SubscriptionModel extends Equatable {
   const SubscriptionModel({
     this.maxCount = defaultCount,
     this.minPeriod = defaultPeriod,
-    List<SubscriptionTypeModel> types = const <SubscriptionTypeModel>[],
+    List<SubscriptionTypeModel>? types = const <SubscriptionTypeModel>[],
   })  : types = types ?? const <SubscriptionTypeModel>[],
         super();
 
@@ -24,10 +24,10 @@ class SubscriptionModel extends Equatable {
   static const SubscriptionModel defaultModel = SubscriptionModel();
 
   /// Maximum number of changes to cache before pushing to apps
-  final int maxCount;
+  final int? maxCount;
 
   /// Minimum number of seconds between pushing changes to apps
-  final Duration minPeriod;
+  final Duration? minPeriod;
 
   /// List of subscription types that defines which changes to subscribe to
   final List<SubscriptionTypeModel> types;
@@ -36,7 +36,7 @@ class SubscriptionModel extends Equatable {
   Map<String, dynamic> toJson() => _$SubscriptionModelToJson(this);
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         types,
         maxCount,
         minPeriod,

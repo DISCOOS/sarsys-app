@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:flutter/foundation.dart';
@@ -69,9 +69,9 @@ class RepositoryException implements Exception {
   }
 
   final String message;
-  final Repository repo;
-  final StorageState state;
-  final StackTrace stackTrace;
+  final Repository? repo;
+  final StorageState? state;
+  final StackTrace? stackTrace;
 }
 
 class RepositoryServiceException implements Exception {
@@ -90,9 +90,9 @@ class RepositoryServiceException implements Exception {
       'stackTrace: $stackTrace'
       '}';
   final String message;
-  final Repository repo;
-  final StorageState state;
-  final StackTrace stackTrace;
+  final Repository? repo;
+  final StorageState? state;
+  final StackTrace? stackTrace;
   final ServiceResponse response;
 }
 
@@ -100,8 +100,8 @@ class RepositoryRemoteException extends RepositoryException {
   RepositoryRemoteException(
     String message,
     Repository repo, {
-    StorageState state,
-    StackTrace stackTrace,
+    StorageState? state,
+    StackTrace? stackTrace,
   }) : super(
           message,
           repo,
@@ -114,8 +114,8 @@ class RepositoryOfflineException extends RepositoryException {
   RepositoryOfflineException(
     String message,
     Repository repo, {
-    StorageState state,
-    StackTrace stackTrace,
+    StorageState? state,
+    StackTrace? stackTrace,
   }) : super(
           message,
           repo,
@@ -127,9 +127,9 @@ class RepositoryOfflineException extends RepositoryException {
 class RepositoryDependencyException extends RepositoryException {
   RepositoryDependencyException(
     this.refs,
-    Repository repo, {
-    StorageState state,
-    StackTrace stackTrace,
+    Repository? repo, {
+    StorageState? state,
+    StackTrace? stackTrace,
   }) : super(
           'Dependency timeout: ${refs.map((e) => '${e.type}: ${e.uuid}')}',
           repo,
@@ -142,9 +142,9 @@ class RepositoryDependencyException extends RepositoryException {
 class RepositoryTimeoutException extends RepositoryException {
   RepositoryTimeoutException(
     String message,
-    Repository repo, {
-    StorageState state,
-    StackTrace stackTrace,
+    Repository? repo, {
+    StorageState? state,
+    StackTrace? stackTrace,
   }) : super(
           message,
           repo,
@@ -156,15 +156,15 @@ class RepositoryTimeoutException extends RepositoryException {
 class RepositoryIllegalStateValueException extends RepositoryException {
   RepositoryIllegalStateValueException(
     Repository repo, [
-    StorageState state,
+    StorageState? state,
     this.reason,
   ]) : super(
-          '[${state.value?.runtimeType}}] state value is invalid: $reason, '
+          '[${state!.value?.runtimeType}}] state value is invalid: $reason, '
           'state: ${state.runtimeType}, value: ${state.value}, '
           'status: ${state.status}, remote: ${state.isRemote}',
           repo,
         );
-  final String reason;
+  final String? reason;
 }
 
 class RepositoryNotReadyException extends RepositoryException {
@@ -198,7 +198,7 @@ class RepositoryStateNotExistsException extends RepositoryException {
     Repository repo, [
     this.state,
   ]) : super('state $state does not exists', repo);
-  final StorageState state;
+  final StorageState? state;
 }
 
 class RepositoryIllegalStateException extends RepositoryException {

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
@@ -11,10 +11,10 @@ part 'tracking_source_model.g.dart';
 @JsonSerializable()
 class TrackingSourceModel extends TrackingSource {
   TrackingSourceModel({
-    @required String uuid,
-    @required SourceType type,
+    required String? uuid,
+    required SourceType? type,
   }) : super(
-          uuid: uuid,
+          uuid: uuid!,
           type: type,
         );
 

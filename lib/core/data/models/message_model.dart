@@ -1,5 +1,3 @@
-// @dart=2.11
-
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 import 'package:SarSys/core/extensions.dart';
@@ -17,7 +15,7 @@ abstract class MessageModel {
   bool get isApriori => version.isNone;
 
   /// Get aggregate [uuid]
-  String get uuid => data.elementAt('data/uuid');
+  String? get uuid => data.elementAt('data/uuid');
 
   /// Check if message contains actual state
   bool get isState => data.hasPath('data/changed');
@@ -29,8 +27,8 @@ abstract class MessageModel {
   StateVersion get version => StateVersion.fromJson(data);
 
   /// Get next state to apply
-  Map<String, dynamic> get state => data.mapAt<String, dynamic>('data/changed');
+  Map<String, dynamic>? get state => data.mapAt<String, dynamic>('data/changed');
 
   /// Get next patches to apply
-  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
+  List<Map<String, dynamic>>? get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }

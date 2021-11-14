@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:collection';
@@ -19,7 +19,7 @@ import 'package:http/http.dart';
 
 import 'models/AggregateRef.dart';
 
-class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDelegate<V, V>> {
+class StatefulRequestQueue<K, V extends JsonObject?, S extends StatefulServiceDelegate<V, V>> {
   StatefulRequestQueue(
     StatefulRepository<K, V, S> repo,
     this.connectivity,
@@ -28,27 +28,27 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
   static const Duration timeLimit = Duration(seconds: 30);
 
   /// [StatefulRepository] instance
-  StatefulRepository<K, V, S> get repo => _repo;
-  StatefulRepository<K, V, S> _repo;
+  StatefulRepository<K, V, S>? get repo => _repo;
+  StatefulRepository<K, V, S>? _repo;
 
   /// [ConnectivityService] instance
-  final ConnectivityService connectivity;
+  final ConnectivityService? connectivity;
 
   /// Check if repository is online
-  bool get isOnline => connectivity.isOnline;
+  bool get isOnline => connectivity!.isOnline;
 
   /// Check if repository is offline
-  bool get isOffline => connectivity.isOffline;
+  bool get isOffline => connectivity!.isOffline;
 
   /// Subscription for handling  offline -> online
-  StreamSubscription<ConnectivityStatus> _onlineSubscription;
+  StreamSubscription<ConnectivityStatus>? _onlineSubscription;
 
   /// Queue of [load] processed in FIFO manner.
   ///
   /// This queue ensures that each [load] is
   /// processed in order waiting for it to
   /// complete or fail.
-  StreamRequestQueue<K, Iterable<V>> _loadQueue;
+  StreamRequestQueue<K, Iterable<V?>>? _loadQueue;
 
   /// Check if [load] is scheduled for
   ///request from [service].
@@ -61,17 +61,17 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
   /// fail. This prevents concurrent writes which will
   /// result in an unexpected behaviour due to race
   /// conditions.
-  StreamRequestQueue<K, V> _pushQueue;
+  StreamRequestQueue<K, V?>? _pushQueue;
 
   /// Check if queue is empty
-  bool get isEmpty => _loadQueue.isEmpty && _pushQueue.isEmpty;
+  bool get isEmpty => _loadQueue!.isEmpty && _pushQueue!.isEmpty;
 
   /// Check if queue is not empty
   bool get isNotEmpty => !isEmpty;
 
   /// Get backlog of states pending push to a backend API
   Iterable<K> get backlog => List.unmodifiable(_backlog.keys);
-  final _backlog = LinkedHashMap<K, Completer<V>>();
+  final LinkedHashMap<K, Completer<V?>?> _backlog = LinkedHashMap<K, Completer<V>?>();
 
   /// Cancel request processing
   Future cancel() async {
@@ -94,14 +94,14 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
     );
 
     // Cancel queues
-    _loadQueue.cancel();
-    _pushQueue.cancel();
+    _loadQueue!.cancel();
+    _pushQueue!.cancel();
 
     // Add local states to backlog
     _backlog.clear();
     _backlog.addAll(
       Map.fromEntries(
-        states.where((state) => state.isCreated).map((state) => MapEntry(_repo.toKey(state.value), null)),
+        states.where((state) => state.isCreated).map((state) => MapEntry(_repo!.toKey(state.value), null)),
       ),
     );
     return pop();
@@ -115,8 +115,8 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
     );
 
     // Overwrite backlog with pending callbacks
-    next.addAll(Map<K, Completer<V>>.fromEntries(
-      pending.where((r) => r.onResult != null).map((r) => MapEntry(r.key as K, r.onResult)),
+    next.addAll(Map<K, Completer<V?>?>.fromEntries(
+      pending.where((r) => r.onResult != null).map((r) => MapEntry(r.key as K, r.onResult as Completer<V?>?)),
     ));
 
     _backlog.clear();
@@ -140,13 +140,13 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
         error is TimeoutException ||
         error is RepositoryOfflineException ||
         error is RepositoryDependencyException ||
-        isServiceError && (error as ServiceException).response.isErrorTemporary;
+        isServiceError && (error as ServiceException).response!.isErrorTemporary;
 
     if (isTemporary) {
       _popWhenOnline();
       return isOffline;
     }
-    _repo.onError(
+    _repo!.onError(
       error,
       stackTrace,
     );
@@ -155,15 +155,15 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
 
   /// Get local values and schedule a deferred load request
   Iterable<V> load(
-    AsyncValueGetter<ServiceResponse<Iterable<StorageState<V>>>> request, {
-    V map(V value),
+    AsyncValueGetter<ServiceResponse<Iterable<StorageState<V>?>>> request, {
+    V map(V value)?,
     bool fail = false,
     bool shouldEvict = true,
-    Completer<Iterable<V>> onResult,
+    Completer<Iterable<V>>? onResult,
   }) {
     _assertState();
     // Replace current if not executed yet
-    _loadQueue.only(StreamRequest<K, Iterable<V>>(
+    _loadQueue!.only(StreamRequest<K, Iterable<V?>>(
       fail: fail,
       onResult: onResult,
       execute: () => _executeLoad(
@@ -171,19 +171,19 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
         request,
         shouldEvict,
       ),
-      fallback: () => Future.value(_repo.values),
+      fallback: () => Future.value(_repo!.values),
     ));
 
     if (isOffline) {
       _popWhenOnline();
     }
 
-    return _repo.values;
+    return _repo!.values;
   }
 
-  Future<StreamResult<Iterable<V>>> _executeLoad(
-    V map(V value),
-    AsyncValueGetter<ServiceResponse<Iterable<StorageState<V>>>> request,
+  Future<StreamResult<Iterable<V?>>> _executeLoad(
+    V map(V value)?,
+    AsyncValueGetter<ServiceResponse<Iterable<StorageState<V>?>>> request,
     bool shouldEvict,
   ) async {
     _assertState();
@@ -193,26 +193,26 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
     }
     var response = await request();
     if (response != null) {
-      if (_repo.isReady && (response.is200 || response.is206)) {
-        final states = response.body.map((state) {
-          final next = state.remote(
+      if (_repo!.isReady && (response.is200 || response.is206)) {
+        final states = response.body!.map((state) {
+          final next = state!.remote(
             map == null ? state.value : map(state.value),
             status: StorageStatus.updated,
           );
-          if (_repo.containsKey(_repo.toKey(state.value))) {
+          if (_repo!.containsKey(_repo!.toKey(state.value))) {
             return next;
           }
           return state;
         });
         if (shouldEvict) {
-          _repo.evict(
-            retainKeys: states.map((s) => s.value).map(_repo.toKey),
+          _repo!.evict(
+            retainKeys: states.map((s) => s!.value).map(_repo!.toKey),
           );
         }
         states.forEach(
           (state) {
-            if (_repo.toKey(state.value) != null) {
-              _repo.put(
+            if (_repo!.toKey(state!.value) != null) {
+              _repo!.put(
                 _patch(state),
               );
             }
@@ -229,12 +229,12 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
         );
       }
     }
-    return StreamResult<Iterable<V>>(
-      value: _repo.values,
+    return StreamResult<Iterable<V?>>(
+      value: _repo!.values,
     );
   }
 
-  Completer<Iterable<V>> _onLoaded;
+  Completer<Iterable<V>>? _onLoaded;
 
   /// Wait on future completed when
   /// loading is finished. If offline
@@ -259,12 +259,12 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
   /// duration given by [waitFor].
   ///
   Future<Iterable<V>> onLoadedAsync({
-    Duration waitFor,
+    Duration? waitFor,
     bool fail = false,
     bool waitForOnline = false,
   }) {
     if (_onLoaded?.isCompleted == false) {
-      return _onLoaded.future;
+      return _onLoaded!.future;
     }
 
     _onLoaded = Completer<Iterable<V>>();
@@ -274,10 +274,10 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
       waitForOnline,
       fail,
     );
-    return _onLoaded.future;
+    return _onLoaded!.future;
   }
 
-  void _awaitLoaded(Completer<Iterable<V>> completer, Duration waitFor, bool waitForOnline, bool fail) async {
+  void _awaitLoaded(Completer<Iterable<V?>>? completer, Duration? waitFor, bool waitForOnline, bool fail) async {
     // Only wait if loading with connectivity
     // online, or wait for online is requested
     if (_shouldWait(waitForOnline)) {
@@ -286,7 +286,7 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
 
     if (_shouldWait(waitForOnline)) {
       if (fail) {
-        completer.completeError(
+        completer!.completeError(
           RepositoryTimeoutException(
             "Waiting on $runtimeType to complete async loads failed",
             _repo,
@@ -297,9 +297,9 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
       } else {
         _awaitLoaded(completer, waitFor, waitForOnline, fail);
       }
-    } else if (!completer.isCompleted) {
+    } else if (!completer!.isCompleted) {
       assert(!_shouldWait(waitForOnline), "Should not be loading when online");
-      completer.complete(_repo.values);
+      completer.complete(_repo!.values);
     }
   }
 
@@ -310,9 +310,9 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
   /// Returns [state] value.
   V stash(
     StorageState<V> state, {
-    Completer<V> onResult,
+    Completer<V?>? onResult,
   }) {
-    final key = _repo.toKey(state.value);
+    final key = _repo!.toKey(state.value);
     if (state.isLocal) {
       _backlog[key] = onResult;
     }
@@ -326,14 +326,14 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
 
     if (_shouldSchedulePush()) {
       // Cancel current
-      final pending = await _pushQueue.cancel();
+      final pending = await _pushQueue!.cancel();
 
       // Rebuild backlog
       _rebuild(pending, scheduled);
 
       // Start processing again
-      _loadQueue.start();
-      _pushQueue.start();
+      _loadQueue!.start();
+      _pushQueue!.start();
 
       // Reset retry timer
       _retries = 0;
@@ -362,66 +362,66 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
   /// automatically by appropriate actions.
   V push(
     K key, {
-    Completer<V> onResult,
+    Completer<V?>? onResult,
   }) {
     _assertState();
-    final state = _repo.getState(key);
-    if (state?.isLocal == true) {
+    final state = _repo!.getState(key);
+    if (state!.isLocal == true) {
       if (_shouldSchedulePush()) {
         // Replace current if not executed yet
-        _pushQueue.only(StreamRequest<K, V>(
+        _pushQueue!.only(StreamRequest<K, V?>(
           key: key,
           fail: false,
           onResult: onResult,
           fallback: () {
             return Future.value(
-              state.value,
+              state!.value,
             );
           },
           execute: () {
-            return _repo.isReady ? _executePush(key) : state.value;
+            return _repo!.isReady ? _executePush(key) : state!.value as Future<StreamResult<V?>>?;
           },
         ));
-        return state?.value;
+        return state.value;
       }
       return stash(
-        state,
+        state!,
         onResult: onResult,
       );
     }
-    return state?.value;
+    return state.value;
   }
 
   Future<StreamResult<V>> _executePush(K key) async {
     try {
       _assertState();
-      if (_repo.isReady) {
-        if (_repo.containsKey(key)) {
+      if (_repo!.isReady) {
+        if (_repo!.containsKey(key)) {
           final exists = await _waitForDeps(key);
           if (exists) {
             final result = await _push(
-              _repo.getState(key),
+              _repo!.getState(key)!,
             );
-            if (_repo.isReady) {
-              _repo.put(_patch(
-                result,
+            if (_repo!.isReady) {
+              _repo!.put(_patch(
+                result!,
               ));
             }
             return StreamResult(
               // If patch deleted state, use result before patch
-              value: _repo.containsKey(key) ? _repo.get(key) : result.value,
+              value: _repo!.containsKey(key) ? _repo!.get(key) : result!.value,
             );
           } else {
             // Some dependencies where not in remote state
-            final state = _repo.getState(key);
-            final refs = _repo.toRefs(state.value);
+            final state = _repo!.getState(key)!;
+            final refs = _repo!.toRefs(state.value);
             final error = RepositoryDependencyException(
               refs.toList(),
               _repo,
               state: state,
               stackTrace: StackTrace.current,
             );
-            _repo.put(
+            _repo!.put(
               state.failed(error),
             );
             return StreamResult.failed(
@@ -433,9 +433,9 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
       }
       return StreamResult.none();
     } catch (error) {
-      final state = _repo.getState(key);
+      final state = _repo!.getState(key);
       if (state != null) {
-        _repo.put(
+        _repo!.put(
           state.failed(error),
         );
       }
@@ -444,20 +444,20 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
   }
 
   bool _shouldSchedulePush() {
-    return connectivity.isOnline && !_repo.inTransaction;
+    return connectivity!.isOnline && !_repo!.inTransaction;
   }
 
   /// Push state to remote
-  FutureOr<StorageState<V>> _push(StorageState<V> state) async {
+  FutureOr<StorageState<V?>?> _push(StorageState<V> state) async {
     if (state.isLocal) {
       try {
         switch (state.status) {
           case StorageStatus.created:
-            return await _repo.onCreate(state);
+            return await _repo!.onCreate(state);
           case StorageStatus.updated:
-            return await _repo.onUpdate(state);
+            return await _repo!.onUpdate(state);
           case StorageStatus.deleted:
-            return await _repo.onDelete(state);
+            return await _repo!.onDelete(state);
         }
         throw RepositoryException(
           'Unable to process $state',
@@ -465,21 +465,21 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
         );
       } on ServiceException catch (e) {
         if (e.is409) {
-          return await _repo.onResolve(state, e.response);
+          return await _repo!.onResolve(state, e.response!);
         } else if (e.is404) {
-          return await _repo.onNotFound(state, e.response);
+          return await _repo!.onNotFound(state, e.response);
         }
         rethrow;
       }
     }
-    return state;
+    return state!;
   }
 
   /// Patch [next] state with existing in repository
   StorageState<V> _patch(StorageState next) {
-    final key = _repo.toKey(next.value);
-    final current = _repo.getState(key);
-    return current == null ? next : current.patch<V>(next, _repo.fromJson);
+    final key = _repo!.toKey(next.value);
+    final current = _repo!.getState(key);
+    return current == null ? next as StorageState<V> : current.patch<V>(next as StorageState<V>, _repo!.fromJson);
   }
 
   /// Check if dependencies exists remotely
@@ -506,9 +506,9 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
   /// because dependency was not found in backend.
   bool shouldWait(K key) {
     _assertState();
-    final state = _repo.getState(key);
+    final state = _repo!.getState(key);
     if (state?.isLocal == true) {
-      final refs = _repo.toRefs(state.value);
+      final refs = _repo!.toRefs(state!.value);
       return refs.any(_isRefLocal);
     }
     return false;
@@ -516,11 +516,11 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
 
   /// Check if reference exists local only
   bool _isRefLocal(AggregateRef ref) {
-    final state = _repo.dependencies
-        .where((dep) => dep.containsKey(ref.uuid))
-        .map((dep) => dep.getState(ref.uuid))
+    final state = _repo!.dependencies
+        .where((dep) => dep!.containsKey(ref.uuid))
+        .map((dep) => dep!.getState(ref.uuid))
         .where((state) => state?.value?.runtimeType == ref.type)
-        .firstOrNull;
+        .firstOrNull as StorageState<JsonObject<dynamic>>?;
     if (state != null) {
       return state.isCreated && state.isLocal;
     }
@@ -529,18 +529,18 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
 
   void _popWhenOnline() {
     if (_onlineSubscription == null) {
-      _onlineSubscription = connectivity.whenOnline.listen(
+      _onlineSubscription = connectivity!.whenOnline.listen(
         (_) {
           pop();
         },
         cancelOnError: false,
-        onError: _repo.onError,
+        onError: _repo!.onError,
       );
     }
   }
 
   /// Retry timer
-  Timer _timer;
+  Timer? _timer;
 
   /// Current number of retries.
   /// Is reset on each offline -> online transition

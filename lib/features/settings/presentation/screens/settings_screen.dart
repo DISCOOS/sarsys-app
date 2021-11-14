@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:io';
 import 'dart:ui';
@@ -31,7 +31,7 @@ class SettingsScreen extends StatefulWidget {
 class SettingsScreenState extends State<SettingsScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  AppConfigBloc _configBloc;
+  late AppConfigBloc _configBloc;
 
   @override
   void didChangeDependencies() {
@@ -111,7 +111,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text(
         title,
-        style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }

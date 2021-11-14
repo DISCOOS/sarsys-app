@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -17,12 +17,12 @@ class UnlockScreen extends StatefulWidget {
   static const ROUTE = 'unlock/pin';
 
   const UnlockScreen({
-    Key key,
+    Key? key,
     this.returnTo,
     this.popOnClose = false,
   }) : super(key: key);
-  final String returnTo;
-  final bool popOnClose;
+  final String? returnTo;
+  final bool? popOnClose;
 
   @override
   UnlockScreenState createState() => UnlockScreenState();
@@ -33,7 +33,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   final _formKey = GlobalKey<FormState>();
 
   /// Pin code entered by user
-  String _pin;
+  String? _pin;
 
   /// Test result for each digit entered
   bool _wrongPin = false;
@@ -44,23 +44,23 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   /// State for async result processing from [UserState] stream
   bool _popWhenReady = false;
 
-  UserBlocError _lastError;
+  UserBlocError? _lastError;
 
-  AnimationController _animController;
-  StreamSubscription<UserState> _subscription;
+  AnimationController? _animController;
+  StreamSubscription<UserState>? _subscription;
 
-  FocusNode _focusNode;
-  ScrollController _scrollController;
-  TextEditingController _pinController;
+  FocusNode? _focusNode;
+  ScrollController? _scrollController;
+  TextEditingController? _pinController;
 
-  TextTheme textTheme;
-  TextStyle titleStyle;
-  TextStyle emailStyle;
+  TextTheme? textTheme;
+  TextStyle? titleStyle;
+  TextStyle? emailStyle;
 
-  UserBloc _bloc;
+  UserBloc? _bloc;
 
   bool _validateAndSave() {
-    final form = _formKey.currentState;
+    final form = _formKey.currentState!;
     if (form.validate()) {
       form.save();
       return true;
@@ -87,11 +87,11 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   Widget build(BuildContext context) {
     SizeConfig.init(context);
     textTheme ??= Theme.of(context).textTheme;
-    titleStyle ??= textTheme.subtitle2.copyWith(
+    titleStyle ??= textTheme!.subtitle2!.copyWith(
       fontSize: SizeConfig.safeBlockVertical * 2.5,
     );
-    emailStyle ??= textTheme.bodyText2.copyWith(
-      color: textTheme.caption.color,
+    emailStyle ??= textTheme!.bodyText2!.copyWith(
+      color: textTheme!.caption!.color,
       fontSize: SizeConfig.safeBlockVertical * 2.1,
     );
 
@@ -139,7 +139,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
       duration: Duration(seconds: 1),
     );
 
-    _animController.repeat();
+    _animController!.repeat();
 
     return Container(
       padding: EdgeInsets.all(24.0),
@@ -178,7 +178,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   Container _buildForm(BuildContext context) {
     _animController?.stop(canceled: false);
     if (!_pinComplete) {
-      _focusNode.requestFocus();
+      _focusNode!.requestFocus();
     }
 
     return Container(
@@ -211,12 +211,12 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     final isError = _isError();
     var fields = isError ? [_buildErrorText()] : <Widget>[];
     if (isError) {
-      _pinController.clear();
+      _pinController!.clear();
     }
     return fields..add(_buildSecure());
   }
 
-  bool _isError() => _bloc.state.isError();
+  bool _isError() => _bloc!.state.isError();
 
   Widget _buildErrorText() => Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
@@ -248,9 +248,9 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     BuildContext context,
     double size,
     FontWeight weight, {
-    Color color = color,
+    Color? color = color,
   }) =>
-      Theme.of(context).textTheme.headline6.copyWith(
+      Theme.of(context).textTheme.headline6!.copyWith(
             fontSize: size,
             color: color,
             fontWeight: weight,
@@ -265,14 +265,14 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
 
   Widget _buildRipple(Widget icon) => AnimatedBuilder(
         animation: CurvedAnimation(
-          parent: _animController,
+          parent: _animController!,
           curve: Curves.elasticInOut,
         ),
         builder: (context, child) {
           return Stack(
             alignment: Alignment.center,
             children: <Widget>[
-              _buildCircle(200 + (24 * _animController.value)),
+              _buildCircle(200 + (24 * _animController!.value)),
               Align(child: icon),
             ],
           );
@@ -284,20 +284,20 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
         height: radius,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.lightBlue.withOpacity(_animController.value / 3),
+          color: Colors.lightBlue.withOpacity(_animController!.value / 3),
         ),
       );
 
   Widget _buildSecure() => StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
-          return _bloc.user == null
+          return _bloc!.user == null
               ? Container()
               : Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(bottom: 24.0),
-                      child: _buildFullName(_bloc.user),
+                      child: _buildFullName(_bloc!.user!),
                     ),
                     Text(
                       _wrongPin ? 'Feil pinkode' : 'Oppgi din pinkode',
@@ -343,11 +343,11 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     );
   }
 
-  Widget _buildLogoutAction({bool enabled}) => buildAction(
+  Widget _buildLogoutAction({bool? enabled}) => buildAction(
         'LOGG AV',
         () async {
           try {
-            await _bloc.logout();
+            await _bloc!.logout();
           } on Exception {/* Is handled by StreamBuilder */}
         },
         enabled: enabled,
@@ -365,14 +365,14 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
           ),
           Flexible(
             child: Text(
-              user.email,
+              user.email!,
               style: emailStyle,
             ),
           ),
         ],
       );
 
-  Widget _buildPinInput({StateSetter setState}) => Container(
+  Widget _buildPinInput({StateSetter? setState}) => Container(
         constraints: BoxConstraints(minWidth: 215, maxWidth: 215),
         padding: const EdgeInsets.only(top: 24.0),
         child: PinCodeTextField(
@@ -398,29 +398,29 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
         ),
       );
 
-  void _onCompleted(String value, StateSetter setState) async {
+  void _onCompleted(String value, StateSetter? setState) async {
     _pin = value;
-    _wrongPin = _bloc.user.security.pin != value;
+    _wrongPin = _bloc!.user!.security!.pin != value;
 
     _pinComplete = true;
     if (_wrongPin) {
-      _pinController.clear();
-      _focusNode.requestFocus();
+      _pinController!.clear();
+      _focusNode!.requestFocus();
       if (setState != null) {
         setState(() {});
       }
     } else {
       _popWhenReady = true;
-      await _bloc.unlock(_pin);
+      await _bloc!.unlock(_pin);
     }
   }
 
   Widget buildAction(
     String label,
     Function() onPressed, {
-    bool enabled = true,
+    bool? enabled = true,
     Type type = ElevatedButton,
-    Widget icon,
+    Widget? icon,
     Color color = const Color.fromRGBO(00, 41, 73, 1),
     bool validate = true,
   }) =>
@@ -447,16 +447,16 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   Widget _buildButton(
     Color color,
     String label,
-    bool enabled,
+    bool? enabled,
     onPressed(),
     Type type, {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) {
     if (type == OutlinedButton) {
       return _buildOutlinedButton(
         label,
-        enabled,
+        enabled!,
         onPressed,
         icon: icon,
         validate: validate,
@@ -465,7 +465,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     return _buildElevatedButton(
       color,
       label,
-      enabled,
+      enabled!,
       onPressed,
       icon: icon,
       validate: validate,
@@ -477,7 +477,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     String label,
     bool enabled,
     onPressed(), {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) =>
       ElevatedButton(
@@ -517,7 +517,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     String label,
     bool enabled,
     onPressed(), {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) =>
       OutlinedButton(
@@ -576,7 +576,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   void _popTo(BuildContext context) {
     if (!_isPopped) {
       _isPopped = true;
-      if (widget.popOnClose) {
+      if (widget.popOnClose!) {
         Navigator.pop(context);
       } else {
         Navigator.pushReplacementNamed(
@@ -592,8 +592,8 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     _subscription?.cancel();
     _animController?.dispose();
     _scrollController?.dispose();
-    _focusNode.dispose();
-    _pinController.dispose();
+    _focusNode!.dispose();
+    _pinController!.dispose();
     _animController = null;
     _scrollController = null;
     _focusNode = null;

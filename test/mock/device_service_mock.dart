@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -18,9 +18,9 @@ import 'package:uuid/uuid.dart';
 
 class DeviceBuilder {
   static Device create({
-    String uuid,
-    Position position,
-    String number,
+    String? uuid,
+    Position? position,
+    String? number,
     DeviceType type = DeviceType.app,
     DeviceStatus status = DeviceStatus.unavailable,
     bool randomize = false,
@@ -33,11 +33,11 @@ class DeviceBuilder {
         position ?? toPosition(Defaults.origo),
         status ?? DeviceStatus.unavailable,
         randomize,
-      ),
+      )!,
     );
   }
 
-  static Map<String, dynamic> createDeviceAsJson(
+  static Map<String, dynamic>? createDeviceAsJson(
     String uuid,
     DeviceType type,
     String number,
@@ -48,8 +48,8 @@ class DeviceBuilder {
     final rnd = math.Random();
     final actual = randomize
         ? createPositionAsJson(
-            position.lat + nextDouble(rnd, 0.03),
-            position.lon + nextDouble(rnd, 0.03),
+            position.lat! + nextDouble(rnd, 0.03),
+            position.lon! + nextDouble(rnd, 0.03),
           )
         : jsonEncode(position.toJson());
     return json.decode('{'
@@ -76,12 +76,12 @@ class DeviceBuilder {
 }
 
 class DeviceServiceMock extends Mock implements DeviceService {
-  final Timer simulator;
-  final Map<String, StorageState<Device>> devices;
+  final Timer? simulator;
+  final Map<String?, StorageState<Device>> devices;
 
   Device add({
-    String uuid,
-    Position position,
+    String? uuid,
+    Position? position,
     String number = '1',
     DeviceType type = DeviceType.app,
     DeviceStatus status = DeviceStatus.unavailable,
@@ -112,7 +112,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
             ));
   }
 
-  StorageState<Device> remove(uuid) {
+  StorageState<Device>? remove(uuid) {
     return devices.remove(uuid);
   }
 
@@ -124,15 +124,15 @@ class DeviceServiceMock extends Mock implements DeviceService {
   DeviceServiceMock._internal(this.devices, this.simulator);
 
   static DeviceService build(
-    OperationBloc bloc, {
+    OperationBloc? bloc, {
     int tetraCount = 0,
     int appCount = 0,
     bool simulate = false,
     List<String> ouuids = const [],
   }) {
     final rnd = math.Random();
-    final Map<String, StorageState<Device>> devicesRepo = {}; // devices
-    final Map<String, _DeviceSimulation> simulations = {}; // duuid -> simulation
+    final Map<String?, StorageState<Device>> devicesRepo = {}; // devices
+    final Map<String?, _DeviceSimulation> simulations = {}; // duuid -> simulation
     final StreamController<DeviceMessage> controller = StreamController.broadcast();
     devicesRepo.clear();
     final simulator = simulate
@@ -152,7 +152,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     // Only generate devices for automatically generated ouuids
     ouuids.forEach((ouuid) {
       if (ouuid.startsWith('a:')) {
-        Position center = _toCenter(bloc);
+        Position center = _toCenter(bloc!);
         _createDevices(DeviceType.tetra, devicesRepo, tetraCount, ouuid, 6114000, center, rnd, simulations);
         _createDevices(DeviceType.app, devicesRepo, appCount, ouuid, 91500000, center, rnd, simulations);
       }
@@ -166,16 +166,16 @@ class DeviceServiceMock extends Mock implements DeviceService {
       return ServiceResponse.ok(body: devicesRepo.values.toList());
     });
 
-    when(mock.create(any)).thenAnswer((_) async {
+    when(mock.create(any!)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Device>;
-      if (!state.version.isFirst) {
+      if (!state.version!.isFirst) {
         return ServiceResponse.badRequest(
           message: "Aggregate has not version 0: $state",
         );
       }
       var device = state.value;
       final duuid = device.uuid;
-      Position center = _toCenter(bloc);
+      Position center = _toCenter(bloc!);
       if (simulate) {
         device = _simulate(
           DeviceModel(
@@ -184,8 +184,8 @@ class DeviceServiceMock extends Mock implements DeviceService {
             status: device.status,
             position: device.position ??
                 Position.now(
-                  lat: center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
-                  lon: center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
+                  lat: center.lat! + DeviceBuilder.nextDouble(rnd, 0.03),
+                  lon: center.lon! + DeviceBuilder.nextDouble(rnd, 0.03),
                   source: PositionSource.device,
                 ),
             alias: device.alias,
@@ -201,15 +201,15 @@ class DeviceServiceMock extends Mock implements DeviceService {
       );
     });
 
-    when(mock.update(any)).thenAnswer((_) async {
+    when(mock.update(any!)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Device>;
       final uuid = next.value.uuid;
       if (devicesRepo.containsKey(uuid)) {
-        final state = devicesRepo[uuid];
-        final delta = next.version.value - state.version.value;
+        final state = devicesRepo[uuid]!;
+        final delta = next.version!.value! - state.version!.value!;
         if (delta != 1) {
           return ServiceResponse.badRequest(
-            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+            message: "Wrong version: expected ${state.version! + 1}, actual was ${next.version}",
           );
         }
         devicesRepo[uuid] = state.apply(
@@ -226,7 +226,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
       );
     });
 
-    when(mock.delete(any)).thenAnswer((_) async {
+    when(mock.delete(any!)).thenAnswer((_) async {
       var state = _.positionalArguments[0] as StorageState<Device>;
       final uuid = state.value.uuid;
       if (devicesRepo.containsKey(uuid)) {
@@ -241,7 +241,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     return mock;
   }
 
-  static StorageState<Device> _update(Map<String, StorageState<Device>> devicesRepo, Device device) =>
+  static StorageState<Device> _update(Map<String?, StorageState<Device>> devicesRepo, Device device) =>
       devicesRepo.update(
           device.uuid,
           (state) => state.apply(
@@ -259,20 +259,20 @@ class DeviceServiceMock extends Mock implements DeviceService {
     return bloc.isUnselected
         ? toPosition(Defaults.origo)
         : Position.fromPoint(
-            bloc.selected.ipp.point,
+            bloc.selected!.ipp!.point!,
             source: PositionSource.manual,
           );
   }
 
   static void _createDevices(
     DeviceType type,
-    Map<String, StorageState<Device>> devices,
+    Map<String?, StorageState<Device>> devices,
     int count,
     String ouuid,
     int number,
     Position center,
     math.Random rnd,
-    Map<String, _DeviceSimulation> simulations,
+    Map<String?, _DeviceSimulation> simulations,
   ) {
     final prefix = enumName(type).substring(0, 1).toLowerCase();
     return devices.addAll({
@@ -287,7 +287,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
                 center,
                 DeviceStatus.unavailable,
                 true,
-              ),
+              )!,
             ),
             rnd,
             simulations,
@@ -301,7 +301,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
   static Device _simulate(
     Device device,
     math.Random rnd,
-    Map<String, _DeviceSimulation> simulations,
+    Map<String?, _DeviceSimulation> simulations,
   ) {
     final simulation = _DeviceSimulation(
       uuid: device.uuid,
@@ -315,9 +315,9 @@ class DeviceServiceMock extends Mock implements DeviceService {
 
   static void _progress(
     math.Random rnd,
-    OperationBloc bloc,
-    Map<String, StorageState<Device>> devicesMap,
-    Map<String, _DeviceSimulation> simulations,
+    OperationBloc? bloc,
+    Map<String?, StorageState<Device>> devicesMap,
+    Map<String?, _DeviceSimulation> simulations,
     StreamController<DeviceMessage> controller,
   ) {
     final devices = devicesMap.values.toList()..shuffle();
@@ -326,7 +326,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     devices.take(min).forEach((state) {
       var device = state.value;
       if (simulations.containsKey(device.uuid)) {
-        var simulation = simulations[device.uuid];
+        var simulation = simulations[device.uuid]!;
         var position = simulation.progress(rnd.nextDouble() * 20.0);
         device = device.copyWith(
           position: position,
@@ -346,52 +346,52 @@ class DeviceServiceMock extends Mock implements DeviceService {
 }
 
 class _DeviceSimulation {
-  final String uuid;
-  final int steps;
-  final double delta;
+  final String? uuid;
+  final int? steps;
+  final double? delta;
 
   int current;
-  Position position;
+  Position? position;
 
   _DeviceSimulation({this.delta, this.uuid, this.position, this.steps}) : current = 0;
 
-  Position progress(double acc) {
+  Position? progress(double acc) {
     var leg = ((current / 4.0) % 4 + 1).toInt();
     switch (leg) {
       case 1:
         position = Position.now(
-          lat: position.lat,
-          lon: position.lon + delta / steps,
+          lat: position!.lat,
+          lon: position!.lon! + delta! / steps!,
           acc: acc,
           source: PositionSource.device,
         );
         break;
       case 2:
         position = Position.now(
-          lat: position.lat - delta / steps,
-          lon: position.lon,
+          lat: position!.lat! - delta! / steps!,
+          lon: position!.lon,
           acc: acc,
           source: PositionSource.device,
         );
         break;
       case 3:
         position = Position.now(
-          lat: position.lat,
-          lon: position.lon - delta / steps,
+          lat: position!.lat,
+          lon: position!.lon! - delta! / steps!,
           acc: acc,
           source: PositionSource.device,
         );
         break;
       case 4:
         position = Position.now(
-          lat: position.lat + delta / steps,
-          lon: position.lon,
+          lat: position!.lat! + delta! / steps!,
+          lon: position!.lon,
           acc: acc,
           source: PositionSource.device,
         );
         break;
     }
-    current = (current + 1) % steps;
+    current = (current + 1) % steps!;
     return position;
   }
 }

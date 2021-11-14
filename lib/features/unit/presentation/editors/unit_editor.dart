@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/editors/personnel_editor.dart';
@@ -30,16 +30,16 @@ import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets
 import 'package:SarSys/features/tracking/presentation/widgets/position_field.dart';
 
 class UnitEditor extends StatefulWidget {
-  final Unit unit;
-  final Position position;
-  final Operation operation;
-  final Iterable<Device> devices;
-  final Iterable<Personnel> personnels;
+  final Unit? unit;
+  final Position? position;
+  final Operation? operation;
+  final Iterable<Device>? devices;
+  final Iterable<Personnel?>? personnels;
 
   final UnitType type;
 
   const UnitEditor({
-    Key key,
+    Key? key,
     this.unit,
     this.position,
     this.operation,
@@ -51,7 +51,7 @@ class UnitEditor extends StatefulWidget {
   @override
   _UnitEditorState createState() => _UnitEditorState();
 
-  static String findUnitPhone(BuildContext context, Unit unit) {
+  static String? findUnitPhone(BuildContext context, Unit? unit) {
     var phone = unit?.phone;
     if (unit != null && phone == null) {
       if (unit?.tracking != null) {
@@ -61,18 +61,18 @@ class UnitEditor extends StatefulWidget {
           exclude: [],
         ).toList();
         final apps = <Device>[];
-        apps.addAll(devices.where((a) => a.number != null));
+        apps.addAll(devices.where((a) => a!.number != null));
         if (apps.isEmpty) {
           // Search for personnel number
           final bloc = context.read<PersonnelBloc>();
           for (var puuid in unit.personnels) {
-            phone = PersonnelEditor.findPersonnelPhone(context, bloc.repo.get(puuid));
+            phone = PersonnelEditor.findPersonnelPhone(context, bloc.repo.get(puuid!));
             if (phone != null) {
               return phone;
             }
           }
         } else {
-          phone = apps.first.number;
+          phone = apps.first!.number;
         }
       }
     }
@@ -92,10 +92,10 @@ class _UnitEditorState extends State<UnitEditor> {
   final TextEditingController _callsignController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
-  List<Device> _devices;
-  List<Personnel> _personnels;
+  List<Device>? _devices;
+  List<Personnel>? _personnels;
 
-  String _editedName;
+  String? _editedName;
 
   bool get hasAvailablePersonnel =>
       context
@@ -131,8 +131,8 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   void _set() {
-    _devices ??= _getActualDevices();
-    _personnels ??= _getActualPersonnels(init: true);
+    _devices ??= _getActualDevices().cast<Device>();
+    _personnels ??= _getActualPersonnels(init: true).cast<Personnel>();
   }
 
   void _init() async {
@@ -273,27 +273,27 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  String _validateNumber(number) {
+  String? _validateNumber(number) {
     final type = _actualType(widget.type);
-    Unit unit = context
+    Unit? unit = context
         .read<UnitBloc>()
         .units
         .values
         .where(
-          (unit) => widget.unit?.uuid != unit.uuid,
+          (unit) => widget.unit?.uuid != unit!.uuid,
         )
         .where(
-          (unit) => UnitStatus.retired != unit.status,
+          (unit) => UnitStatus.retired != unit!.status,
         )
         .firstWhere(
-          (Unit unit) => isSameNumber(unit, type, number),
+          (Unit? unit) => isSameNumber(unit, type, number),
           orElse: () => null,
         );
     return unit != null ? "Lag $number finnes allerede" : null;
   }
 
-  bool isSameNumber(Unit unit, UnitType type, String number) =>
-      unit != widget.unit && unit.type == type && unit.number == int.tryParse(number);
+  bool isSameNumber(Unit? unit, UnitType type, String? number) =>
+      unit != widget.unit && unit!.type == type && unit.number == int.tryParse(number!);
 
   FormBuilderTextField _buildCallsignField() {
     return FormBuilderTextField(
@@ -326,22 +326,22 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  String _validateCallsign(callsign) {
-    Unit unit = context
+  String? _validateCallsign(callsign) {
+    Unit? unit = context
         .read<UnitBloc>()
         .units
         .values
         .where(
-          (unit) => UnitStatus.retired != unit.status,
+          (unit) => UnitStatus.retired != unit!.status,
         )
         .firstWhere(
-          (Unit unit) => _isSameCallsign(unit, callsign),
+          (Unit? unit) => _isSameCallsign(unit, callsign),
           orElse: () => null,
         );
     return unit != null ? "${unit.name} har samme" : null;
   }
 
-  bool _isSameCallsign(Unit unit, String callsign) {
+  bool _isSameCallsign(Unit? unit, String? callsign) {
     return callsign?.isNotEmpty == true &&
         unit?.uuid != widget?.unit?.uuid &&
         unit?.callsign?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
@@ -387,29 +387,29 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  String _validatePhone(phone) {
-    Unit unit = context
+  String? _validatePhone(phone) {
+    Unit? unit = context
         .read<UnitBloc>()
         .units
         .values
         .where(
-          (unit) => UnitStatus.retired != unit.status,
+          (unit) => UnitStatus.retired != unit!.status,
         )
         .firstWhere(
-          (Unit unit) => _isSamePhone(unit, phone),
+          (Unit? unit) => _isSamePhone(unit, phone),
           orElse: () => null,
         );
     return unit != null ? "${unit.name} har samme" : null;
   }
 
-  bool _isSamePhone(Unit unit, String phone) {
+  bool _isSamePhone(Unit? unit, String? phone) {
     return phone?.isNotEmpty == true &&
         unit?.uuid != widget?.unit?.uuid &&
         unit?.phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
             phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
 
-  void _setText(TextEditingController controller, String value) {
+  void _setText(TextEditingController controller, String? value) {
     setText(controller, value);
     _formKey?.currentState?.save();
   }
@@ -433,7 +433,7 @@ class _UnitEditorState extends State<UnitEditor> {
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
           .toList(),
       validator: FormBuilderValidators.required(context, errorText: 'Type må velges'),
-      onChanged: (value) => _onTypeOrNumberEdit(
+      onChanged: (dynamic value) => _onTypeOrNumberEdit(
         UnitType.values.firstWhere(
           (test) => enumName(test) == value,
           orElse: () => widget.type,
@@ -489,37 +489,37 @@ class _UnitEditorState extends State<UnitEditor> {
       options: _findDevices,
       items: () => _getLocalDevices(),
       onChanged: (devices) => _devices
-        ..clear()
-        ..addAll(devices),
+        !..clear()
+        ..addAll(devices!),
     );
   }
 
-  List<Device> _findDevices(String type, String query) {
-    var actual = _getActualDevices().map((device) => device.uuid);
+  List<Device> _findDevices(String? type, String? query) {
+    var actual = _getActualDevices().map((device) => device!.uuid);
     return context
         .read<DeviceBloc>()
         .values
-        .where((device) => _canAddDevice(actual, device))
-        .where((device) => _deviceMatch(device, type, query))
+        .where((device) => _canAddDevice(actual, device!))
+        .where((device) => _deviceMatch(device!, type, query))
         .take(5)
         .toList(growable: false);
   }
 
-  bool _deviceMatch(Device device, String type, String query) {
+  bool _deviceMatch(Device device, String? type, String? query) {
     final test = [device.number, device.alias, device.name].join();
     return test.toLowerCase().contains(query ?? '') &&
-        (type?.toLowerCase() == 'alle' || enumName(device.type).contains(type?.toLowerCase()));
+        (type?.toLowerCase() == 'alle' || enumName(device.type).contains(type!.toLowerCase()));
   }
 
-  bool _canAddDevice(Iterable<String> actual, Device match) {
+  bool _canAddDevice(Iterable<String?> actual, Device match) {
     if (actual.contains(match.uuid)) {
       return true;
     }
     final bloc = context.read<TrackingBloc>();
     if (widget.unit?.tracking?.uuid != null) {
       // Was device tracked by this unit earlier?
-      final trackings = bloc.find(match).map((t) => t.uuid);
-      if (trackings.contains(widget.unit.tracking.uuid)) {
+      final trackings = bloc.find(match).map((t) => t!.uuid);
+      if (trackings.contains(widget.unit!.tracking!.uuid)) {
         return true;
       }
     }
@@ -532,7 +532,7 @@ class _UnitEditorState extends State<UnitEditor> {
       ..sort(
         (a, b) => enumName(a).compareTo(enumName(b)),
       );
-    return buildChipsField<Personnel>(
+    return buildChipsField<Personnel?>(
       name: 'personnels',
       enabled: enabled,
       labelText: 'Mannskap',
@@ -564,34 +564,34 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  List<Personnel> _findPersonnels(String status, String query) {
-    var actual = _getActualPersonnels().map((personnel) => personnel.uuid);
+  List<Personnel?> _findPersonnels(String? status, String? query) {
+    var actual = _getActualPersonnels().map((personnel) => personnel!.uuid);
     return context
         .read<PersonnelBloc>()
         .values
-        .where((personnel) => _canAddPersonnel(actual, personnel))
-        .where((personnel) => _personnelMatch(personnel, status, query))
+        .where((personnel) => _canAddPersonnel(actual, personnel!))
+        .where((personnel) => _personnelMatch(personnel!, status, query))
         .take(5)
         .toList(growable: false);
   }
 
-  bool _personnelMatch(Personnel personnel, String status, String query) {
+  bool _personnelMatch(Personnel personnel, String? status, String? query) {
     final test = personnel.searchable;
     return test.toLowerCase().contains(query ?? '') &&
         (status?.toLowerCase() == 'alle' ||
             status?.toLowerCase() == 'tilgjengelig' && personnel.isAvailable ||
-            enumName(personnel.status).contains(status?.toLowerCase()));
+            enumName(personnel.status).contains(status!.toLowerCase()));
   }
 
-  bool _canAddPersonnel(Iterable<String> actual, Personnel match) {
+  bool _canAddPersonnel(Iterable<String?> actual, Personnel match) {
     if (actual.contains(match.uuid)) {
       return true;
     }
     final bloc = context.read<TrackingBloc>();
     if (widget.unit?.tracking?.uuid != null) {
       // Was personnel tracked by this unit earlier?
-      final trackings = bloc.find(match).map((t) => t.uuid);
-      if (trackings.contains(widget.unit.tracking.uuid)) {
+      final trackings = bloc.find(match).map((t) => t!.uuid);
+      if (trackings.contains(widget.unit!.tracking!.uuid)) {
         return true;
       }
     }
@@ -611,7 +611,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  String _toTrackingHelperText(Position position) {
+  String _toTrackingHelperText(Position? position) {
     return position != null
         ? (PositionSource.manual == position.source
             ? 'Manuell lagt inn.'
@@ -619,18 +619,18 @@ class _UnitEditorState extends State<UnitEditor> {
         : '';
   }
 
-  Position _toPosition() {
+  Position? _toPosition() {
     final tracking = context.read<TrackingBloc>().trackings[tuuid];
     return tracking?.position ?? widget.position;
   }
 
-  String get tuuid => widget?.unit?.tracking?.uuid;
+  String? get tuuid => widget.unit!.tracking.uuid;
 
   List<Device> _getLocalDevices() =>
-      _formKey.currentState == null || _formKey.currentState.fields['devices'].value == null
+      _formKey.currentState == null || _formKey.currentState!.fields['devices']!.value == null
           ? _getActualDevices()
           : List<Device>.from(
-              _formKey.currentState.fields['devices'].value ?? <Device>[],
+              _formKey.currentState!.fields['devices']!.value ?? <Device>[],
             );
 
   List<Device> _getActualDevices() {
@@ -641,24 +641,24 @@ class _UnitEditorState extends State<UnitEditor> {
       ..addAll(widget.devices ?? []);
   }
 
-  List<Personnel> _getLocalPersonnel() {
-    if (_formKey.currentState == null || _formKey.currentState.fields['personnels'].value == null) {
+  List<Personnel?> _getLocalPersonnel() {
+    if (_formKey.currentState == null || _formKey.currentState!.fields['personnels']!.value == null) {
       return _getActualPersonnels();
     }
-    return _formKey.currentState.fields['personnels'].value ?? <Personnel>[];
+    return _formKey.currentState!.fields['personnels']!.value ?? <Personnel>[];
   }
 
-  List<Personnel> _getActualPersonnels({bool init = false}) {
-    final puuids = List<String>.from(widget?.unit?.personnels ?? <String>[]);
+  List<Personnel?> _getActualPersonnels({bool init = false}) {
+    final puuids = List<String?>.from(widget?.unit?.personnels ?? <String>[]);
     if (init) {
-      puuids.addAll(widget.personnels?.map((p) => p.uuid) ?? <String>[]);
+      puuids.addAll(widget.personnels?.map((p) => p!.uuid) ?? <String>[]);
     }
     final personnels =
-        context.read<PersonnelBloc>().values.where((p) => p.isAvailable).where((p) => puuids.contains(p.uuid)).toList();
+        context.read<PersonnelBloc>().values.where((p) => p!.isAvailable).where((p) => puuids.contains(p!.uuid)).toList();
     return personnels;
   }
 
-  Position _preparePosition() {
+  Position? _preparePosition() {
     final position = _toJson()['position'] == null
         ? null
         : Position.fromJson(
@@ -674,13 +674,13 @@ class _UnitEditorState extends State<UnitEditor> {
 
   int _nextNumber(UnitType type) => context.read<UnitBloc>().nextAvailableNumber(
         type,
-        reuse: context.read<AppConfigBloc>().config.callsignReuse,
+        reuse: context.read<AppConfigBloc>().config!.callsignReuse,
       );
 
   String _actualNumber() {
     final values = _formKey?.currentState?.value;
     return values?.containsKey('number') == true
-        ? "${values['number']}" ?? "${widget?.unit?.number ?? _numberController.text}"
+        ? "${values!['number']}" ?? "${widget?.unit?.number ?? _numberController.text}"
         : "${widget?.unit?.number ?? _numberController.text}";
   }
 
@@ -698,7 +698,7 @@ class _UnitEditorState extends State<UnitEditor> {
   String _nextCallSign() {
     int number = _ensureCallSignSuffix();
     UnitType type = _actualType(widget.type);
-    Department dep = context.read<AffiliationBloc>().findUserDepartment();
+    Department? dep = context.read<AffiliationBloc>().findUserDepartment();
     return toCallsign(type, dep?.name, number);
   }
 
@@ -706,18 +706,18 @@ class _UnitEditorState extends State<UnitEditor> {
     final next = _nextNumber(_actualType(widget.type));
     final values = _formKey?.currentState?.value;
     final number = values?.containsKey('number') == true
-        ? values['number'] ?? widget?.unit?.number ?? next
+        ? values!['number'] ?? widget?.unit?.number ?? next
         : widget?.unit?.number ?? next;
     return number;
   }
 
-  String _defaultPhone() {
+  String? _defaultPhone() {
     return UnitEditor.findUnitPhone(context, widget.unit);
   }
 
   void _submit() async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
       var response = true;
       final create = widget.unit == null;
       var unit = create ? _createdUnit() : _updatedUnit();
@@ -750,18 +750,18 @@ class _UnitEditorState extends State<UnitEditor> {
   Unit _createdUnit() => UnitModel.fromJson(_toJson()).copyWith(
         uuid: Uuid().v4(),
         tracking: TrackingUtils.newRef(),
-        operation: widget.operation.toRef(),
+        operation: widget.operation!.toRef(),
       );
 
-  Unit _updatedUnit() => widget.unit.mergeWith(_toJson()).copyWith(
-        operation: widget.operation?.toRef() ?? widget.unit.operation,
+  Unit _updatedUnit() => widget.unit!.mergeWith(_toJson()).copyWith(
+        operation: widget.operation?.toRef() ?? widget.unit!.operation,
       );
 
   Map<String, dynamic> _toJson() {
     final json = Map<String, dynamic>.from(
       _formKey.currentState?.value ?? {},
     );
-    json['personnels'] = (json['personnels'] as List<Personnel>)?.map((p) => p.uuid)?.toList();
+    json['personnels'] = (json['personnels'] as List<Personnel>?)?.map((p) => p.uuid)?.toList();
     return json;
   }
 }

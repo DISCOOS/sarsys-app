@@ -1,9 +1,10 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
 import 'package:SarSys/core/error_handler.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -23,10 +24,10 @@ class LoginScreen extends StatefulWidget {
   static const ROUTE = 'login';
 
   const LoginScreen({
-    Key key,
+    Key? key,
     this.returnTo,
   }) : super(key: key);
-  final String returnTo;
+  final String? returnTo;
 
   @override
   LoginScreenState createState() => LoginScreenState();
@@ -36,8 +37,8 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   static const color = Color(0xFF0d2149);
   final _formKey = GlobalKey<FormState>();
 
-  User _user;
-  String _username = "";
+  User? _user;
+  String? _username = "";
 
   /// Indicates that new user was requested
   bool _newUser = false;
@@ -45,23 +46,23 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   /// State for async result processing from [UserState] stream
   bool _popWhenReady = false;
 
-  UserBlocError _lastError;
+  UserBlocError? _lastError;
 
-  AnimationController _animController;
-  StreamSubscription<UserState> _subscription;
+  AnimationController? _animController;
+  StreamSubscription<UserState>? _subscription;
 
-  FocusNode _focusNode;
-  ScrollController _scrollController;
-  TextEditingController _pinController;
+  FocusNode? _focusNode;
+  ScrollController? _scrollController;
+  TextEditingController? _pinController;
 
   bool get newUser => _newUser;
 
-  TextTheme textTheme;
-  TextStyle titleStyle;
-  TextStyle emailStyle;
+  TextTheme? textTheme;
+  TextStyle? titleStyle;
+  TextStyle? emailStyle;
 
   bool _validateAndSave() {
-    final form = _formKey.currentState;
+    final form = _formKey.currentState!;
     if (form.validate()) {
       form.save();
       return true;
@@ -92,11 +93,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   Widget build(BuildContext context) {
     SizeConfig.init(context);
     textTheme ??= Theme.of(context).textTheme;
-    titleStyle ??= textTheme.subtitle2.copyWith(
+    titleStyle ??= textTheme!.subtitle2!.copyWith(
       fontSize: SizeConfig.safeBlockVertical * 2.5,
     );
-    emailStyle ??= textTheme.bodyText2.copyWith(
-      color: textTheme.caption.color,
+    emailStyle ??= textTheme!.bodyText2!.copyWith(
+      color: textTheme!.caption!.color,
       fontSize: SizeConfig.safeBlockVertical * 2.1,
     );
 
@@ -147,7 +148,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       duration: Duration(seconds: 1),
     );
 
-    _animController.repeat();
+    _animController!.repeat();
 
     return Container(
       padding: EdgeInsets.all(24.0),
@@ -304,7 +305,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     FontWeight weight, {
     Color color = color,
   }) =>
-      Theme.of(context).textTheme.headline6.copyWith(
+      Theme.of(context).textTheme.headline6!.copyWith(
             fontSize: size,
             color: color,
             fontWeight: weight,
@@ -319,7 +320,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildRipple(Widget icon) => AnimatedBuilder(
         animation: CurvedAnimation(
-          parent: _animController,
+          parent: _animController!,
           curve: Curves.elasticOut,
           reverseCurve: Curves.elasticIn,
         ),
@@ -327,7 +328,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           return Stack(
             alignment: Alignment.center,
             children: <Widget>[
-              _buildCircle(180 + (36 * _animController.value)),
+              _buildCircle(180 + (36 * _animController!.value)),
               Align(child: icon),
             ],
           );
@@ -339,7 +340,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         height: radius,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.lightBlue.withOpacity(_animController.value / 3),
+          color: Colors.lightBlue.withOpacity(_animController!.value / 3),
         ),
       );
 
@@ -355,7 +356,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           ),
           Flexible(
             child: Text(
-              user.email,
+              user.email!,
               style: emailStyle,
             ),
           ),
@@ -377,7 +378,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                if (bloc.isPersonal || context.read<AppConfigBloc>().config.idpHints.contains('rodekors'))
+                if (bloc.isPersonal || context.read<AppConfigBloc>().config!.idpHints.contains('rodekors'))
                   _buildOrgLoginAction(bloc),
                 if (bloc.isPersonal) _buildGoogleLoginAction(bloc),
                 _buildDivider(),
@@ -429,7 +430,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     );
   }
 
-  Padding _toIcon(IconData icon, Color color) => Padding(
+  Padding _toIcon(IconData icon, Color? color) => Padding(
         padding: const EdgeInsets.only(left: 8.0, right: 24.0),
         child: Container(
           padding: EdgeInsets.all(8).copyWith(left: 9),
@@ -451,33 +452,32 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildSharedUseInput(UserBloc bloc) => Padding(
         padding: const EdgeInsets.only(top: 24.0),
-        child: _newUser || bloc.users.isEmpty
+        child: _newUser || bloc.users!.isEmpty
             ? _buildEmailTextField(bloc)
-            : buildDropDownField<String>(
+            : buildDropDownField<String?>(
                 name: 'email',
                 isDense: false,
                 initialValue: _setUser(
                   bloc,
-                  bloc.users.first,
+                  bloc.users!.first,
                 ),
                 items: _buildUserItems(
-                  bloc.users,
+                  bloc.users as List<User>,
                 ),
                 onChanged: (value) {
-                  final user = bloc.users.firstWhere(
+                  final user = bloc.users!.firstWhereOrNull(
                     (user) => user.userId == value,
-                    orElse: () => null,
                   );
-                  _setUser(bloc, user);
+                  _setUser(bloc, user!);
                 },
-                validator: FormBuilderValidators.minLength(context, 0),
+                validator: FormBuilderValidators.minLength(context, 0) as String? Function(dynamic),
               ),
       );
 
-  String _setUser(UserBloc bloc, User user) {
+  String? _setUser(UserBloc bloc, User user) {
     _user = user ?? bloc.user;
-    _username = _user.uname;
-    return _user.userId;
+    _username = _user!.uname;
+    return _user!.userId;
   }
 
   List<DropdownMenuItem<String>> _buildUserItems(List<User> users) {
@@ -525,12 +525,12 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         ),
         validator: (value) {
           if (bloc.isShared) {
-            final domain = UserService.toDomain(value);
+            final domain = UserService.toDomain(value!);
             if (!bloc.trustedDomains.contains(domain)) {
               return '$value er ikke tillatt';
             }
           }
-          return value.isEmpty ? 'Påloggingsadresse må fylles ut' : null;
+          return value!.isEmpty ? 'Påloggingsadresse må fylles ut' : null;
         },
         onSaved: (value) => _username = value,
       );
@@ -542,7 +542,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         },
       );
 
-  Future _authenticate(UserBloc bloc, {String idpHint}) async {
+  Future _authenticate(UserBloc bloc, {String? idpHint}) async {
     try {
       _popWhenReady = true;
       await bloc.login(
@@ -563,8 +563,8 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     Function() onPressed, {
     bool enabled = true,
     Type type = ElevatedButton,
-    Widget icon,
-    Color color = const Color.fromRGBO(00, 41, 73, 1),
+    Widget? icon,
+    Color? color = const Color.fromRGBO(00, 41, 73, 1),
     bool validate = true,
   }) =>
       Container(
@@ -588,12 +588,12 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   Widget _buildButton(
-    Color color,
+    Color? color,
     String label,
     bool enabled,
     onPressed(),
     Type type, {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) {
     if (type == OutlinedButton) {
@@ -616,11 +616,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   }
 
   Widget _buildElevatedButton(
-    Color color,
+    Color? color,
     String label,
     bool enabled,
     onPressed(), {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) =>
       ElevatedButton(
@@ -660,7 +660,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     String label,
     bool enabled,
     onPressed(), {
-    Widget icon,
+    Widget? icon,
     bool validate = true,
   }) =>
       OutlinedButton(
@@ -721,8 +721,8 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     _subscription?.cancel();
     _animController?.dispose();
     _scrollController?.dispose();
-    _focusNode.dispose();
-    _pinController.dispose();
+    _focusNode!.dispose();
+    _pinController!.dispose();
     _animController = null;
     _scrollController = null;
     _focusNode = null;

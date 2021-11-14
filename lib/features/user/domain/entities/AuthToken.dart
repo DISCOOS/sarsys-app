@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
@@ -13,7 +13,7 @@ part 'AuthToken.g.dart';
 @JsonSerializable()
 class AuthToken extends Equatable {
   AuthToken({
-    @required this.accessToken,
+    required this.accessToken,
     this.idToken,
     this.clientId,
     this.refreshToken,
@@ -21,7 +21,7 @@ class AuthToken extends Equatable {
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         idToken,
         clientId,
         accessToken,
@@ -29,17 +29,17 @@ class AuthToken extends Equatable {
         accessTokenExpiration,
       ];
 
-  final String idToken;
-  final String clientId;
-  final String accessToken;
-  final String refreshToken;
-  final DateTime accessTokenExpiration;
+  final String? idToken;
+  final String? clientId;
+  final String? accessToken;
+  final String? refreshToken;
+  final DateTime? accessTokenExpiration;
 
   /// Check if token is valid
   bool get isValid => !isExpired;
 
   /// Check if token is expired
-  bool get isExpired => accessTokenExpiration.isBefore(DateTime.now());
+  bool get isExpired => accessTokenExpiration!.isBefore(DateTime.now());
 
   /// Factory constructor for creating a new `AuthToken` instance
   factory AuthToken.fromJson(Map<String, dynamic> json) => _$AuthTokenFromJson(json);
@@ -48,18 +48,18 @@ class AuthToken extends Equatable {
   Map<String, dynamic> toJson() => _$AuthTokenToJson(this);
 
   /// Get current user id
-  String get userId => toUser().userId;
+  String? get userId => toUser().userId;
 
   /// Get Token as User
   User toUser({
-    String org,
-    String div,
-    String dep,
-    Security security,
-    List<Passcodes> passcodes,
+    String? org,
+    String? div,
+    String? dep,
+    Security? security,
+    List<Passcodes>? passcodes,
   }) =>
       User.fromTokens(
-        accessToken,
+        accessToken!,
         idToken: idToken,
         security: security,
         passcodes: passcodes,

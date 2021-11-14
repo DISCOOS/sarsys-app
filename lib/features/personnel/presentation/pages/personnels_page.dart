@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -33,17 +33,17 @@ import 'package:SarSys/core/presentation/widgets/descriptions.dart';
 import 'package:SarSys/core/presentation/widgets/filter_sheet.dart';
 
 class PersonnelsPage extends StatefulWidget {
-  final String query;
+  final String? query;
   final bool withAvatar;
   final bool withStatus;
   final bool withActions;
   final bool withGrouped;
   final bool withMultiSelect;
-  final bool Function(Personnel personnel) where;
-  final void Function(Personnel personnel) onSelection;
+  final bool Function(Personnel personnel)? where;
+  final void Function(Personnel personnel)? onSelection;
 
   const PersonnelsPage({
-    Key key,
+    Key? key,
     this.query,
     this.where,
     this.onSelection,
@@ -60,9 +60,9 @@ class PersonnelsPage extends StatefulWidget {
 
 class PersonnelsPageState extends State<PersonnelsPage> {
   static const FILTER = "personnel_filter";
-  StreamGroup<dynamic> _group;
+  StreamGroup<dynamic>? _group;
 
-  Set<PersonnelStatus> _filter;
+  Set<PersonnelStatus>? _filter;
 
   final _selected = <String>{};
 
@@ -80,7 +80,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_group != null) _group.close();
+    if (_group != null) _group!.close();
     _group = StreamGroup.broadcast()
       ..add(context.read<PersonnelBloc>().stream)
       ..add(context.read<TrackingBloc>().stream)
@@ -89,7 +89,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   @override
   void dispose() {
-    _group.close();
+    _group!.close();
     _group = null;
     super.dispose();
   }
@@ -103,7 +103,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
             context.read<PersonnelBloc>().load();
           },
           child: StreamBuilder(
-            stream: _group.stream,
+            stream: _group!.stream,
             initialData: context.read<PersonnelBloc>().state,
             builder: (context, snapshot) {
               if (snapshot.hasData == false) return Container();
@@ -112,7 +112,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
                   ? toRefreshable(
                       viewportConstraints,
                       message: snapshot.hasError
-                          ? snapshot.error
+                          ? snapshot.error as String?
                           : widget.query == null
                               ? "Legg til mannskap"
                               : "Ingen mannskap funnet",
@@ -125,17 +125,17 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     );
   }
 
-  List<Personnel> _filteredPersonnel() {
+  List<Personnel?> _filteredPersonnel() {
     final personnels = context
         .read<PersonnelBloc>()
         .repo
         .values
-        .where((personnel) => _filter.contains(personnel.status))
-        .where((personnel) => widget.where == null || widget.where(personnel))
-        .where((personnel) => widget.query == null || _prepare(personnel).contains(widget.query.toLowerCase()))
+        .where((personnel) => _filter!.contains(personnel!.status))
+        .where((personnel) => widget.where == null || widget.where!(personnel))
+        .where((personnel) => widget.query == null || _prepare(personnel!).contains(widget.query!.toLowerCase()))
         .toList();
     if (!widget.withGrouped) {
-      personnels.sort((p1, p2) => p1.name.toLowerCase().compareTo(p2.name.toLowerCase()));
+      personnels.sort((p1, p2) => p1!.name.toLowerCase().compareTo(p2!.name.toLowerCase()));
     }
     return personnels;
   }
@@ -144,18 +144,18 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   Widget _buildList(List personnels) {
     return widget.withGrouped
-        ? GroupedListView<Personnel, AffiliationGroupEntry>(
+        ? GroupedListView<Personnel?, AffiliationGroupEntry>(
             sort: true,
             shrinkWrap: false,
             cacheExtent: 150.0,
-            elements: personnels,
+            elements: personnels as List<Personnel?>,
             order: GroupedListOrder.ASC,
             useStickyGroupSeparators: false,
             physics: AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, personnel) {
               return Container(
                 height: 56.0,
-                child: _buildPersonnel(personnel),
+                child: _buildPersonnel(personnel!),
               );
             },
             groupBy: (personnel) {
@@ -168,7 +168,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
                       affiliation,
                       empty: 'Uorganisert',
                       short: true,
-                    )
+                    )!
                     .trim(),
               );
             },
@@ -209,7 +209,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     );
   }
 
-  Widget _buildPersonnelTile(Unit unit, Personnel personnel, TrackingStatus status, Tracking tracking) {
+  Widget _buildPersonnelTile(Unit? unit, Personnel personnel, TrackingStatus status, Tracking? tracking) {
     return Container(
       key: ObjectKey(personnel.uuid),
       color: Colors.white,
@@ -298,18 +298,18 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
-  Affiliation _toAffiliation(Personnel personnel) => affiliationBloc.repo[personnel?.affiliation?.uuid];
+  Affiliation _toAffiliation(Personnel? personnel) => affiliationBloc.repo[personnel!.affiliation!.uuid]!;
 
   AffiliationBloc get affiliationBloc => context.read<AffiliationBloc>();
 
   bool isTemporary(Personnel personnel) => affiliationBloc.isTemporary(
-        personnel.affiliation.uuid,
+        personnel.affiliation!.uuid,
       );
 
   String _toUsage(
-    Unit unit,
+    Unit? unit,
     Personnel personnel,
-    Tracking tracking,
+    Tracking? tracking,
   ) =>
       [
         unit?.name ?? '',
@@ -321,7 +321,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     } else if (widget.onSelection == null) {
       Navigator.pushNamed(context, PersonnelScreen.ROUTE, arguments: personnel);
     } else {
-      widget.onSelection(personnel);
+      widget.onSelection!(personnel);
     }
   }
 
@@ -358,7 +358,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         ),
       );
 
-  Unit _toUnit(Personnel personnel) => context.read<UnitBloc>().findUnitsWithPersonnel(personnel.uuid).firstOrNull;
+  Unit? _toUnit(Personnel personnel) => context.read<UnitBloc>().findUnitsWithPersonnel(personnel.uuid).firstOrNull;
 
   Widget _buildCreateUnitAction(Personnel personnel) => Tooltip(
         message: "Opprett enhet med mannskap",
@@ -423,10 +423,10 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 }
 
 class PersonnelAvatar extends StatelessWidget {
-  final Personnel personnel;
-  final Tracking tracking;
+  final Personnel? personnel;
+  final Tracking? tracking;
   const PersonnelAvatar({
-    Key key,
+    Key? key,
     this.personnel,
     this.tracking,
   }) : super(key: key);
@@ -434,7 +434,7 @@ class PersonnelAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
-      backgroundColor: toPersonnelStatusColor(personnel.status),
+      backgroundColor: toPersonnelStatusColor(personnel!.status),
       child: Stack(
         children: <Widget>[
           Center(child: Icon(toPersonnelIconData(personnel))),
@@ -462,11 +462,11 @@ class PersonnelAvatar extends StatelessWidget {
   }
 }
 
-class PersonnelSearch extends SearchDelegate<Personnel> {
+class PersonnelSearch extends SearchDelegate<Personnel?> {
   static final _storage = Storage.secure;
   static const RECENT_KEY = "search/personnel/recent";
 
-  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+  ValueNotifier<Set<String>?> _recent = ValueNotifier(null);
 
   PersonnelSearch() {
     _init();
@@ -511,9 +511,9 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
   @override
   Widget buildSuggestions(BuildContext context) {
     return query.isEmpty
-        ? ValueListenableBuilder<Set<String>>(
+        ? ValueListenableBuilder<Set<String>?>(
             valueListenable: _recent,
-            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+            builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
               return _buildSuggestionList(
                 context,
                 suggestions?.where(_matches)?.toList() ?? [],
@@ -533,7 +533,7 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
@@ -564,9 +564,9 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
 
   PersonnelsPage _buildResults(BuildContext context, {bool store = false}) {
     if (store) {
-      final recent = _recent.value.toSet()..add(query);
+      final recent = _recent.value!.toSet()..add(query);
       _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-      _recent.value = recent.toSet() ?? [];
+      _recent.value = (recent.toSet() ?? []) as Set<String>?;
     }
     return PersonnelsPage(
       query: query,
@@ -579,15 +579,15 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     buildSuggestions(context);
   }
 }
 
-Future<Personnel> selectPersonnel(
+Future<Personnel?> selectPersonnel(
   BuildContext context, {
-  bool where(Personnel personnel),
-  String query,
+  bool where(Personnel personnel)?,
+  String? query,
 }) async {
   return await showDialog<Personnel>(
     context: context,

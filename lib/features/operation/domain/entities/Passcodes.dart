@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:json_annotation/json_annotation.dart';
 import 'package:random_string/random_string.dart';
@@ -10,12 +10,12 @@ part 'Passcodes.g.dart';
 
 @JsonSerializable()
 class Passcodes extends ValueObject<Map<String, dynamic>> {
-  final String commander;
-  final String personnel;
+  final String? commander;
+  final String? personnel;
 
   Passcodes({
-    @required this.commander,
-    @required this.personnel,
+    required this.commander,
+    required this.personnel,
   }) : super([
           commander,
           personnel,

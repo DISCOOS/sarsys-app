@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/error_handler.dart';
@@ -148,7 +148,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Tilhørigheter",
       repo: context.read<AffiliationBloc>().repo,
       subject: (StorageState<Affiliation> state) => '${context.read<AffiliationBloc>().toName(
-            state?.value,
+            state.value,
             empty: translateAffiliationType(AffiliationType.volunteer),
           )}',
       content: (StorageState<Affiliation> state) => '${emptyAsNull(state?.value?.person?.name) ?? '<Ingen navn>'}',
@@ -183,18 +183,18 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       repo: context.read<TrackingBloc>().repo,
       subject: (StorageState<Tracking> state) {
         final units = context.read<UnitBloc>().repo.find(
-              where: (u) => u.tracking?.uuid == state.value.uuid,
+              where: (u) => u!.tracking?.uuid == state.value.uuid,
             );
         if (units.isNotEmpty) {
-          return 'Unit: ${units.first.name} '
-              '(${translateUnitStatus(units.first.status)})';
+          return 'Unit: ${units.first!.name} '
+              '(${translateUnitStatus(units.first!.status)})';
         }
         final personnels = context.read<PersonnelBloc>().repo.find(
-              where: (p) => p.tracking?.uuid == state.value.uuid,
+              where: (p) => p!.tracking?.uuid == state.value.uuid,
             );
         if (personnels.isNotEmpty) {
-          return 'Mannskap: ${personnels.first.person.name} '
-              '(${translatePersonnelStatus(personnels.first.status)})';
+          return 'Mannskap: ${personnels.first!.person!.name} '
+              '(${translatePersonnelStatus(personnels.first!.status)})';
         }
 
         return 'Tracking is ${enumName(state?.value?.status)}';
@@ -248,10 +248,10 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
         context.read<OperationBloc>().repo.commit(),
         context.read<UnitBloc>().repo.commit(),
         context.read<PersonnelBloc>().repo.commit(),
-        context.read<DeviceBloc>().repo.commit(),
+        context.read<DeviceBloc>().repo!.commit(),
         context.read<TrackingBloc>().repo.commit(),
       ],
-      cleanUp: (_) => setState(() {}),
+      cleanUp: (dynamic _) => setState(() {}),
     ).catchError(SarSysApp.reportCheckedError);
   }
 
@@ -268,10 +268,10 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
         context.read<OperationBloc>().repo.reset(),
         context.read<UnitBloc>().repo.reset(),
         context.read<PersonnelBloc>().repo.reset(),
-        context.read<DeviceBloc>().repo.reset(),
+        context.read<DeviceBloc>().repo!.reset(),
         context.read<TrackingBloc>().repo.reset(),
       ],
-      cleanUp: (_) => setState(() {}),
+      cleanUp: (dynamic _) => setState(() {}),
     ).catchError(SarSysApp.reportCheckedError);
   }
 }
@@ -283,9 +283,9 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
   final bool withResetAction;
 
   const RepositoryTile({
-    @required this.repo,
-    @required this.title,
-    @required this.subject,
+    required this.repo,
+    required this.title,
+    required this.subject,
     this.content,
     this.onReset,
     this.onCommit,
@@ -293,21 +293,21 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
     this.withCommitAction = true,
   });
   final String title;
-  final VoidCallback onReset;
-  final VoidCallback onCommit;
-  final StatefulRepository repo;
+  final VoidCallback? onReset;
+  final VoidCallback? onCommit;
+  final StatefulRepository? repo;
   final String Function(StorageState<T> state) subject;
-  final String Function(StorageState<T> state) content;
+  final String Function(StorageState<T> state)? content;
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Object>(
-        stream: repo.onChanged,
+    return StreamBuilder<Object?>(
+        stream: repo!.onChanged,
         builder: (context, snapshot) {
           var local = 0;
           var remote = 0;
           if (snapshot.hasData) {
-            repo.states.values.forEach((state) {
+            repo!.states.values.forEach((state) {
               if (state.isLocal) {
                 local++;
               } else {
@@ -318,17 +318,17 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
           return _buildRepoActions(
             context,
             child: ListTile(
-              key: PageStorageKey<StatefulRepository>(repo),
+              key: PageStorageKey<StatefulRepository?>(repo),
               leading: const Icon(Icons.storage),
               title: SelectableText(
                 title,
                 onTap: () => onTap(context),
               ),
-              subtitle: repo.isEmpty
+              subtitle: repo!.isEmpty
                   ? SelectableText('No data')
                   : SelectableText(
-                      'Totals ${repo.length} '
-                      '($remote published, $local waiting, ${repo.errors.length} errors)',
+                      'Totals ${repo!.length} '
+                      '($remote published, $local waiting, ${repo!.errors.length} errors)',
                     ),
               onTap: () => onTap(context),
             ),
@@ -357,7 +357,7 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
 
   Widget _buildRepoActions(
     BuildContext context, {
-    @required Widget child,
+    required Widget child,
   }) {
     return Slidable(
       actionPane: SlidableScrollActionPane(),
@@ -376,9 +376,9 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
       color: Theme.of(context).buttonColor,
       icon: Icons.clear_all,
       onTap: () {
-        repo.reset();
+        repo!.reset();
         if (onReset != null) {
-          onReset();
+          onReset!();
         }
       },
     );
@@ -391,9 +391,9 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
       icon: Icons.publish,
       onTap: () {
         if (onCommit != null) {
-          onCommit();
+          onCommit!();
         }
-        repo.commit();
+        repo!.commit();
       },
     );
   }

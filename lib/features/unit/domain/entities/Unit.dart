@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:meta/meta.dart';
@@ -9,17 +9,17 @@ import 'package:SarSys/core/utils/data.dart';
 
 abstract class Unit extends Trackable<Map<String, dynamic>> {
   Unit({
-    @required String uuid,
-    @required this.type,
-    @required this.number,
-    @required this.status,
-    @required this.callsign,
+    required String uuid,
+    required this.type,
+    required this.number,
+    required this.status,
+    required this.callsign,
     this.phone,
     this.operation,
-    AggregateRef<Tracking> tracking,
-    List<String> personnels = const <String>[],
+    AggregateRef<Tracking>? tracking,
+    List<String>? personnels = const <String>[],
   })  : personnels = personnels ?? const <String>[],
-        super(uuid, tracking, fields: [
+        super(uuid, tracking!, fields: [
           type,
           number,
           status,
@@ -28,13 +28,13 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
           personnels ?? const <String>[],
         ]);
 
-  final int number;
-  final UnitType type;
-  final UnitStatus status;
-  final String phone;
-  final String callsign;
+  final int? number;
+  final UnitType? type;
+  final UnitStatus? status;
+  final String? phone;
+  final String? callsign;
   final List<String> personnels;
-  final AggregateRef<Operation> operation;
+  final AggregateRef<Operation>? operation;
 
   String get name => "${translateUnitType(type)} $number";
 
@@ -48,21 +48,21 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
   Unit mergeWith(Map<String, dynamic> json);
 
   Unit copyWith({
-    String uuid,
-    UnitType type,
-    int number,
-    UnitStatus status,
-    String phone,
-    String callsign,
-    List<String> personnels,
-    AggregateRef<Tracking> tracking,
-    AggregateRef<Operation> operation,
+    String? uuid,
+    UnitType? type,
+    int? number,
+    UnitStatus? status,
+    String? phone,
+    String? callsign,
+    List<String>? personnels,
+    AggregateRef<Tracking>? tracking,
+    AggregateRef<Operation>? operation,
   });
 }
 
 enum UnitStatus { mobilized, deployed, retired }
 
-String translateUnitStatus(UnitStatus status) {
+String translateUnitStatus(UnitStatus? status) {
   switch (status) {
     case UnitStatus.mobilized:
       return "Mobilisert";
@@ -77,7 +77,7 @@ String translateUnitStatus(UnitStatus status) {
 
 enum UnitType { team, k9, boat, vehicle, snowmobile, atv, commandpost, other }
 
-String translateUnitType(UnitType type) {
+String translateUnitType(UnitType? type) {
   switch (type) {
     case UnitType.team:
       return "Lag";

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
@@ -15,6 +15,7 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
 
 import 'affiliation_bloc.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 
 /// --------------------------------------------
 /// Helper class for querying for [Affiliation]s
@@ -29,12 +30,12 @@ class AffiliationQuery {
     this.bloc, {
 
     /// Aggregates included in query
-    Map<String, Aggregate> aggregates,
+    Map<String, Aggregate>? aggregates,
   }) : _aggregates = aggregates ?? toAggregates(bloc);
 
   static Map<String, Aggregate> toAggregates<String, Aggregate>(
     AffiliationBloc bloc, {
-    bool Function(Aggregate aggregate) where,
+    bool Function(Aggregate aggregate)? where,
   }) =>
       Map<String, Aggregate>.from(bloc.orgs.map)
         ..addAll(bloc.divs.map.cast())
@@ -62,22 +63,22 @@ class AffiliationQuery {
 
   /// Get all [person]s with an affiliation
   Iterable<Person> get persons => affiliates.where((a) => _aggregates.containsKey(a.person?.uuid)).map(
-        (a) => _aggregates[a.person.uuid],
+        (a) => _aggregates[a.person!.uuid!] as Person,
       );
 
   /// Test if given [uuid] is contained in any [Affiliation] in this [AffiliationQuery]
-  bool contains(String uuid) => _aggregates.containsKey(uuid);
+  bool contains(String? uuid) => _aggregates.containsKey(uuid);
 
   /// Get [Affiliation] with child [Aggregate.uuid] as leaf
   ///
   /// It is guaranteed that only one affiliation contains
   /// any given child as leaf.
   ///
-  Affiliation elementAt(String uuid) {
+  Affiliation? elementAt(String? uuid) {
     if (!contains(uuid)) {
       return null;
     }
-    final child = _aggregates[uuid];
+    final child = _aggregates[uuid!];
     switch (child.runtimeType) {
       case OrganisationModel:
         return AffiliationModel(
@@ -85,24 +86,23 @@ class AffiliationQuery {
         );
       case DivisionModel:
         return AffiliationModel(
-          org: AggregateRef.fromType<OrganisationModel>((child as Division).organisation.uuid),
+          org: AggregateRef.fromType<OrganisationModel>((child as Division).organisation!.uuid!),
           div: AggregateRef.fromType<DivisionModel>(uuid),
         );
       case DepartmentModel:
         return AffiliationModel(
           org: AggregateRef.fromType<OrganisationModel>(
-            (_aggregates[(child as Department).division.uuid] as Division).organisation.uuid,
+            (_aggregates[(child as Department).division!.uuid!] as Division).organisation!.uuid!,
           ),
-          div: AggregateRef.fromType<DivisionModel>((child as Department).division.uuid),
+          div: AggregateRef.fromType<DivisionModel>(child.division!.uuid!),
           dep: AggregateRef.fromType<DepartmentModel>(uuid),
         );
       case PersonModel:
-        return _aggregates.values.whereType<Affiliation>().firstWhere(
-              (element) => element.person.uuid == child.uuid,
-              orElse: () => null,
+        return _aggregates.values.whereType<Affiliation>().firstWhereOrNull(
+              (element) => element.person!.uuid == child!.uuid,
             );
       case AffiliationModel:
-        return child;
+        return child as Affiliation;
     }
     throw UnimplementedError(
       "Unexpected affiliation type: ${child.runtimeType}",
@@ -113,9 +113,9 @@ class AffiliationQuery {
   /// at any position in the affiliation tree
   ///
   Iterable<Affiliation> find<T extends Aggregate>({
-    String uuid,
-    List<Type> types,
-    bool Function(Aggregate aggregate) where,
+    String? uuid,
+    List<Type>? types,
+    bool Function(Aggregate? aggregate)? where,
   }) {
     switch (_toModelType(T)) {
       // Search for parent types
@@ -127,14 +127,14 @@ class AffiliationQuery {
         // and departments in organisation
         if (_accept<T>(uuid, where)) {
           final child = (_aggregates[uuid] as Organisation);
-          final divisions = _findChildren<Division>(child.divisions, where);
+          final divisions = _findChildren<Division>(child.divisions!, where);
           return [
-            elementAt(uuid),
-            ...divisions.map((div) => elementAt(div.uuid)),
+            elementAt(uuid)!,
+            ...divisions.map((div) => elementAt(div!.uuid)!),
             ...divisions.fold(
                 <Affiliation>[],
                 (found, div) => _findLeafs<Department>(
-                      div.departments,
+                      div!.departments!,
                       where,
                     ))
           ];
@@ -148,9 +148,9 @@ class AffiliationQuery {
         // departments in division
         if (_accept<T>(uuid, where)) {
           final child = (_aggregates[uuid] as Division);
-          final departments = _findLeafs<Department>(child.departments, where);
+          final departments = _findLeafs<Department>(child.departments!, where);
           return [
-            elementAt(uuid),
+            elementAt(uuid)!,
             ...departments,
           ];
         }
@@ -162,7 +162,7 @@ class AffiliationQuery {
             _findTyped<DepartmentModel>(where)
             : // Match against given uuid
             _accept<DepartmentModel>(uuid, where)
-                ? [elementAt(uuid)]
+                ? [elementAt(uuid)!]
                 : [];
       case AffiliationModel:
         return uuid == null
@@ -170,7 +170,7 @@ class AffiliationQuery {
             _findTyped<AffiliationModel>(where)
             : // Match against given uuid
             _accept<AffiliationModel>(uuid, where)
-                ? [elementAt(uuid)]
+                ? [elementAt(uuid)!]
                 : [];
       case PersonModel:
         return uuid == null
@@ -178,7 +178,7 @@ class AffiliationQuery {
             _findTyped<PersonModel>(where)
             : // Match against given uuid
             _accept<PersonModel>(uuid, where)
-                ? [elementAt(uuid)]
+                ? [elementAt(uuid)!]
                 : [];
       default:
         return uuid == null
@@ -188,18 +188,18 @@ class AffiliationQuery {
                 : _findAny(where)
             : // Match against given uuid
             _accept<T>(uuid, where, types: _toModelTypes(types))
-                ? [elementAt(uuid)]
+                ? [elementAt(uuid)!]
                 : [];
     }
   }
 
-  Iterable<T> _findChildren<T extends Aggregate>(List<String> uuids, bool where(Aggregate aggregate)) => uuids
-      .map((uuid) => _aggregates[uuid] as T)
+  Iterable<T?> _findChildren<T extends Aggregate?>(List<String> uuids, bool where(Aggregate? aggregate)?) => uuids
+      .map((uuid) => _aggregates[uuid] as T?)
       .where((aggregate) => aggregate != null && (where == null || where(aggregate)));
 
   Iterable<Affiliation> _findLeafs<T extends Aggregate>(
     List<String> uuids,
-    bool where(Aggregate aggregate), {
+    bool where(Aggregate? aggregate)?, {
     List<Type> types = const [],
   }) =>
       uuids
@@ -207,9 +207,9 @@ class AffiliationQuery {
           .map((uuid) => _aggregates[uuid])
           .where((aggregate) => aggregate is T || isType(aggregate, types))
           .where((aggregate) => where == null || where(aggregate))
-          .map((aggregate) => elementAt(aggregate.uuid));
+          .map((aggregate) => elementAt(aggregate!.uuid)!);
 
-  List<Type> _toModelTypes(List<Type> types) => (types ?? []).map(_toModelType).toList();
+  List<Type> _toModelTypes(List<Type>? types) => (types ?? []).map(_toModelType).toList();
 
   Type _toModelType(Type type) {
     switch (type) {
@@ -235,10 +235,10 @@ class AffiliationQuery {
     }
   }
 
-  bool isType(Aggregate aggregate, List<Type> types) => types.contains(aggregate.runtimeType);
+  bool isType(Aggregate? aggregate, List<Type> types) => types.contains(aggregate.runtimeType);
 
   Iterable<Affiliation> _findAny(
-    bool where(Aggregate aggregate),
+    bool where(Aggregate aggregate)?,
   ) =>
       _aggregates.values.where((aggregate) => where == null || where(aggregate)).fold(
         <Affiliation>[],
@@ -252,7 +252,7 @@ class AffiliationQuery {
               return List.from(found)
                 ..add(elementAt(
                   next.uuid,
-                ));
+                )!);
             default:
               throw UnimplementedError(
                 "Unexpected affiliation type ${next.runtimeType}",
@@ -262,7 +262,7 @@ class AffiliationQuery {
       );
 
   Iterable<Affiliation> _findTyped<T extends Aggregate>(
-    bool where(Aggregate aggregate),
+    bool where(Aggregate? aggregate)?,
   ) =>
       _aggregates.values.whereType<T>().fold(
         <Affiliation>[],
@@ -275,7 +275,7 @@ class AffiliationQuery {
 
   Iterable<Affiliation> _findTypes(
     List<Type> types,
-    bool where(Aggregate aggregate),
+    bool where(Aggregate? aggregate)?,
   ) =>
       _aggregates.values.where((aggregate) => isType(aggregate, types)).fold(
         <Affiliation>[],
@@ -289,7 +289,7 @@ class AffiliationQuery {
 
   bool _accept<T>(
     String uuid,
-    bool where(Aggregate aggregate), {
+    bool where(Aggregate? aggregate)?, {
     List<Type> types = const [],
   }) {
     final aggregate = _aggregates[uuid];
@@ -307,8 +307,8 @@ class AffiliationQuery {
   /// rule guarantees a one-to-one mapping.
   ///
   AffiliationQuery where({
-    String uuid,
-    bool Function(Aggregate aggregate) where,
+    String? uuid,
+    bool Function(Aggregate aggregate)? where,
   }) =>
       AffiliationQuery(
         bloc,

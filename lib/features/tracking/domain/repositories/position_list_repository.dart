@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -8,25 +8,25 @@ import 'package:SarSys/features/tracking/data/services/position_list_service.dar
 import 'package:SarSys/features/tracking/domain/entities/PositionList.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 
-abstract class PositionListRepository implements StatefulRepository<String, PositionList, PositionListService> {
+abstract class PositionListRepository implements StatefulRepository<String?, PositionList, PositionListService> {
   /// Get [PositionList.id] from [value]
   @override
-  String toKey(PositionList value);
+  String? toKey(PositionList? value);
 
   /// Find tracks matching given query
-  Iterable<PositionList> find({bool where(PositionList list)});
+  Iterable<PositionList> find({bool where(PositionList list)?});
 
   /// Init from local storage, overwrite states
   /// with given tracks if given. Returns
   /// number of states after initialisation
-  Future<int> init({Map<String, List<TrackingTrack>> tracks});
+  Future<int> init({Map<String, List<TrackingTrack>>? tracks});
 
   /// Load positions for given [Tracking] and [TrackingSource] uuids.
-  Future<Iterable<PositionList>> fetch(
+  Future<Iterable<PositionList?>> fetch(
     String tuuid, {
     bool replace = false,
-    Iterable<String> suuids,
-    Completer<Iterable<PositionList>> onRemote,
+    Iterable<String?>? suuids,
+    Completer<Iterable<PositionList>>? onRemote,
     List<String> options = const ['truncate:-20:m'],
   });
 }
@@ -34,7 +34,7 @@ abstract class PositionListRepository implements StatefulRepository<String, Posi
 class PositionListServiceException extends ServiceException {
   PositionListServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(error, response: response, stackTrace: stackTrace);
 }

@@ -1,18 +1,18 @@
-// @dart=2.11
+
 
 import 'package:flutter/material.dart';
 
 class StreamBuilderWidget<T> extends StatelessWidget {
   const StreamBuilderWidget({
-    Key key,
-    @required this.stream,
-    @required this.builder,
+    Key? key,
+    required this.stream,
+    required this.builder,
     this.initialData,
   }) : assert(builder != null);
 
-  final T initialData;
+  final T? initialData;
   final Stream<T> stream;
-  final Function(BuildContext, T) builder;
+  final Function(BuildContext, T?) builder;
 
   @override
   Widget build(BuildContext context) {

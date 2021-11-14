@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/presentation/widgets/permission_setup.dart';
@@ -35,8 +35,8 @@ class _PermissionConfigScreenState extends State<PermissionConfigScreen> {
           key: _permissionsKey,
           onChanged: (response) async {
             await context.read<AppConfigBloc>().updateWith(
-                  storage: _permissionsKey.currentState.isStorageGranted,
-                  locationWhenInUse: _permissionsKey.currentState.isLocationWhenInUseGranted,
+                  storage: _permissionsKey.currentState!.isStorageGranted,
+                  locationWhenInUse: _permissionsKey.currentState!.isLocationWhenInUseGranted,
                 );
           },
         ),

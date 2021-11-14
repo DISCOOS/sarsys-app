@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:math';
 
@@ -26,10 +26,10 @@ class PersonnelLayerOptions extends LayerOptions {
   bool showTail;
   bool showRetired;
   final TrackingBloc bloc;
-  final ActionCallback onMessage;
+  final ActionCallback? onMessage;
 
   PersonnelLayerOptions({
-    @required this.bloc,
+    required this.bloc,
     this.size = 8.0,
     this.opacity = 0.6,
     this.showLabels = true,
@@ -63,23 +63,23 @@ class PersonnelLayer extends MapPlugin {
   Widget _build(BuildContext context, Size size, PersonnelLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final trackings = options.bloc.trackings;
-    final personnels = sortMapValues<String, Personnel, TrackingStatus>(
+    final personnels = sortMapValues<String?, Personnel?, TrackingStatus>(
             options.bloc.personnels.where(exclude: options.showRetired ? [] : [TrackingStatus.closed]).map,
-            (personnel) => trackings[personnel.tracking.uuid].status ?? TrackingStatus.none,
-            (s1, s2) => s1.index - s2.index)
+            (personnel) => trackings[personnel!.tracking!.uuid]!.status ?? TrackingStatus.none,
+            (s1, s2) => s1!.index - s2!.index)
         .values
-        .where((personnel) => trackings[personnel.tracking.uuid]?.position?.isNotEmpty == true)
-        .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.retired)
+        .where((personnel) => trackings[personnel!.tracking!.uuid]?.position?.isNotEmpty == true)
+        .where((personnel) => options.showRetired || personnel!.status != PersonnelStatus.retired)
         .where(
-          (personnel) => bounds.contains(toLatLng(trackings[personnel.tracking.uuid]?.position?.geometry)),
+          (personnel) => bounds.contains(toLatLng(trackings[personnel!.tracking!.uuid]?.position?.geometry)),
         );
     return trackings.isEmpty
         ? Container()
         : Stack(
             clipBehavior: Clip.none,
             children: [
-              if (options.showTail) ..._buildTracks(context, personnels, size, options, map, trackings),
-              if (options.showLabels) ..._buildLabels(context, personnels, options, map, trackings),
+              if (options.showTail) ..._buildTracks(context, personnels, size, options, map, trackings) as Iterable<Widget>,
+              if (options.showLabels) ..._buildLabels(context, personnels, options, map, trackings) as Iterable<Widget>,
               ..._buildPoints(context, personnels, options, map, trackings),
             ],
           );
@@ -87,45 +87,45 @@ class PersonnelLayer extends MapPlugin {
 
   List<Widget> _buildPoints(
     BuildContext context,
-    Iterable<Personnel> personnels,
+    Iterable<Personnel?> personnels,
     PersonnelLayerOptions options,
     MapState map,
-    Map<String, Tracking> trackings,
+    Map<String?, Tracking?> trackings,
   ) =>
       personnels
           .map((personnels) => _buildPoint(
                 context,
                 options,
                 map,
-                personnels,
-                trackings[personnels.tracking.uuid],
+                personnels!,
+                trackings[personnels.tracking!.uuid]!,
               ))
           .toList();
 
   List _buildLabels(
     BuildContext context,
-    Iterable<Personnel> personnels,
+    Iterable<Personnel?> personnels,
     PersonnelLayerOptions options,
     MapState map,
-    Map<String, Tracking> trackings,
+    Map<String?, Tracking?> trackings,
   ) =>
       personnels
           .map((personnels) => _buildLabel(
                 context,
                 options,
                 map,
-                personnels,
-                trackings[personnels.tracking.uuid]?.position?.geometry,
+                personnels!,
+                trackings[personnels.tracking!.uuid]?.position?.geometry,
               ))
           .toList();
 
   List _buildTracks(
     BuildContext context,
-    Iterable<Personnel> personnels,
+    Iterable<Personnel?> personnels,
     Size size,
     PersonnelLayerOptions options,
     MapState map,
-    Map<String, Tracking> trackings,
+    Map<String?, Tracking?> trackings,
   ) =>
       personnels
           .map((personnels) => _buildTrack(
@@ -134,7 +134,7 @@ class PersonnelLayer extends MapPlugin {
                 options,
                 map,
                 personnels,
-                trackings[personnels.tracking.uuid],
+                trackings[personnels!.tracking!.uuid]!,
               ))
           .toList();
 
@@ -143,11 +143,11 @@ class PersonnelLayer extends MapPlugin {
     Size size,
     PersonnelLayerOptions options,
     MapState map,
-    Personnel personnels,
+    Personnel? personnels,
     Tracking tracking,
   ) {
     var offsets = tracking.history.reversed.take(10).map((position) {
-      var pos = map.project(toLatLng(position.geometry));
+      var pos = map.project(toLatLng(position!.geometry));
       pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
       return Offset(pos.x.toDouble(), pos.y.toDouble());
     }).toList(growable: false);
@@ -168,14 +168,14 @@ class PersonnelLayer extends MapPlugin {
   Widget _buildPoint(
       BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnels, Tracking tracking) {
     var size = options.size;
-    var point = tracking.position.geometry;
+    var point = tracking.position!.geometry;
     var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, tracking.position);
+    var pixelRadius = _toPixelRadius(map, size, pos.x as double, pos.y as double, tracking.position);
 
     return Positioned(
-      top: pos.y,
-      left: pos.x,
+      top: pos.y as double?,
+      left: pos.x as double?,
       width: pixelRadius,
       height: pixelRadius,
       child: CustomPaint(
@@ -190,14 +190,14 @@ class PersonnelLayer extends MapPlugin {
     );
   }
 
-  _buildLabel(BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnels, Point point) {
+  _buildLabel(BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnels, Point? point) {
     var size = options.size;
     var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
     return Positioned(
       top: pos.y + size,
-      left: pos.x,
+      left: pos.x as double?,
       child: CustomPaint(
         painter: LabelPainter("${personnels.fname}\n${personnels.lname}", top: size),
         size: Size(size, size),
@@ -206,17 +206,17 @@ class PersonnelLayer extends MapPlugin {
   }
 }
 
-double _toPixelRadius(MapState map, double size, double x, double y, Position position) {
+double _toPixelRadius(MapState map, double size, double x, double y, Position? position) {
   if (position == null) return 0;
   var pixelRadius = size;
-  if (position.acc != null && position.acc > 0.0) {
+  if (position.acc != null && position.acc! > 0.0) {
     var coords = ProjMath.calculateEndingGlobalCoordinates(
-      position.lat,
+      position.lat!,
       position.lon,
       45.0,
-      position.acc,
+      position.acc!,
     );
-    var pos = map.project(LatLng(coords.y, coords.x));
+    var pos = map.project(LatLng(coords.y!, coords.x!));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
     pixelRadius = min(max((pos.x - x).abs(), size), max((pos.y - y).abs(), size).abs()).toDouble();
   }

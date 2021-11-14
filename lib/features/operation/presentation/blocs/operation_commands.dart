@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
@@ -21,12 +21,12 @@ class LoadOperations extends OperationCommand<void, List<Operation>> {
   String toString() => '$runtimeType {}';
 }
 
-class CreateOperation extends OperationCommand<Operation, Operation> {
+class CreateOperation extends OperationCommand<Operation?, Operation> {
   final bool selected;
-  final List<String> units;
-  final Incident incident;
+  final List<String>? units;
+  final Incident? incident;
   CreateOperation(
-    Operation operation, {
+    Operation? operation, {
     this.selected = true,
     this.units,
     this.incident,
@@ -36,11 +36,11 @@ class CreateOperation extends OperationCommand<Operation, Operation> {
   String toString() => '$runtimeType {data: $data, selected: $selected, incident: $incident, units: $units}';
 }
 
-class UpdateOperation extends OperationCommand<Operation, Operation> {
+class UpdateOperation extends OperationCommand<Operation?, Operation> {
   final bool selected;
-  final Incident incident;
+  final Incident? incident;
   UpdateOperation(
-    Operation operation, {
+    Operation? operation, {
     this.selected = true,
     this.incident,
   }) : super(operation, props: [selected, incident]);
@@ -49,8 +49,8 @@ class UpdateOperation extends OperationCommand<Operation, Operation> {
   String toString() => '$runtimeType {data: $data, selected: $selected, incident: $incident}';
 }
 
-class SelectOperation extends OperationCommand<String, Operation> {
-  SelectOperation(String uuid) : super(uuid);
+class SelectOperation extends OperationCommand<String?, Operation> {
+  SelectOperation(String? uuid) : super(uuid);
 
   @override
   String toString() => '$runtimeType {data: $data}';
@@ -63,8 +63,8 @@ class UnselectOperation extends OperationCommand<void, Operation> {
   String toString() => '$runtimeType';
 }
 
-class DeleteOperation extends OperationCommand<String, Operation> {
-  DeleteOperation(String uuid) : super(uuid);
+class DeleteOperation extends OperationCommand<String?, Operation> {
+  DeleteOperation(String? uuid) : super(uuid);
 
   @override
   String toString() => '$runtimeType {data: $data}';

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -11,8 +11,8 @@ import 'package:SarSys/core/utils/data.dart';
 
 abstract class Device extends Positionable<Map<String, dynamic>> {
   Device({
-    @required String uuid,
-    @required this.type,
+    required String? uuid,
+    required this.type,
     this.alias,
     this.number,
     this.manual,
@@ -20,7 +20,7 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
     this.networkId,
     this.trackable,
     this.allocatedTo,
-    Position position,
+    Position? position,
     this.status = DeviceStatus.unavailable,
   }) : super(uuid, position, fields: [
           type,
@@ -34,19 +34,19 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
           status,
         ]);
 
-  final bool manual;
-  final DeviceType type;
-  final DeviceStatus status;
-  final String number;
-  final String alias;
-  final bool trackable;
-  final String network;
-  final String networkId;
+  final bool? manual;
+  final DeviceType? type;
+  final DeviceStatus? status;
+  final String? number;
+  final String? alias;
+  final bool? trackable;
+  final String? network;
+  final String? networkId;
   @JsonKey(fromJson: toIncidentRef)
-  final AggregateRef<Incident> allocatedTo;
+  final AggregateRef<Incident>? allocatedTo;
 
   /// Device name
-  String get name => this.alias?.isNotEmpty == true ? this.alias : this.number;
+  String? get name => this.alias?.isNotEmpty == true ? this.alias : this.number;
 
   /// Get searchable string
   String get searchable => props.map((prop) => prop is DeviceType ? translateDeviceType(prop) : prop).join(' ');
@@ -56,17 +56,17 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
 
   /// Clone device and set given location
   Device copyWith({
-    String uuid,
-    DeviceType type,
-    DeviceStatus status,
-    String alias,
-    bool manual,
-    bool trackable,
-    String network,
-    String networkId,
-    String number,
-    Position position,
-    AggregateRef<Incident> allocatedTo,
+    String? uuid,
+    DeviceType? type,
+    DeviceStatus? status,
+    String? alias,
+    bool? manual,
+    bool? trackable,
+    String? network,
+    String? networkId,
+    String? number,
+    Position? position,
+    AggregateRef<Incident>? allocatedTo,
   });
 }
 
@@ -79,7 +79,7 @@ enum DeviceType {
   inreach,
 }
 
-String translateDeviceType(DeviceType type) {
+String translateDeviceType(DeviceType? type) {
   switch (type) {
     case DeviceType.tetra:
       return "Nødnett";
@@ -100,7 +100,7 @@ String translateDeviceType(DeviceType type) {
 
 enum DeviceStatus { unavailable, available }
 
-String translateDeviceStatus(DeviceStatus status) {
+String translateDeviceStatus(DeviceStatus? status) {
   switch (status) {
     case DeviceStatus.unavailable:
       return "Ikke tilgjengelig";

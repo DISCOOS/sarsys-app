@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -15,10 +15,10 @@ abstract class UserService {
   UserService(this.connectivity);
 
   /// Get [ConnectivityService]
-  final ConnectivityService connectivity;
+  final ConnectivityService? connectivity;
 
   /// Get domain from username
-  static String toDomain(String username) {
+  static String? toDomain(String username) {
     final pattern = RegExp(".*.@(.*)");
     final matcher = pattern.firstMatch(username);
     return matcher?.group(1);
@@ -26,14 +26,14 @@ abstract class UserService {
 
   /// Authorize and get token
   Future<ServiceResponse<AuthToken>> login({
-    String userId,
-    String username,
-    String password,
-    String idpHint,
+    String? userId,
+    String? username,
+    String? password,
+    String? idpHint,
   });
 
   /// Refresh token
-  Future<ServiceResponse<AuthToken>> refresh(AuthToken token);
+  Future<ServiceResponse<AuthToken>> refresh(AuthToken? token);
 
   /// Logout from session
   Future<ServiceResponse<void>> logout(AuthToken token);
@@ -93,38 +93,38 @@ class UserIdentityService extends UserService {
   /// Authorize and get token
   @override
   Future<ServiceResponse<AuthToken>> login({
-    String userId,
-    String username,
-    String password,
-    String idpHint,
+    String? userId,
+    String? username,
+    String? password,
+    String? idpHint,
   }) async {
-    if (connectivity.isOffline) {
+    if (connectivity!.isOffline) {
       return ServiceResponse.badRequest(
         message: "Login not possible when offline",
       );
     }
     try {
       // Select idp hint and prompt values
-      final hint = idpHint ?? toIdpHint(username);
+      final hint = idpHint ?? toIdpHint(username!);
       final idpPrompt = [
-        if (_promptValues.containsKey(idpHint)) _promptValues[idpHint],
+        if (_promptValues.containsKey(idpHint)) _promptValues[idpHint!],
       ];
 
       // Request a new session from idp
-      final response = await _appAuth.authorizeAndExchangeCode(
+      final response = await (_appAuth.authorizeAndExchangeCode(
         AuthorizationTokenRequest(
           _clientId,
           _redirectUrl,
           scopes: _scopes,
-          promptValues: idpPrompt,
+          promptValues: idpPrompt as List<String>?,
           // Use actual username if found, otherwise passed username
-          loginHint: emptyAsNull(username),
+          loginHint: emptyAsNull(username!),
           additionalParameters: {
             if (hint != null) 'kc_idp_hint': hint,
           },
           discoveryUrl: _discoveryUrl,
         ),
-      );
+      ) as FutureOr<AuthorizationTokenResponse>);
 
       // Write token and get user
       return ServiceResponse.ok<AuthToken>(
@@ -157,31 +157,31 @@ class UserIdentityService extends UserService {
     }
   }
 
-  Completer<ServiceResponse<AuthToken>> _refreshCompleter;
+  Completer<ServiceResponse<AuthToken>>? _refreshCompleter;
 
   @override
-  Future<ServiceResponse<AuthToken>> refresh(AuthToken token) async {
-    if (connectivity.isOffline) {
+  Future<ServiceResponse<AuthToken>> refresh(AuthToken? token) async {
+    if (connectivity!.isOffline) {
       return ServiceResponse.noContent(
         message: 'Refresh not possible when offline',
       );
     }
     // Refresh is pending?
-    if (_refreshCompleter != null && _refreshCompleter.isCompleted == false) {
-      return _refreshCompleter.future;
+    if (_refreshCompleter != null && _refreshCompleter!.isCompleted == false) {
+      return _refreshCompleter!.future;
     }
     _refreshCompleter = Completer<ServiceResponse<AuthToken>>();
     try {
-      final response = await _appAuth.token(
+      final response = await (_appAuth.token(
         TokenRequest(
           _clientId,
           _redirectUrl,
           scopes: _scopes,
           discoveryUrl: _discoveryUrl,
-          refreshToken: token.refreshToken,
+          refreshToken: token!.refreshToken,
         ),
-      );
-      _refreshCompleter.complete(ServiceResponse.ok<AuthToken>(
+      ) as FutureOr<TokenResponse>);
+      _refreshCompleter!.complete(ServiceResponse.ok<AuthToken>(
         body: AuthToken(
           clientId: _clientId,
           idToken: response.idToken,
@@ -192,32 +192,32 @@ class UserIdentityService extends UserService {
       ));
     } on PlatformException catch (e, stackTrace) {
       if (USER_ERRORS.contains(e.code)) {
-        _refreshCompleter.complete(ServiceResponse.unauthorized(
+        _refreshCompleter!.complete(ServiceResponse.unauthorized(
           message: "Unauthorized",
           error: e,
         ));
       } else {
-        _refreshCompleter.complete(ServiceResponse.internalServerError(
+        _refreshCompleter!.complete(ServiceResponse.internalServerError(
           message: "Failed to refresh token",
           error: e,
           stackTrace: stackTrace,
         ));
       }
     } catch (e, stackTrace) {
-      _refreshCompleter.complete(ServiceResponse.internalServerError(
+      _refreshCompleter!.complete(ServiceResponse.internalServerError(
         message: "Failed to refresh token",
         error: e,
         stackTrace: stackTrace,
       ));
     }
-    return _refreshCompleter.future;
+    return _refreshCompleter!.future;
   }
 
   /// Delete token from secure storage
   @override
   Future<ServiceResponse<void>> logout(AuthToken token) async {
     try {
-      if (connectivity.isOffline) {
+      if (connectivity!.isOffline) {
         return ServiceResponse.badRequest(
           message: "Logout not possible when offline",
         );
@@ -250,7 +250,7 @@ class UserIdentityService extends UserService {
     }
   }
 
-  String toIdpHint(String username) {
+  String? toIdpHint(String username) {
     final domain = UserService.toDomain(username);
     if (domain != null && _idpHints.containsKey(domain)) {
       return _idpHints[domain];
@@ -266,10 +266,10 @@ class UserCredentialsService extends UserService {
 
   /// Authorize with basic auth and get token
   Future<ServiceResponse<AuthToken>> login({
-    String userId,
-    String username,
-    String password,
-    String idpHint,
+    String? userId,
+    String? username,
+    String? password,
+    String? idpHint,
   }) async {
     // TODO: Change to http_client to get better control of timeout, retries etc.
     // TODO: Handle various login/network errors and throw appropriate errors
@@ -312,7 +312,7 @@ class UserCredentialsService extends UserService {
   }
 
   @override
-  Future<ServiceResponse<AuthToken>> refresh(AuthToken token) async {
-    return ServiceResponse.badRequest<void>();
+  Future<ServiceResponse<AuthToken>> refresh(AuthToken? token) async {
+    return ServiceResponse.badRequest<void>() as FutureOr<ServiceResponse<AuthToken>>;
   }
 }

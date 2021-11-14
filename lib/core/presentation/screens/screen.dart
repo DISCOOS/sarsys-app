@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/presentation/widgets/app_drawer.dart';
@@ -7,13 +7,13 @@ import 'package:flutter/material.dart';
 import 'models/route_model.dart';
 
 abstract class Screen<S extends ScreenState> extends StatefulWidget {
-  const Screen({Key key}) : super(key: key);
+  const Screen({Key? key}) : super(key: key);
   @override
   S createState();
 }
 
 abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T> {
-  final String title;
+  final String? title;
   final bool withDrawer;
 
   final FloatingActionButtonLocation floatingActionButtonLocation;
@@ -21,10 +21,10 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
-  final routeWriter;
+  final bool routeWriter;
 
   ScreenState({
-    @required this.title,
+    required this.title,
     this.withDrawer = true,
     this.routeWriter = true,
     this.floatingActionButtonLocation = FloatingActionButtonLocation.endFloat,
@@ -34,10 +34,10 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
   List<Widget> buildAppBarActions() => <Widget>[];
 
   @protected
-  Widget buildFAB(BuildContext context) => null;
+  Widget? buildFAB(BuildContext context) => null;
 
   @protected
-  Widget bottomNavigationBar(BuildContext context) => null;
+  Widget? bottomNavigationBar(BuildContext context) => null;
 
   @protected
   Widget buildBody(BuildContext context, BoxConstraints constraints);
@@ -50,7 +50,7 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
           key: _scaffoldKey,
           drawer: withDrawer ? AppDrawer() : null,
           appBar: AppBar(
-            title: Text(title),
+            title: Text(title!),
             centerTitle: false,
             actions: buildAppBarActions(),
           ),
@@ -67,7 +67,7 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
   void showMessage(
     String message, {
     String action = "OK",
-    VoidCallback onPressed,
+    VoidCallback? onPressed,
     dynamic data,
   }) {
     final snackbar = SnackBar(
@@ -79,7 +79,7 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
       action: _buildSnackBarAction(action, () {
         if (onPressed != null) onPressed();
         ScaffoldMessenger.of(context)..hideCurrentSnackBar(reason: SnackBarClosedReason.action);
-      }),
+      }) as SnackBarAction?,
     );
     ScaffoldMessenger.of(context).showSnackBar(snackbar);
   }
@@ -97,13 +97,13 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
   static const STATE = "route";
   static const FIELD_DATA = "data";
   static const FIELD_NAME = "name";
-  static RouteObserver<PageRoute> _observer;
+  static RouteObserver<PageRoute>? _observer;
   static get observer => _observer ??= RouteObserver<PageRoute>();
 
   RouteWriter({this.routeData, this.routeName, this.routeWriter = true});
 
-  T routeData;
-  String routeName;
+  T? routeData;
+  String? routeName;
   bool routeWriter = true;
 
   @override
@@ -111,13 +111,13 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route is PageRoute) {
-      _observer.subscribe(this, ModalRoute.of(context));
+      _observer!.subscribe(this, ModalRoute.of(context) as PageRoute<dynamic>);
     }
   }
 
   @override
   void dispose() {
-    _observer.unsubscribe(this);
+    _observer!.unsubscribe(this);
     super.dispose();
   }
 
@@ -147,7 +147,7 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
   static RouteModel state(BuildContext context) => RouteModel.fromJson(getPageState(context, STATE));
 
   /// Write route information to PageStorage
-  void writeRoute({T data, String name}) {
+  void writeRoute({T? data, String? name}) {
     if (routeWriter) {
       this.routeData = data;
       this.routeName = name ?? this.routeName;

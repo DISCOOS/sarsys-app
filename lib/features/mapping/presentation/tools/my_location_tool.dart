@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
@@ -11,7 +11,7 @@ import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
 
 
 class MyLocation {
-  final Point point;
+  final Point? point;
 
   MyLocation(
       this.point,

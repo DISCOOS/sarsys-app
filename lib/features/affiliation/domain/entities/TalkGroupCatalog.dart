@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:equatable/equatable.dart';
@@ -11,18 +11,18 @@ part 'TalkGroupCatalog.g.dart';
 
 @JsonSerializable()
 class TalkGroupCatalog extends Equatable {
-  final String name;
+  final String? name;
 
   @FleetMapTalkGroupConverter()
   final List<TalkGroup> groups;
 
   TalkGroupCatalog({
-    @required this.name,
-    @required this.groups,
+    required this.name,
+    required this.groups,
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         name,
         groups,
       ];

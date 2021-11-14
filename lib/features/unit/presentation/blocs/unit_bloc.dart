@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:math';
@@ -23,6 +23,7 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:bloc/bloc.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';
 
@@ -34,13 +35,13 @@ export 'unit_bloc_states.dart';
 
 typedef void UnitCallback(VoidCallback fn);
 
-class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, String, Unit, UnitService>
+class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, String?, Unit, UnitService>
     with
-        LoadableBloc<List<Unit>>,
-        CreatableBloc<Unit>,
-        UpdatableBloc<Unit>,
-        DeletableBloc<Unit>,
-        UnloadableBloc<List<Unit>> {
+        LoadableBloc<List<Unit>?>,
+        CreatableBloc<Unit?>,
+        UpdatableBloc<Unit?>,
+        DeletableBloc<Unit?>,
+        UnloadableBloc<List<Unit>?> {
   ///
   /// Default constructor
   ///
@@ -64,12 +65,12 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
 
     // Notify when device state has changed
     forward(
-      (t) => _NotifyRepositoryStateChanged(t),
+      (t) => _NotifyRepositoryStateChanged(t as StorageTransition<Unit>),
     );
   }
 
   /// All repositories
-  Iterable<StatefulRepository> get repos => [repo];
+  Iterable<StatefulRepository?> get repos => [repo];
 
   /// Process [OperationState] events
   ///
@@ -84,7 +85,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
           (state.data as Operation).uuid,
         ));
         // Could change during load
-        if ((bloc as OperationBloc).isSelected && (state is OperationCreated && state.units.isNotEmpty)) {
+        if (bloc.isSelected && (state is OperationCreated && state.units!.isNotEmpty)) {
           action.createUnits(
             bloc: this,
             templates: state.units,
@@ -97,11 +98,11 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   }
 
   void _processPersonnelDeleted(Bloc bloc, PersonnelDeleted state) {
-    final puuid = state.data.uuid;
+    final puuid = state.data!.uuid;
     final units = repo.findPersonnel(puuid);
     if (units.isNotEmpty) {
       for (var unit in units) {
-        if (unit.personnels.contains(puuid)) {
+        if (unit!.personnels.contains(puuid)) {
           dispatch(
             _toAprioriChange(
               unit.copyWith(
@@ -120,13 +121,13 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
       );
 
   /// Get [OperationBloc]
-  final OperationBloc operationBloc;
+  final OperationBloc? operationBloc;
 
   /// Get [UnitRepository]
   final UnitRepository repo;
 
   /// Get [Unit] from [uuid]
-  Unit operator [](String uuid) => repo[uuid];
+  Unit? operator [](String? uuid) => repo[uuid!];
 
   /// Get all [Unit]s
   Iterable<Unit> get values => repo.values;
@@ -135,7 +136,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   UnitService get service => repo.service;
 
   /// Get units
-  Map<String, Unit> get units => repo.map;
+  Map<String, Unit?> get units => repo.map;
 
   /// Check if bloc is ready
   @override
@@ -146,34 +147,34 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   Stream<bool> get onReadyChanged => repo.onReadyChanged;
 
   /// [Operation] that manages given [map]
-  String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
+  String? get ouuid => isReady ? repo.ouuid ?? operationBloc!.selected?.uuid : null;
 
   /// Stream of changes on given unit
-  Stream<Unit> onChanged(String uuid) => stream
+  Stream<Unit?> onChanged(String? uuid) => stream
       .where(
         (state) =>
-            (state is UnitUpdated && state.data.uuid == uuid) || (state is UnitsLoaded && state.data.contains(uuid)),
+            (state is UnitUpdated && state.data!.uuid == uuid) || (state is UnitsLoaded && state.data!.contains(uuid)),
       )
-      .map((state) => state is UnitsLoaded ? repo[uuid] : state.data);
+      .map((state) => state is UnitsLoaded ? repo[uuid!] : state.data);
 
   /// Get count
   int count({List<UnitStatus> exclude: const [UnitStatus.retired]}) => repo.count(exclude: exclude);
 
   /// Find units given personnel is assigned to
-  Iterable<Unit> findUnitsWithPersonnel(
-    String puuid, {
+  Iterable<Unit?> findUnitsWithPersonnel(
+    String? puuid, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
       repo.findPersonnel(puuid, exclude: exclude);
 
   /// Find [Personnel] not allocated to an [Unit]
-  Iterable<Personnel> findAvailablePersonnel(PersonnelRepository personnels) {
-    final assigned = repo.values.fold<List<String>>(
+  Iterable<Personnel?> findAvailablePersonnel(PersonnelRepository personnels) {
+    final assigned = repo.values.fold<List<String?>>(
       [],
-      (personnels, unit) => personnels..addAll(unit.personnels),
+      (personnels, unit) => personnels..addAll(unit!.personnels),
     );
     return personnels.values.where(
-      (personnel) => !assigned.contains(personnel.uuid),
+      (personnel) => !assigned.contains(personnel!.uuid),
     );
   }
 
@@ -181,21 +182,20 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   int nextAvailableNumber(UnitType type, {bool reuse = true}) => repo.nextAvailableNumber(type, reuse: reuse);
 
   /// Creating a new 'Unit' instance from template string
-  Unit fromTemplate(String department, String template, {int count}) {
-    final type = UnitType.values.firstWhere(
+  Unit? fromTemplate(String? department, String template, {int? count}) {
+    final type = UnitType.values.firstWhereOrNull(
       (type) {
         final name = translateUnitType(type).toLowerCase();
         final match = template.length >= name.length
             ? template.substring(0, min(name.length, template.length))?.trim()
             : template;
-        return name.startsWith(match.toLowerCase());
+        return name.startsWith(match!.toLowerCase());
       },
-      orElse: () => null,
     );
 
     if (type != null) {
       final name = translateUnitType(type).toLowerCase();
-      final suffix = template.substring(min(name.length, template.length))?.trim();
+      final suffix = template.substring(min(name.length, template.length)).trim();
       final number = int.tryParse(suffix) ?? 1;
 
       return UnitModel.fromJson({
@@ -210,7 +210,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   }
 
   void _assertState() {
-    if (operationBloc.isUnselected) {
+    if (operationBloc!.isUnselected) {
       throw UnitBlocError(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String id)' is called before 'UnitBloc.load()'",
@@ -218,7 +218,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     }
   }
 
-  void _assertData(Unit unit) {
+  void _assertData(Unit? unit) {
     if (unit?.uuid == null) {
       throw ArgumentError(
         "Unit have no uuid",
@@ -226,35 +226,35 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     }
     if (unit?.operation?.uuid == null) {
       throw ArgumentError(
-        "Unit ${unit.uuid} have no operation uuid",
+        "Unit ${unit!.uuid} have no operation uuid",
       );
     }
     if (unit?.operation?.uuid != ouuid) {
       throw ArgumentError(
-        "Unit ${unit.uuid} is not mobilized for operation $ouuid",
+        "Unit ${unit!.uuid} is not mobilized for operation $ouuid",
       );
     }
     TrackingUtils.assertRef(unit);
   }
 
   /// Fetch units from [service]
-  Future<List<Unit>> load() async {
+  Future<List<Unit>?> load() async {
     _assertState();
     return dispatch<List<Unit>>(
-      LoadUnits(ouuid ?? operationBloc.selected.uuid),
+      LoadUnits(ouuid ?? operationBloc!.selected!.uuid),
     );
   }
 
   /// Create given unit
-  Future<Unit> create(
-    Unit unit, {
-    Position position,
-    List<Device> devices,
+  Future<Unit?> create(
+    Unit? unit, {
+    Position? position,
+    List<Device>? devices,
   }) {
     _assertState();
     return dispatch<Unit>(
       CreateUnit(
-        unit.copyWith(
+        unit!.copyWith(
           // Units should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
           // reference to create a [Tracking] instance which the
@@ -270,7 +270,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   }
 
   /// Update given unit
-  Future<Unit> update(Unit unit) {
+  Future<Unit?> update(Unit? unit) {
     _assertState();
     return dispatch<Unit>(
       UpdateUnit(unit),
@@ -278,15 +278,15 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   }
 
   /// Delete given unit
-  Future<Unit> delete(String uuid) {
+  Future<Unit?> delete(String? uuid) {
     _assertState();
     return dispatch<Unit>(
-      DeleteUnit(repo[uuid]),
+      DeleteUnit(repo[uuid!]),
     );
   }
 
   /// Unload [units] from local storage
-  Future<List<Unit>> unload() {
+  Future<List<Unit>?> unload() {
     return dispatch<List<Unit>>(
       UnloadUnits(ouuid),
     );
@@ -325,7 +325,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     );
     yield toOK(
       command,
-      UnitsLoaded(repo.keys),
+      UnitsLoaded(repo.keys as List<String?>),
       result: units,
     );
 
@@ -333,10 +333,10 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     onComplete(
       [onRemote.future],
       toState: (_) => UnitsLoaded(
-        repo.keys,
+        repo.keys as List<String?>,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChanged<Object>(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Object>(state as UnitState<Object>),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -347,7 +347,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
 
   Stream<UnitState> _create(CreateUnit command) async* {
     _assertData(command.data);
-    final unit = repo.apply(command.data);
+    final unit = repo.apply(command.data)!;
     yield toOK(
       command,
       UnitCreated(
@@ -365,7 +365,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
         units[unit.uuid],
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state as UnitState<Unit>),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -376,8 +376,8 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
 
   Stream<UnitState> _update(UpdateUnit command) async* {
     _assertData(command.data);
-    final previous = repo[command.data.uuid];
-    final unit = repo.apply(command.data);
+    final previous = repo[command.data!.uuid];
+    final unit = repo.apply(command.data!)!;
 
     yield toOK(
       command,
@@ -393,7 +393,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
         previous,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state as UnitState<Unit>),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -406,7 +406,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     _assertData(command.data);
     final onRemote = Completer<Unit>();
     final unit = repo.delete(
-      command.data.uuid,
+      command.data!.uuid,
       onResult: onRemote,
     );
     yield toOK(
@@ -422,7 +422,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
         unit,
         isRemote: true,
       ),
-      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state),
+      toCommand: (state) => _NotifyBlocStateChanged<Unit>(state as UnitState<Unit>),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -445,8 +445,8 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
       switch (command.data.type) {
         case UnitMessageType.UnitCreated:
         case UnitMessageType.UnitInformationUpdated:
-          final value = UnitModel.fromJson(command.data.state);
-          final next = repo.patch(value, isRemote: false).value;
+          final value = UnitModel.fromJson(command.data.state!);
+          final next = repo.patch(value, isRemote: false)!.value;
           return command.data.type == UnitMessageType.UnitCreated
               ? UnitCreated(next)
               : UnitUpdated(
@@ -454,7 +454,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
                   value,
                 );
         case UnitMessageType.UnitDeleted:
-          final current = repo[command.data.uuid];
+          final current = repo[command.data.uuid!];
           if (current != null) {
             repo.remove(current, isRemote: false);
           }
@@ -472,7 +472,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   }
 
   UnitState _notify(_NotifyRepositoryStateChanged command) {
-    final state = command.state;
+    final Unit state = command.state;
 
     switch (command.status) {
       case StorageStatus.created:
@@ -513,7 +513,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   }
 
   @override
-  UnitBlocError createError(Object error, {StackTrace stackTrace}) => UnitBlocError(
+  UnitBlocError createError(Object error, {StackTrace? stackTrace}) => UnitBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );

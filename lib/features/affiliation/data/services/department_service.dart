@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,6 +15,7 @@ import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'department_service.chopper.dart';
 
 /// Service for consuming the departments endpoint
@@ -51,7 +52,7 @@ class DepartmentService extends StatefulServiceDelegate<Department, DepartmentMo
   void dispose() {
     _controller.close();
     DepartmentMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -65,9 +66,9 @@ enum DepartmentMessageType {
 class DepartmentMessage extends MessageModel {
   DepartmentMessage(Map<String, dynamic> data) : super(data);
 
-  DepartmentMessageType get type {
+  DepartmentMessageType? get type {
     final type = data.elementAt('type');
-    return DepartmentMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return DepartmentMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -76,22 +77,22 @@ abstract class DepartmentServiceImpl extends StatefulService<Department, Departm
   DepartmentServiceImpl()
       : super(
           decoder: (json) => DepartmentModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<DepartmentModel>(value, remove: const [
+          reducer: (value) => JsonUtils.toJson<DepartmentModel?>(value, remove: const [
             'division',
           ]),
         );
 
-  static DepartmentServiceImpl newInstance([ChopperClient client]) => _$DepartmentServiceImpl(client);
+  static DepartmentServiceImpl newInstance([ChopperClient? client]) => _$DepartmentServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Department> state) => create(
-        state.value.division.uuid,
+        state.value.division!.uuid,
         state.value,
       );
 
   @Post(path: '/divisions/{uuid}/departments')
   Future<Response<String>> create(
-    @Path() String uuid,
+    @Path() String? uuid,
     @Body() Department body,
   );
 
@@ -103,22 +104,22 @@ abstract class DepartmentServiceImpl extends StatefulService<Department, Departm
 
   @Patch(path: '/departments/{uuid}')
   Future<Response<StorageState<Department>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Department body,
   );
 
   @override
   Future<Response<StorageState<Department>>> onDelete(StorageState<Department> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Department>>);
 
   @Delete(path: '/departments/{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
   @override
-  Future<Response<PagedList<StorageState<Department>>>> onGetPage(int offset, int limit, List<String> options) =>
+  Future<Response<PagedList<StorageState<Department>>>> onGetPage(int? offset, int? limit, List<String> options) =>
       getAll(
         offset,
         limit,
@@ -126,7 +127,7 @@ abstract class DepartmentServiceImpl extends StatefulService<Department, Departm
 
   @Get(path: '/departments')
   Future<Response<PagedList<StorageState<Department>>>> getAll(
-    @Query('offset') int offset,
-    @Query('limit') int limit,
+    @Query('offset') int? offset,
+    @Query('limit') int? limit,
   );
 }

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:io';
 
@@ -19,6 +19,7 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -39,7 +40,7 @@ const FIT_BOUNDS_OPTIONS = const FitBoundsOptions(
   padding: EdgeInsets.all(48.0),
 );
 
-Future<void> alert(BuildContext context, {String title, Widget content}) {
+Future<void> alert(BuildContext context, {String? title, Widget? content}) {
   // flutter defined function
   return showDialog<bool>(
     context: context,
@@ -61,7 +62,7 @@ Future<void> alert(BuildContext context, {String title, Widget content}) {
   );
 }
 
-Future<bool> prompt(BuildContext context, String title, String message) async {
+Future<bool> prompt(BuildContext context, String title, String? message) async {
   // flutter defined function
   final answer = await showDialog<bool>(
     context: context,
@@ -69,7 +70,7 @@ Future<bool> prompt(BuildContext context, String title, String message) async {
       // return object of type Dialog
       return AlertDialog(
         title: Text(title),
-        content: Text(message),
+        content: Text(message!),
         actions: <Widget>[
           TextButton(
             child: Text("AVBRYT"),
@@ -94,14 +95,14 @@ FormBuilderField<T> buildReadOnlyField<T>(
   BuildContext context,
   String name,
   String label,
-  String title,
+  String? title,
   T value,
 ) {
   return FormBuilderField<T>(
     name: name,
     enabled: false,
     initialValue: value,
-    builder: (FormFieldState<T> field) => InputDecorator(
+    builder: (FormFieldState<T?> field) => InputDecorator(
       decoration: InputDecoration(
         labelText: label,
         filled: true,
@@ -118,22 +119,22 @@ FormBuilderField<T> buildReadOnlyField<T>(
 }
 
 Widget buildDropDownField<T>({
-  @required String name,
-  @required T initialValue,
-  @required List<DropdownMenuItem<T>> items,
-  @required FormFieldValidator validator,
-  String label,
-  String helperText,
+  required String name,
+  required T initialValue,
+  required List<DropdownMenuItem<T>> items,
+  required FormFieldValidator validator,
+  String? label,
+  String? helperText,
   bool isDense = true,
   bool enabled = true,
-  EdgeInsetsGeometry contentPadding,
-  ValueChanged<T> onChanged,
+  EdgeInsetsGeometry? contentPadding,
+  ValueChanged<T?>? onChanged,
 }) =>
     FormBuilderField(
       name: name,
       enabled: enabled,
       initialValue: initialValue,
-      builder: (FormFieldState<T> field) => buildDropdown<T>(
+      builder: (FormFieldState<T?> field) => buildDropdown<T?>(
         value: _ensureLegalItem(field, items),
         hasError: field.hasError,
         errorText: field.errorText,
@@ -144,7 +145,7 @@ Widget buildDropDownField<T>({
         enabled: enabled,
         initialValue: initialValue,
         contentPadding: contentPadding,
-        onChanged: (T newValue) {
+        onChanged: (T? newValue) {
           field.didChange(newValue);
           if (onChanged != null) onChanged(newValue);
         },
@@ -152,7 +153,7 @@ Widget buildDropDownField<T>({
       validator: validator,
     );
 
-T _ensureLegalItem<T>(FormFieldState field, List<DropdownMenuItem<T>> items) {
+T? _ensureLegalItem<T>(FormFieldState field, List<DropdownMenuItem<T>> items) {
   if (items.any((item) => item.value == field.value)) {
     return field.value;
   }
@@ -160,19 +161,19 @@ T _ensureLegalItem<T>(FormFieldState field, List<DropdownMenuItem<T>> items) {
 }
 
 Widget buildDropdown<T>({
-  @required T value,
-  @required List<DropdownMenuItem<T>> items,
-  @required ValueChanged<T> onChanged,
-  String label,
-  String helperText,
-  EdgeInsetsGeometry contentPadding,
-  T initialValue,
+  required T value,
+  required List<DropdownMenuItem<T>> items,
+  required ValueChanged<T?> onChanged,
+  String? label,
+  String? helperText,
+  EdgeInsetsGeometry? contentPadding,
+  T? initialValue,
   bool isDense = true,
   bool enabled = true,
   bool hasError = false,
-  String errorText,
+  String? errorText,
 }) {
-  T selected = items.firstWhere((item) => item.value == value, orElse: () => null)?.value ?? initialValue;
+  T? selected = items.firstWhereOrNull((item) => item.value == value)?.value ?? initialValue;
   return InputDecorator(
     decoration: InputDecoration(
       errorText: hasError ? errorText : null,
@@ -192,7 +193,7 @@ Widget buildDropdown<T>({
                 return DropdownButton<T>(
                   value: selected,
                   isDense: isDense,
-                  onChanged: (T value) {
+                  onChanged: (T? value) {
                     // Unfocus input-fields with current focus
                     FocusScope.of(context).requestFocus(FocusNode());
                     onChanged?.call(value);
@@ -204,43 +205,43 @@ Widget buildDropdown<T>({
           )
         : Padding(
             padding: EdgeInsets.symmetric(vertical: 4.0),
-            child: items.firstWhere((item) => item.value == selected, orElse: () => null)?.child,
+            child: items.firstWhereOrNull((item) => item.value == selected)?.child,
           ),
   );
 }
 
 Widget buildChipsField<T>({
-  @required String name,
-  @required String selectorTitle,
-  @required String selectorLabel,
-  @required ItemWidgetBuilder<T> builder,
-  @required ValueGetter<Iterable<T>> items,
-  @required Iterable<T> Function(String category, String query) options,
-  String hintText,
-  String category,
-  String labelText,
-  String helperText,
-  String emptyText,
+  required String name,
+  required String selectorTitle,
+  required String selectorLabel,
+  required ItemWidgetBuilder<T> builder,
+  required ValueGetter<Iterable<T>?> items,
+  required Iterable<T> Function(String? category, String? query) options,
+  String? hintText,
+  String? category,
+  String? labelText,
+  String? helperText,
+  String? emptyText,
   bool enabled = true,
-  ValueChanged<Iterable<T>> onChanged,
+  ValueChanged<Iterable<T>?>? onChanged,
   Iterable<DropdownMenuItem<String>> categories = const [],
 }) {
-  var query = '';
+  String? query = '';
   return FormBuilderField<Iterable<T>>(
     name: name,
     initialValue: items(),
-    builder: (FormFieldState<Iterable<T>> field) {
+    builder: (FormFieldState<Iterable<T>?> field) {
       return Builder(
         builder: (context) {
-          final hintStyle = Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey);
-          final chips = items().map((item) => builder(context, item)).toList();
+          final hintStyle = Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.grey);
+          final chips = items()!.map((item) => builder(context, item)).toList();
           return GestureDetector(
             child: InputDecorator(
               child: Wrap(
                 spacing: 4.0,
                 runSpacing: -4.0,
                 clipBehavior: Clip.antiAlias,
-                children: chips.isEmpty ? [Text(hintText, style: hintStyle)] : chips,
+                children: chips.isEmpty ? [Text(hintText!, style: hintStyle)] : chips,
               ),
               decoration: InputDecoration(
                 filled: true,
@@ -306,7 +307,7 @@ Widget buildChipsField<T>({
                               FormBuilderFilterChip<T>(
                                 name: 'selectables',
                                 spacing: 4.0,
-                                initialValue: items(),
+                                initialValue: items() as List<T>,
                                 selectedColor: Colors.green.shade200,
                                 checkmarkColor: Colors.green.shade900,
                                 padding: const EdgeInsets.all(0),
@@ -361,7 +362,7 @@ Widget buildTwoCellRow(Widget left, Widget right, {double spacing = 16.0, int lf
   );
 }
 
-Color toTrackingStatusColor(TrackingStatus status) {
+Color toTrackingStatusColor(TrackingStatus? status) {
   switch (status) {
     case TrackingStatus.tracking:
       return Colors.green;
@@ -377,7 +378,7 @@ Color toTrackingStatusColor(TrackingStatus status) {
   }
 }
 
-IconData toTrackingIconData(TrackingStatus status) {
+IconData toTrackingIconData(TrackingStatus? status) {
   switch (status) {
     case TrackingStatus.ready:
       return Icons.more_horiz;
@@ -392,7 +393,7 @@ IconData toTrackingIconData(TrackingStatus status) {
   }
 }
 
-Color toUnitStatusColor(UnitStatus status) {
+Color toUnitStatusColor(UnitStatus? status) {
   switch (status) {
     case UnitStatus.deployed:
       return Colors.green;
@@ -404,7 +405,7 @@ Color toUnitStatusColor(UnitStatus status) {
   }
 }
 
-IconData toUnitIconData(UnitType type) {
+IconData toUnitIconData(UnitType? type) {
   switch (type) {
     case UnitType.atv:
     case UnitType.snowmobile:
@@ -423,7 +424,7 @@ IconData toUnitIconData(UnitType type) {
   }
 }
 
-IconData toDeviceIconData(DeviceType type) {
+IconData toDeviceIconData(DeviceType? type) {
   switch (type) {
     case DeviceType.app:
       return Icons.phone_android;
@@ -437,7 +438,7 @@ IconData toDeviceIconData(DeviceType type) {
   }
 }
 
-IconData toDialerIconData(DeviceType type) {
+IconData toDialerIconData(DeviceType? type) {
   switch (type) {
     case DeviceType.app:
       return Icons.phone;
@@ -449,7 +450,7 @@ IconData toDialerIconData(DeviceType type) {
   }
 }
 
-Color toPersonnelStatusColor(PersonnelStatus status) {
+Color toPersonnelStatusColor(PersonnelStatus? status) {
   switch (status) {
     case PersonnelStatus.onscene:
       return Colors.green;
@@ -461,7 +462,7 @@ Color toPersonnelStatusColor(PersonnelStatus status) {
   }
 }
 
-IconData toPersonnelIconData(Personnel personnel) {
+IconData toPersonnelIconData(Personnel? personnel) {
   return Icons.person;
 }
 
@@ -477,22 +478,22 @@ Color toAffiliationStandbyStatusColor(AffiliationStandbyStatus status) {
   }
 }
 
-IconData toAffiliationIconData(BuildContext context, Affiliation affiliation) {
+IconData? toAffiliationIconData(BuildContext context, Affiliation affiliation) {
   return SarSysIcons.of(
     context.read<AffiliationBloc>().orgs[affiliation?.org?.uuid]?.prefix,
   ).icon;
 }
 
-Color toPositionStatusColor(Position position) {
-  final since = (position == null ? null : DateTime.now().difference(position.timestamp).inMinutes);
+Color toPositionStatusColor(Position? position) {
+  final since = (position == null ? null : DateTime.now().difference(position.timestamp!).inMinutes);
   return since == null || since > 5 ? Colors.red : (since > 1 ? Colors.orange : Colors.green);
 }
 
-void jumpToPoint(BuildContext context, {sarsys.Point center, Operation operation}) {
+void jumpToPoint(BuildContext context, {sarsys.Point? center, Operation? operation}) {
   jumpToLatLng(context, center: toLatLng(center), operation: operation);
 }
 
-void jumpToLatLng(BuildContext context, {LatLng center, Operation operation}) {
+void jumpToLatLng(BuildContext context, {LatLng? center, Operation? operation}) {
   if (center != null) {
     _stopFollowMe(context);
     Navigator.pushReplacementNamed(context, MapScreen.ROUTE, arguments: {
@@ -504,8 +505,8 @@ void jumpToLatLng(BuildContext context, {LatLng center, Operation operation}) {
 
 void jumpToLatLngBounds(
   BuildContext context, {
-  Operation operation,
-  LatLngBounds fitBounds,
+  Operation? operation,
+  LatLngBounds? fitBounds,
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) {
   if (fitBounds != null && fitBounds.isValid) {
@@ -522,8 +523,8 @@ void _stopFollowMe(BuildContext context) {
   // Disable location lock?
   var model = getPageState<MapWidgetStateModel>(context, MapWidgetState.STATE, defaultValue: MapWidgetStateModel());
   if (model?.following == true) {
-    putPageState(context, MapWidgetState.STATE, model.cloneWith(following: false));
-    writePageStorageBucket(PageStorage.of(context));
+    putPageState(context, MapWidgetState.STATE, model!.cloneWith(following: false));
+    writePageStorageBucket(PageStorage.of(context)!, context: context);
   }
 }
 
@@ -552,8 +553,8 @@ void jumpToOperation(
   Operation operation, {
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) {
-  final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
-  final meetup = operation.meetup != null ? toLatLng(operation.meetup.point) : null;
+  final ipp = operation.ipp != null ? toLatLng(operation.ipp!.point) : null;
+  final meetup = operation.meetup != null ? toLatLng(operation.meetup!.point) : null;
   final fitBounds = LatLngBounds(ipp, meetup);
   if (ipp == null || meetup == null || fitBounds.isValid == false)
     jumpToLatLng(
@@ -593,21 +594,21 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
 }
 
 Widget buildCopyableText({
-  BuildContext context,
-  String label,
-  Icon icon,
-  Widget text,
-  String value,
-  Icon action,
+  BuildContext? context,
+  String? label,
+  Icon? icon,
+  Widget? text,
+  String? value,
+  Icon? action,
   int hintMaxLines = 3,
   bool isDense = false,
   bool selectable = false,
-  EdgeInsetsGeometry contentPadding,
-  GestureTapCallback onAction,
-  ValueChanged<String> onCopy,
-  MessageCallback onMessage,
-  GestureTapCallback onTap,
-  VoidCallback onComplete,
+  EdgeInsetsGeometry? contentPadding,
+  GestureTapCallback? onAction,
+  ValueChanged<String?>? onCopy,
+  MessageCallback? onMessage,
+  GestureTapCallback? onTap,
+  VoidCallback? onComplete,
 }) =>
     GestureDetector(
         child: InputDecorator(
@@ -625,7 +626,7 @@ Widget buildCopyableText({
                 : null,
             border: InputBorder.none,
           ),
-          child: text ?? (selectable ? SelectableText(value) : Text(value)),
+          child: text ?? (selectable ? SelectableText(value!) : Text(value!)),
         ),
         onTap: onTap,
         onLongPress: () {
@@ -634,34 +635,34 @@ Widget buildCopyableText({
           copy(value, onMessage, message: '"$value" kopiert til utklippstavlen');
         });
 
-void copy(String value, MessageCallback onMessage, {String message: 'Kopiert til utklippstavlen'}) {
+void copy(String? value, MessageCallback? onMessage, {String message: 'Kopiert til utklippstavlen'}) {
   Clipboard.setData(ClipboardData(text: value));
   if (onMessage != null) {
     onMessage(message);
   }
 }
 
-void setText(TextEditingController controller, String value) {
+void setText(TextEditingController? controller, String? value) {
   // Workaround for errors when clearing TextField,
   // see https://github.com/flutter/flutter/issues/17647
   if (emptyAsNull(value) == null)
-    WidgetsBinding.instance.addPostFrameCallback((_) => controller.clear());
+    WidgetsBinding.instance!.addPostFrameCallback((_) => controller!.clear());
   else if (value != null) {
-    final selection = controller.selection;
+    final selection = controller!.selection;
 
     controller.value = TextEditingValue(
       text: value,
       selection:
-          selection.extentOffset > value?.length ?? 0 ? TextSelection.collapsed(offset: value?.length ?? 0) : selection,
+      (selection.extentOffset > (value.length ?? 0)) ? TextSelection.collapsed(offset: value?.length ?? 0) : selection,
     );
   }
 }
 
 SingleChildScrollView toRefreshable(
   BoxConstraints viewportConstraints, {
-  Widget child,
-  List<Widget> children,
-  String message,
+  Widget? child,
+  List<Widget>? children,
+  String? message,
 }) =>
     SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -678,7 +679,7 @@ SingleChildScrollView toRefreshable(
                     Container(
                       alignment: Alignment.center,
                       child: Text(
-                        message,
+                        message!,
                         textAlign: TextAlign.center,
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
@@ -688,10 +689,10 @@ SingleChildScrollView toRefreshable(
       ),
     );
 
-Widget keyboardDismisser({BuildContext context, Widget child}) {
+Widget keyboardDismisser({BuildContext? context, Widget? child}) {
   final gesture = GestureDetector(
     onTap: () {
-      FocusScope.of(context).requestFocus(FocusNode());
+      FocusScope.of(context!).requestFocus(FocusNode());
     },
     child: child,
   );

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/core/domain/models/core.dart';
@@ -11,12 +11,12 @@ part 'Location.g.dart';
 
 @JsonSerializable()
 class Location extends ValueObject<Map<String, dynamic>> {
-  final Point point;
-  final Address address;
-  final String description;
+  final Point? point;
+  final Address? address;
+  final String? description;
 
   Location({
-    @required this.point,
+    required this.point,
     this.description,
     this.address,
   }) : super([
@@ -32,9 +32,9 @@ class Location extends ValueObject<Map<String, dynamic>> {
   Map<String, dynamic> toJson() => _$LocationToJson(this);
 
   Location cloneWith({
-    Point point,
-    Address address,
-    String description,
+    Point? point,
+    Address? address,
+    String? description,
   }) =>
       Location(
         point: point ?? this.point,

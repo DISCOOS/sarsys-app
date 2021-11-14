@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/models/message_model.dart';
 import 'package:SarSys/core/data/services/stateful_service.dart';
@@ -21,7 +21,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
 
   void _handle(MessageModel message) {
     if (isReady) {
-      StorageState<V> state;
+      StorageState<V>? state;
       try {
         // Merge with local state?
         if (containsKey(message.uuid)) {
@@ -31,19 +31,19 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
 
           // A-priori message?
           if (message.isApriori) {
-            state = _onApriori(message, current);
+            state = _onApriori(message, current!);
           }
 
           // Skip retrospective events
-          else if (message.version >= current.version) {
-            if (current.isRemote) {
-              if (message.version == current.version + 1) {
+          else if (message.version >= current!.version!) {
+            if (current.isRemote!) {
+              if (message.version == current.version! + 1) {
                 // Trivial >> Just update local with remote state
                 state = _onRemoteNextWhenUnmodified(
                   message,
                   current,
                 );
-              } else if (message.version > current.version + 1) {
+              } else if (message.version > current.version! + 1) {
                 // Warning >> Only update if message contains state
                 state = _onRemoteBeyondWhenUnmodified(
                   message,
@@ -57,7 +57,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
                   message,
                   current,
                 );
-              } else if (message.version >= current.version + 1) {
+              } else if (message.version >= current.version! + 1) {
                 // Danger >> Remote state has progress beyond local
                 state = _onRemoteBeyondWhenModified(
                   message,
@@ -86,11 +86,11 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
   }
 
   /// Get next state from state directly or by patching changed to previous
-  V _toNextState(MessageModel message, StorageState<V> previous) => fromJson(message.isState
+  V _toNextState(MessageModel message, StorageState<V?>? previous) => fromJson(message.isState
       ? message.state
       : JsonUtils.apply(
-          previous.value,
-          message.patches,
+          previous!.value,
+          message.patches!,
           strict: false,
         ));
 
@@ -100,13 +100,13 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
       );
 
   /// Created new state not seen before
-  StorageState<V> _onRemoteCreate(MessageModel message, StorageState<V> state) {
-    final next = fromJson(
+  StorageState<V> _onRemoteCreate(MessageModel message, StorageState<V?>? state) {
+    final V next = fromJson(
       message.isState
           ? message.state
           : JsonPatch.apply(
               {},
-              message.patches,
+              message.patches!,
               strict: false,
             ),
     );
@@ -119,7 +119,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
 
   StorageState<V> _onRemoteNextWhenUnmodified(
     MessageModel message,
-    StorageState<V> current,
+    StorageState<V?>? current,
   ) {
     return StorageState.updated(
       _toNextState(
@@ -131,9 +131,9 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
     );
   }
 
-  StorageState<V> _onRemoteBeyondWhenUnmodified(
+  StorageState<V>? _onRemoteBeyondWhenUnmodified(
     MessageModel message,
-    StorageState<V> current,
+    StorageState<V>? current,
   ) {
     if (message.isState) {
       return StorageState.updated(
@@ -171,15 +171,15 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
     );
   }
 
-  StorageState<V> _onRemoteBeyondWhenModified(
+  StorageState<V>? _onRemoteBeyondWhenModified(
     MessageModel message,
-    StorageState<V> current,
+    StorageState<V>? current,
   ) {
     if (message.isState) {
       // With state we can do a forward merge
       return _onRemoteNextWhenModified(
         message,
-        current,
+        current!,
       );
     }
     // No state to replace directly - skip message
@@ -189,17 +189,17 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
 
   List<Map<String, dynamic>> _check(
     MessageModel message,
-    StorageState<V> current,
+    StorageState<V?> current,
     V next,
   ) {
     final base = current.previous;
     if (base != null) {
       final mine = JsonUtils.diff(
         base,
-        current.value,
+        current.value!,
       );
       final yours = message.isPatches
-          ? message.patches
+          ? message.patches!
           : JsonUtils.diff(
               base,
               next,
@@ -209,7 +209,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
         // TODO: Allow user to choose conflict resolution
         debugPrint(
           'Conflict >> ${typeOf<V>()} ${message.uuid} lost local changes: '
-          '${mine.where((op) => conflict.paths.contains(op['path']))}',
+          '${mine.where((op) => conflict.paths!.contains(op['path']))}',
         );
       }
     }
@@ -217,7 +217,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
     // (not consumed by same remote changes)
     return JsonUtils.diff(
       next,
-      current.value,
+      current.value!,
     );
   }
 }

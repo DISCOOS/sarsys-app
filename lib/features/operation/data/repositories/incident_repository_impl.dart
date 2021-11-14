@@ -1,7 +1,8 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
@@ -18,7 +19,7 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
     implements IncidentRepository {
   IncidentRepositoryImpl(
     IncidentService service, {
-    @required ConnectivityService connectivity,
+    required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
@@ -30,31 +31,31 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
 
   /// Get [Operation.uuid] from [value]
   @override
-  String toKey(Incident value) {
-    return value?.uuid;
+  String toKey(Incident? value) {
+    return value!.uuid;
   }
 
   /// Create [Incident] from json
-  Incident fromJson(Map<String, dynamic> json) => IncidentModel.fromJson(json);
+  Incident fromJson(Map<String, dynamic>? json) => IncidentModel.fromJson(json!);
 
   /// Load incidents
-  Future<List<Incident>> load({
+  Future<List<Incident?>> load({
     bool force = true,
-    Completer<Iterable<Incident>> onRemote,
+    Completer<Iterable<Incident>>? onRemote,
   }) async {
     await prepare(
       force: force ?? false,
     );
     return _load(
       onRemote: onRemote,
-    );
+    ) as FutureOr<List<Incident?>>;
   }
 
   /// GET ../incidents
   Iterable<Incident> _load({
-    Completer<Iterable<Incident>> onRemote,
+    Completer<Iterable<Incident>>? onRemote,
   }) {
-    return requestQueue.load(
+    return requestQueue!.load(
       service.getList,
       shouldEvict: true,
       onResult: onRemote,
@@ -62,13 +63,13 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
   }
 
   @override
-  Future<Iterable<Incident>> onReset({Iterable<Incident> previous}) => Future.value(_load());
+  Future<Iterable<Incident>> onReset({Iterable<Incident?>? previous}) => Future.value(_load());
 
   @override
   Future<StorageState<Incident>> onCreate(StorageState<Incident> state) async {
     var response = await service.create(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
     throw IncidentServiceException(
       'Failed to create Incident ${state.value}',
@@ -77,7 +78,7 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
     );
   }
 
-  Future<StorageState<Incident>> onUpdate(StorageState<Incident> state) async {
+  Future<StorageState<Incident>?> onUpdate(StorageState<Incident> state) async {
     var response = await service.update(state);
     if (response.isOK) {
       return response.body;
@@ -89,7 +90,7 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
     );
   }
 
-  Future<StorageState<Incident>> onDelete(StorageState<Incident> state) async {
+  Future<StorageState<Incident>?> onDelete(StorageState<Incident> state) async {
     var response = await service.delete(state);
     if (response.isOK) {
       return response.body;

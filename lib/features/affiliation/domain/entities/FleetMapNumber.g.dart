@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'FleetMapNumber.dart';
@@ -10,8 +8,8 @@ part of 'FleetMapNumber.dart';
 
 FleetMapNumber _$FleetMapNumberFromJson(Map json) {
   return FleetMapNumber(
-    name: json['name'] as String,
-    suffix: json['suffix'] as String,
+    name: json['name'] as String?,
+    suffix: json['suffix'] as String?,
   );
 }
 

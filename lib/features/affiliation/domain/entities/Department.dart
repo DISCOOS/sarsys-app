@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:meta/meta.dart';
 
@@ -9,11 +9,11 @@ import 'Division.dart';
 
 abstract class Department extends Aggregate<Map<String, dynamic>> {
   Department({
-    @required String uuid,
-    @required this.name,
-    @required this.suffix,
-    @required this.division,
-    @required this.active,
+    required String uuid,
+    required this.name,
+    required this.suffix,
+    required this.division,
+    required this.active,
   }) : super(uuid, fields: [
           name,
           suffix,
@@ -22,17 +22,17 @@ abstract class Department extends Aggregate<Map<String, dynamic>> {
         ]);
 
   /// Department name
-  final String name;
+  final String? name;
 
   /// FleetMap number suffix
-  final String suffix;
+  final String? suffix;
 
   /// Reference to division parent
-  final AggregateRef<Division> division;
+  final AggregateRef<Division>? division;
 
   /// Department status
-  final bool active;
+  final bool? active;
 
   /// Get [Department] reference
-  AggregateRef<Department> toRef();
+  AggregateRef<Department>? toRef();
 }

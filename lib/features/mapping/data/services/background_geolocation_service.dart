@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:io';
@@ -19,10 +19,10 @@ import 'location_service.dart';
 
 class BackgroundGeolocationService implements LocationService {
   BackgroundGeolocationService({
-    @required LocationOptions options,
-    String duuid,
-    AuthToken token,
-    bool share = false,
+    required LocationOptions options,
+    String? duuid,
+    AuthToken? token,
+    bool? share = false,
     bool locationDebug = false,
     this.maxEvents = 100,
   }) {
@@ -35,16 +35,16 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   final int maxEvents;
-  static List<Position> _positions = [];
+  static List<Position?> _positions = [];
   static List<LocationEvent> _events = [];
 
   @override
-  LocationOptions get options => _options;
-  LocationOptions _options;
+  LocationOptions? get options => _options;
+  LocationOptions? _options;
 
   @override
-  String get duuid => _duuid;
-  String _duuid;
+  String? get duuid => _duuid;
+  String? _duuid;
 
   @override
   bool get canStore => (_options?.locationStoreLocally ?? Defaults.locationStoreLocally);
@@ -67,7 +67,7 @@ class BackgroundGeolocationService implements LocationService {
   Activity get activity => _current?.activity ?? Activity.unknown;
 
   @override
-  Iterable<Position> get positions => _positions;
+  Iterable<Position?> get positions => _positions;
 
   @override
   double get odometer => _odometer;
@@ -81,22 +81,22 @@ class BackgroundGeolocationService implements LocationService {
 
   PermissionStatus _status = PermissionStatus.denied;
 
-  StreamController<Position> _positionController = StreamController.broadcast();
-  StreamController<LocationEvent> _eventController = StreamController.broadcast();
+  StreamController<Position?>? _positionController = StreamController.broadcast();
+  StreamController<LocationEvent>? _eventController = StreamController.broadcast();
 
   @override
-  Position get current => _current;
-  Position _current;
+  Position? get current => _current;
+  Position? _current;
 
   @override
   bool get isReady => _state?.enabled ?? false;
-  bg.State _state;
+  bg.State? _state;
 
   @override
-  Stream<Position> get stream => _positionController.stream;
+  Stream<Position?> get stream => _positionController!.stream;
 
   @override
-  Stream<LocationEvent> get onEvent => _eventController.stream;
+  Stream<LocationEvent> get onEvent => _eventController!.stream;
 
   @override
   Iterable<LocationEvent> get events => List.unmodifiable(_events);
@@ -105,8 +105,8 @@ class BackgroundGeolocationService implements LocationService {
   LocationEvent operator [](int index) => _events[index];
 
   @override
-  AuthToken get token => _token;
-  AuthToken _token;
+  AuthToken? get token => _token;
+  AuthToken? _token;
 
   final _queue = StreamRequestQueue<String, LocationOptions>();
 
@@ -153,13 +153,13 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   @override
-  Future<LocationOptions> configure({
-    bool share,
-    bool debug,
-    String duuid,
-    AuthToken token,
+  Future<LocationOptions?> configure({
+    bool? share,
+    bool? debug,
+    String? duuid,
+    AuthToken? token,
     bool force = false,
-    LocationOptions options,
+    LocationOptions? options,
   }) async {
     _status = await Permission.location.status;
     if (_status != PermissionStatus.granted) {
@@ -185,8 +185,8 @@ class BackgroundGeolocationService implements LocationService {
         _subscribe();
 
         // Ensure debug flag is updated if given
-        _options = (options ?? _options).copyWith(
-          debug: debug ?? _options.debug,
+        _options = (options ?? _options)!.copyWith(
+          debug: debug ?? _options!.debug,
         );
         final config = _toConfig(
           duuid: duuid,
@@ -249,7 +249,7 @@ class BackgroundGeolocationService implements LocationService {
       await update();
 
       // Only set once
-      _positions ??= await backlog();
+      _positions ??= await (backlog() as FutureOr<List<Position?>>);
 
       _notify(ConfigureEvent(
         _duuid,
@@ -267,9 +267,9 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   bg.Config _toConfig({
-    bool share,
-    String duuid,
-    AuthToken token,
+    bool? share,
+    String? duuid,
+    AuthToken? token,
   }) {
     _duuid = duuid ?? _duuid;
     _token = token ?? _token;
@@ -304,11 +304,11 @@ class BackgroundGeolocationService implements LocationService {
       showsBackgroundLocationIndicator: true,
       // We handle permissions our self
       disableLocationAuthorizationAlert: true,
-      locationUpdateInterval: _options.timeInterval,
-      desiredAccuracy: _toAccuracy(_options.accuracy),
-      distanceFilter: _options.distanceFilter.toDouble(),
-      fastestLocationUpdateInterval: _options.timeInterval,
-      disableMotionActivityUpdates: !_options.activityRecognition,
+      locationUpdateInterval: _options!.timeInterval,
+      desiredAccuracy: _toAccuracy(_options!.accuracy),
+      distanceFilter: _options!.distanceFilter.toDouble(),
+      fastestLocationUpdateInterval: _options!.timeInterval,
+      disableMotionActivityUpdates: !_options!.activityRecognition,
       notification: bg.Notification(
         sticky: true,
         title: "SARSys",
@@ -319,17 +319,17 @@ class BackgroundGeolocationService implements LocationService {
 
   bool get _debug => (_options?.debug ?? kDebugMode);
 
-  String _toUrl({bool override = false}) =>
+  String? _toUrl({bool override = false}) =>
       override || isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
 
-  bg.Authorization _toAuthorization() {
+  bg.Authorization? _toAuthorization() {
     return _token != null
         ? bg.Authorization(
-            accessToken: _token.accessToken,
-            refreshToken: _token.refreshToken,
+            accessToken: _token!.accessToken,
+            refreshToken: _token!.refreshToken,
             refreshUrl: UserIdentityService.REFRESH_URL,
             refreshPayload: {
-                'client_id': _token.clientId,
+                'client_id': _token!.clientId,
                 'grant_type': 'refresh_token',
                 'refresh_token': '{refreshToken}',
               })
@@ -341,7 +341,7 @@ class BackgroundGeolocationService implements LocationService {
       ? ((_options?.debug ?? kDebugMode) ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO)
       : bg.Config.LOG_LEVEL_OFF;
 
-  int _toAccuracy(LocationAccuracy accuracy) {
+  int _toAccuracy(LocationAccuracy? accuracy) {
     switch (accuracy) {
       case LocationAccuracy.lowest:
         return bg.Config.DESIRED_ACCURACY_LOWEST;
@@ -362,11 +362,11 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   @override
-  Future<Position> update() async {
+  Future<Position?> update() async {
     if (isReady) {
       try {
         final state = await bg.BackgroundGeolocation.state;
-        if (state.isMoving) {
+        if (state.isMoving!) {
           await bg.BackgroundGeolocation.getCurrentPosition();
         } else {
           await bg.BackgroundGeolocation.changePace(true);
@@ -406,7 +406,7 @@ class BackgroundGeolocationService implements LocationService {
     return pushed.length;
   }
 
-  bool _shouldReport(Exception e) {
+  bool _shouldReport(Object e) {
     return !(e is PlatformException &&
         !const [
           'timeout',
@@ -429,27 +429,27 @@ class BackgroundGeolocationService implements LocationService {
         _state = await bg.BackgroundGeolocation.stop();
       }
       await bg.BackgroundGeolocation.removeListeners();
-      await _eventController.close();
-      await _positionController.close();
+      await _eventController!.close();
+      await _positionController!.close();
       _eventController = null;
       _positionController = null;
     }
     return Future.value();
   }
 
-  bool _isDeviceChanged(String duuid) => duuid != null && duuid != _duuid;
-  bool _isTokenChanged(AuthToken token) => token != null && token != _token;
-  bool _isSharingStateChanged(bool share) => share != null && share != _share;
+  bool _isDeviceChanged(String? duuid) => duuid != null && duuid != _duuid;
+  bool _isTokenChanged(AuthToken? token) => token != null && token != _token;
+  bool _isSharingStateChanged(bool? share) => share != null && share != _share;
 
   bool _isConfigChanged({
-    bool share,
-    bool debug,
-    String duuid,
-    AuthToken token,
-    LocationOptions options,
+    bool? share,
+    bool? debug,
+    String? duuid,
+    AuthToken? token,
+    LocationOptions? options,
   }) {
-    return _options?.debug != (debug ?? options.debug ?? kDebugMode) ||
-        _options?.accuracy != options.accuracy ||
+    return _options?.debug != (debug ?? options!.debug ?? kDebugMode) ||
+        _options?.accuracy != options!.accuracy ||
         _options?.locationAlways != (options.locationAlways ?? false) ||
         _options?.locationWhenInUse != (options.locationWhenInUse ?? false) ||
         _options?.activityRecognition != (options.activityRecognition ?? false) ||
@@ -464,10 +464,10 @@ class BackgroundGeolocationService implements LocationService {
 
   void _onHeartbeat(bg.HeartbeatEvent event) {
     if (!_disposed) {
-      final location = event.location;
+      final location = event.location!;
       _odometer = location.odometer;
       _current = _toPosition(location);
-      _positionController.add(_current);
+      _positionController!.add(_current);
       _notify(PositionEvent(
         _current,
         heartbeat: true,
@@ -479,7 +479,7 @@ class BackgroundGeolocationService implements LocationService {
     if (!_disposed) {
       _odometer = location.odometer;
       _current = _toPosition(location);
-      _positionController.add(_current);
+      _positionController!.add(_current);
       _notify(PositionEvent(
         _current,
         sample: location.sample,
@@ -491,7 +491,7 @@ class BackgroundGeolocationService implements LocationService {
     if (!_disposed) {
       _odometer = location.odometer;
       _current = _toPosition(location);
-      _positionController.add(_current);
+      _positionController!.add(_current);
       _notify(
         MoveChangeEvent(
           _toPosition(location),
@@ -556,13 +556,13 @@ class BackgroundGeolocationService implements LocationService {
     if (!_disposed) {
       if (event.success) {
         _token = AuthToken(
-          idToken: _token.idToken,
-          clientId: _token.clientId,
-          accessToken: event.response['access_token'],
-          refreshToken: event.response['refresh_token'],
+          idToken: _token!.idToken,
+          clientId: _token!.clientId,
+          accessToken: event.response!['access_token'],
+          refreshToken: event.response!['refresh_token'],
           accessTokenExpiration: DateTime.now()
             ..add(
-              Duration(seconds: event.response['expires_in'] ?? 300),
+              Duration(seconds: event.response!['expires_in'] ?? 300),
             ),
         );
         _notify(
@@ -591,10 +591,10 @@ class BackgroundGeolocationService implements LocationService {
       _events.removeLast();
     }
     _events.insert(0, event);
-    if (event is PositionEvent && !(event.sample || event.heartbeat)) {
+    if (event is PositionEvent && !(event.sample! || event.heartbeat)) {
       _positions.add(event.position);
     }
-    _eventController.add(event);
+    _eventController!.add(event);
   }
 
   Position _toPosition(bg.Location location) => Position.timestamp(

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:SarSys/core/domain/models/converters.dart';
@@ -14,13 +14,13 @@ import 'TrackingTrack.dart';
 abstract class Tracking extends Positionable<Map<String, dynamic>> {
   Tracking({
     /// Tracking id
-    @required String uuid,
+    required String uuid,
 
     /// Tracking status
-    @required this.status,
+    required this.status,
 
     /// Last known position
-    Position position,
+    Position? position,
 
     /// Total distance in meter
     this.distance,
@@ -35,7 +35,7 @@ abstract class Tracking extends Positionable<Map<String, dynamic>> {
     List<TrackingSource> sources = const [],
 
     /// List of historical positions aggregated from temporally and spatially related positions in tracks
-    List<Position> history = const [],
+    List<Position?> history = const [],
 
     /// Map from track id to list of positions
     List<TrackingTrack> tracks = const [],
@@ -53,13 +53,13 @@ abstract class Tracking extends Positionable<Map<String, dynamic>> {
           tracks,
         ]);
 
-  final double speed;
-  final Duration effort;
-  final double distance;
+  final double? speed;
+  final Duration? effort;
+  final double? distance;
   final List<TrackingTrack> tracks;
   final List<TrackingSource> sources;
-  final TrackingStatus status;
-  final List<Position> history;
+  final TrackingStatus? status;
+  final List<Position?> history;
 
   bool get isNotEmpty => !isEmpty;
   bool get isEmpty => sources.isEmpty;
@@ -69,14 +69,14 @@ abstract class Tracking extends Positionable<Map<String, dynamic>> {
 
   /// Clone with given devices and state
   Tracking copyWith({
-    double speed,
-    double distance,
-    Duration effort,
-    Position position,
-    List<TrackingSource> sources,
-    List<Position> history,
-    TrackingStatus status,
-    List<TrackingTrack> tracks,
+    double? speed,
+    double? distance,
+    Duration? effort,
+    Position? position,
+    List<TrackingSource?>? sources,
+    List<Position?>? history,
+    TrackingStatus? status,
+    List<TrackingTrack>? tracks,
   });
 
   /// Clone with json

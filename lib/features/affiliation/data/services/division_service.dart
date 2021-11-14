@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,6 +15,7 @@ import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'division_service.chopper.dart';
 
 /// Service for consuming the organisations endpoint
@@ -51,7 +52,7 @@ class DivisionService extends StatefulServiceDelegate<Division, DivisionModel>
   void dispose() {
     _controller.close();
     DivisionMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -65,9 +66,9 @@ enum DivisionMessageType {
 class DivisionMessage extends MessageModel {
   DivisionMessage(Map<String, dynamic> data) : super(data);
 
-  DivisionMessageType get type {
+  DivisionMessageType? get type {
     final type = data.elementAt('type');
-    return DivisionMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return DivisionMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -76,22 +77,22 @@ abstract class DivisionServiceImpl extends StatefulService<Division, DivisionMod
   DivisionServiceImpl()
       : super(
           decoder: (json) => DivisionModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<DivisionModel>(value, remove: const [
+          reducer: (value) => JsonUtils.toJson<DivisionModel?>(value, remove: const [
             'organisation',
           ]),
         );
 
-  static DivisionServiceImpl newInstance([ChopperClient client]) => _$DivisionServiceImpl(client);
+  static DivisionServiceImpl newInstance([ChopperClient? client]) => _$DivisionServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Division> state) => create(
-        state.value.organisation.uuid,
+        state.value.organisation!.uuid,
         state.value,
       );
 
   @Post(path: '/organisations/{uuid}/divisions')
   Future<Response<String>> create(
-    @Path() String uuid,
+    @Path() String? uuid,
     @Body() Division body,
   );
 
@@ -103,29 +104,29 @@ abstract class DivisionServiceImpl extends StatefulService<Division, DivisionMod
 
   @Patch(path: '/divisions/{uuid}')
   Future<Response<StorageState<Division>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Division body,
   );
 
   @override
   Future<Response<StorageState<Division>>> onDelete(StorageState<Division> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Division>>);
 
   @Delete(path: '/divisions/{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
   @override
-  Future<Response<PagedList<StorageState<Division>>>> onGetPage(int offset, int limit, List<String> options) => getAll(
+  Future<Response<PagedList<StorageState<Division>>>> onGetPage(int? offset, int? limit, List<String> options) => getAll(
         offset,
         limit,
       );
 
   @Get(path: '/divisions')
   Future<Response<PagedList<StorageState<Division>>>> getAll(
-    @Query('offset') int offset,
-    @Query('limit') int limit,
+    @Query('offset') int? offset,
+    @Query('limit') int? limit,
   );
 }

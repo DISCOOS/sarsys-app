@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:equatable/equatable.dart';
 import 'package:json_patch/json_patch.dart';
@@ -13,10 +13,10 @@ abstract class JsonObject<T> extends Equatable {
   JsonObject(List fields) : _props = [...fields];
   T toJson();
 
-  final List<Object> _props;
+  final List<Object?> _props;
 
   @override
-  List<Object> get props => _props;
+  List<Object?> get props => _props;
 }
 
 abstract class Aggregate<T> extends JsonObject<T> {
@@ -26,7 +26,7 @@ abstract class Aggregate<T> extends JsonObject<T> {
 
 abstract class EntityObject<T> extends JsonObject<T> {
   EntityObject(this.id, {List fields = const []}) : super([id, ...fields]);
-  final String id;
+  final String? id;
 }
 
 abstract class ValueObject<T> extends JsonObject<T> {
@@ -36,29 +36,29 @@ abstract class ValueObject<T> extends JsonObject<T> {
 class JsonUtils {
   static toNull(value) => null;
 
-  static List<T> toList<T>(
+  static List<T?> toList<T>(
     Map<String, dynamic> json,
-    JsonDecoder<T> factory, {
+    JsonDecoder<T>? factory, {
     String dataField = 'data',
     String entriesField = 'entries',
   }) {
     final isRoot = dataField == null || dataField == '.';
     if (json.hasPath(entriesField)) {
       return json
-          .listAt(entriesField)
-          .map((json) => factory(isRoot ? json : Map.from(json).elementAt(dataField)))
+          .listAt(entriesField)!
+          .map((json) => factory!(isRoot ? json : Map.from(json).elementAt(dataField)))
           .toList();
     }
     return <T>[];
   }
 
-  static PagedList<T> toPagedList<T>(
+  static PagedList<T?> toPagedList<T>(
     Map<String, dynamic> json,
-    JsonDecoder<T> factory, {
+    JsonDecoder<T>? factory, {
     String dataField = 'data',
     String entriesField = 'entries',
   }) =>
-      PagedList<T>(
+      PagedList<T?>(
         toList(
           json,
           factory,
@@ -68,7 +68,7 @@ class JsonUtils {
         PageResult.from(json),
       );
 
-  static dynamic toJson<T extends JsonObject>(
+  static dynamic toJson<T extends JsonObject?>(
     T value, {
     List<String> retain = const [],
     List<String> remove = const [],
@@ -77,7 +77,7 @@ class JsonUtils {
       !(retain?.isNotEmpty == true && remove?.isNotEmpty == true),
       'Only use retain or remove',
     );
-    final json = value.toJson();
+    final json = value!.toJson();
     if (retain?.isNotEmpty == true) {
       json.removeWhere(
         (key, _) => !retain.contains(key),
@@ -126,13 +126,13 @@ class JsonUtils {
     return patches;
   }
 
-  static ConflictModel check(List<Map<String, dynamic>> mine, List<Map<String, dynamic>> yours) {
+  static ConflictModel? check(List<Map<String, dynamic>> mine, List<Map<String, dynamic>> yours) {
     // 1. Get local (mine) and remote (yours) patches
     final yourPaths = yours.map((op) => op['path']);
     final concurrent = mine.where((op) => yourPaths.contains(op['path']));
 
     // 2. Check if any of mine and yours patches collide
-    final eq = const MapEquality().equals;
+    final bool Function(Map<dynamic, dynamic>, Map<dynamic, dynamic>) eq = const MapEquality().equals;
     final conflicts = concurrent.where(
       (op1) => yours.where((op2) => op2['path'] == op1['path'] && !eq(op1, op2)).isNotEmpty,
     );
@@ -142,12 +142,12 @@ class JsonUtils {
             type: ConflictType.merge,
             mine: mine,
             yours: yours,
-            paths: conflicts.map((op) => op['path'] as String).toList(),
+            paths: conflicts.map((op) => op['path'] as String?).toList(),
           )
         : null;
   }
 
-  static Map<String, dynamic> patch(
+  static Map<String, dynamic>? patch(
     JsonObject oldJson,
     JsonObject newJson, {
     bool strict = false,
@@ -159,8 +159,8 @@ class JsonUtils {
     return apply(oldJson, patches, strict: strict);
   }
 
-  static Map<String, dynamic> apply(
-    JsonObject oldJson,
+  static Map<String, dynamic>? apply(
+    JsonObject? oldJson,
     List<Map<String, dynamic>> patches, {
     bool strict = false,
   }) {

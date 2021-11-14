@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:math';
@@ -17,14 +17,14 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/presentation/widgets/coordinate_input.dart';
 
 class PositionEditor extends StatefulWidget {
-  final Position position;
+  final Position? position;
   final String title;
-  final Operation operation;
+  final Operation? operation;
   const PositionEditor(
     this.position, {
-    Key key,
+    Key? key,
     this.operation,
-    @required this.title,
+    required this.title,
   }) : super(key: key);
 
   @override
@@ -35,24 +35,24 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
-  Position _current;
-  MapSearchField _searchField;
-  MapWidgetController _mapController;
+  Position? _current;
+  MapSearchField? _searchField;
+  MapWidgetController? _mapController;
 
-  StreamController<LatLng> _changes;
+  StreamController<LatLng?>? _changes;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapWidgetController();
-    _changes = StreamController<LatLng>();
+    _changes = StreamController<LatLng?>();
     _searchField = MapSearchField(
       key: _searchFieldKey,
       offset: 106.0,
       withBorder: false,
       onError: _onError,
       mapController: _mapController,
-      onMatch: (point) => setState(() => _setFromLatLng(point)),
+      onMatch: (point) => setState(() => _setFromLatLng(point!)),
     );
   }
 
@@ -68,9 +68,9 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
         source: PositionSource.manual,
       );
 
-  Position _ensurePosition() => widget.position?.isNotEmpty != true
+  Position? _ensurePosition() => widget.position?.isNotEmpty != true
       ? Position.fromPoint(
-            LocationService().current?.geometry,
+            LocationService().current!.geometry!,
             source: PositionSource.manual,
           ) ??
           Position.now(
@@ -100,7 +100,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
         leading: GestureDetector(
           child: Icon(Icons.close),
           onTap: () {
-            _searchFieldKey.currentState.clear();
+            _searchFieldKey.currentState!.clear();
             Navigator.pop(context);
           },
         ),
@@ -162,9 +162,9 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
   }
 
   Widget _buildUTMField() {
-    return StreamBuilder<LatLng>(
+    return StreamBuilder<LatLng?>(
         initialData: toLatLng(_current?.geometry),
-        stream: _changes.stream,
+        stream: _changes!.stream,
         builder: (context, snapshot) {
           return snapshot.hasData
               ? Container(
@@ -172,7 +172,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
                   child: CoordinateInput(
                     point: snapshot.data,
                     onChanged: (point) {
-                      _mapController.animatedMove(point, _mapController.zoom, this);
+                      _mapController!.animatedMove(point, _mapController!.zoom, this);
                       _setFromLatLng(point);
                     },
                   ),
@@ -184,7 +184,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
   Widget _buildMap() {
     return MapWidget(
       operation: widget.operation,
-      center: _mapController.center,
+      center: _mapController!.center,
       mapController: _mapController,
       withRead: true,
       readLayers: true,
@@ -197,7 +197,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
       withControlsLocateMe: true,
       withControlsOffset: 180,
       onPositionChanged: _onPositionChanged,
-      onTap: (_) => _searchFieldKey.currentState.clear(),
+      onTap: (_) => _searchFieldKey.currentState!.clear(),
     );
   }
 
@@ -230,7 +230,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture) {
-    _setFromLatLng(position.center);
-    _changes.add(position.center);
+    _setFromLatLng(position.center!);
+    _changes!.add(position.center);
   }
 }

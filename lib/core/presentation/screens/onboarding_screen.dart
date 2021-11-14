@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -22,7 +22,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final controller = PageController();
 
-  Timer timer;
+  Timer? timer;
 
   @override
   void initState() {
@@ -33,7 +33,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  Timer _scheduleScroll() {
+  Timer? _scheduleScroll() {
     timer ??= Timer(Duration(seconds: 3), () {
       if (mounted) {
         if (index < views.length - 1) {
@@ -56,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   int index = 0;
 
-  List<Widget> views;
+  late List<Widget> views;
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +162,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildTitle() {
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final titleStyle = textTheme.headline6.copyWith(
+    final titleStyle = textTheme.headline6!.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
@@ -178,16 +178,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildTopBenefit({String asset, String rationale, String statement}) {
+  Widget _buildTopBenefit({String? asset, required String rationale, required String statement}) {
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final rationaleStyle = textTheme.headline6.copyWith(
+    final rationaleStyle = textTheme.headline6!.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
       fontSize: SizeConfig.safeBlockVertical * 4.0,
     );
-    final statementStyle = Theme.of(context).textTheme.subtitle2.copyWith(
+    final statementStyle = Theme.of(context).textTheme.subtitle2!.copyWith(
           fontSize: SizeConfig.safeBlockVertical * 2.5,
         );
 
@@ -243,7 +243,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Image _buildIcon(String asset) => Image.asset(
+  Image _buildIcon(String? asset) => Image.asset(
         'assets/images/$asset',
         height: SizeConfig.blockSizeVertical * 30 * (SizeConfig.isPortrait ? 1 : 2.5),
         width: SizeConfig.blockSizeHorizontal * 60 * (SizeConfig.isPortrait ? 1 : 2.5),

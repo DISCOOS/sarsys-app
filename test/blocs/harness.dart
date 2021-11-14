@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -77,110 +77,111 @@ class BlocTestHarness implements BlocObserver {
   final baseRestUrl = Defaults.baseRestUrl;
   final assetConfig = 'assets/config/app_config.json';
 
-  ConnectivityServiceMock _connectivity;
-  ConnectivityServiceMock get connectivity => _connectivity;
+  late ConnectivityServiceMock _connectivity
+  ;
+  ConnectivityServiceMock? get connectivity => _connectivity;
 
-  bool get isWifi => connectivity.isWifi;
-  bool get isOnline => connectivity.isOnline;
-  bool get isOffline => connectivity.isOffline;
-  bool get isCellular => connectivity.isCellular;
+  bool get isWifi => connectivity!.isWifi;
+  bool get isOnline => connectivity!.isOnline;
+  bool get isOffline => connectivity!.isOffline;
+  bool get isCellular => connectivity!.isCellular;
 
   BlocEventBus get bus => _observer.bus;
   AppBlocObserver _observer = AppBlocObserver();
 
-  User get user => _userService.token.toUser();
+  User get user => _userService!.token!.toUser();
 
-  String _userId;
-  String get userId => _userId;
+  String? _userId;
+  String? get userId => _userId;
 
-  String _username;
-  String get username => _username;
+  String? _username;
+  String? get username => _username;
 
-  String _password;
-  String get password => _password;
+  String? _password;
+  String? get password => _password;
 
-  String get division => _division;
-  String _division;
+  String? get division => _division;
+  String? _division;
 
-  String get department => _department;
-  String _department;
+  String? get department => _department;
+  String? _department;
 
   bool get isAuthenticated => _authenticated;
   bool _authenticated = false;
 
-  UserServiceMock get userService => _userService;
-  UserServiceMock _userService;
+  UserServiceMock? get userService => _userService;
+  UserServiceMock? _userService;
 
-  UserBloc get userBloc => _userBloc;
-  UserBloc _userBloc;
+  UserBloc? get userBloc => _userBloc;
+  UserBloc? _userBloc;
   bool _withUserBloc = false;
 
-  AppConfigBloc get configBloc => _configBloc;
-  AppConfigBloc _configBloc;
+  AppConfigBloc? get configBloc => _configBloc;
+  AppConfigBloc? _configBloc;
   bool _withConfigBloc = false;
 
-  AffiliationBloc get affiliationBloc => _affiliationBloc;
-  AffiliationBloc _affiliationBloc;
+  AffiliationBloc? get affiliationBloc => _affiliationBloc;
+  AffiliationBloc? _affiliationBloc;
   bool _withAffiliationBloc = false;
 
-  OrganisationServiceMock get organisationService => _organisationService;
-  OrganisationServiceMock _organisationService;
+  OrganisationServiceMock? get organisationService => _organisationService;
+  OrganisationServiceMock? _organisationService;
 
-  DivisionServiceMock get divisionService => _divisionService;
-  DivisionServiceMock _divisionService;
+  DivisionServiceMock? get divisionService => _divisionService;
+  DivisionServiceMock? _divisionService;
 
-  DepartmentServiceMock get departmentService => _departmentService;
-  DepartmentServiceMock _departmentService;
+  DepartmentServiceMock? get departmentService => _departmentService;
+  DepartmentServiceMock? _departmentService;
 
-  PersonServiceMock get personService => _personService;
-  PersonServiceMock _personService;
+  PersonServiceMock? get personService => _personService;
+  PersonServiceMock? _personService;
 
-  AffiliationServiceMock get affiliationService => _affiliationService;
-  AffiliationServiceMock _affiliationService;
+  AffiliationServiceMock? get affiliationService => _affiliationService;
+  AffiliationServiceMock? _affiliationService;
 
-  IncidentServiceMock get incidentService => _incidentService;
-  IncidentServiceMock _incidentService;
+  IncidentServiceMock? get incidentService => _incidentService;
+  IncidentServiceMock? _incidentService;
 
-  OperationServiceMock get operationService => _operationService;
-  OperationServiceMock _operationService;
+  OperationServiceMock? get operationService => _operationService;
+  OperationServiceMock? _operationService;
 
-  OperationBloc get operationsBloc => _operationsBloc;
-  OperationBloc _operationsBloc;
+  OperationBloc? get operationsBloc => _operationsBloc;
+  OperationBloc? _operationsBloc;
   bool _withOperationBloc = false;
 
-  DeviceServiceMock get deviceService => _deviceService;
-  DeviceServiceMock _deviceService;
+  DeviceServiceMock? get deviceService => _deviceService;
+  DeviceServiceMock? _deviceService;
 
-  DeviceRepository get deviceRepo => _deviceRepo;
-  DeviceRepository _deviceRepo;
+  DeviceRepository? get deviceRepo => _deviceRepo;
+  DeviceRepository? _deviceRepo;
 
-  DeviceBloc get deviceBloc => _deviceBloc;
-  DeviceBloc _deviceBloc;
+  DeviceBloc? get deviceBloc => _deviceBloc;
+  DeviceBloc? _deviceBloc;
   bool _withDeviceBloc = false;
 
-  PersonnelServiceMock get personnelService => _personnelService;
-  PersonnelServiceMock _personnelService;
+  PersonnelServiceMock? get personnelService => _personnelService;
+  PersonnelServiceMock? _personnelService;
 
-  PersonnelBloc get personnelBloc => _personnelBloc;
-  PersonnelBloc _personnelBloc;
+  PersonnelBloc? get personnelBloc => _personnelBloc;
+  PersonnelBloc? _personnelBloc;
   bool _withPersonnelBloc = false;
 
-  UnitServiceMock get unitService => _unitService;
-  UnitServiceMock _unitService;
+  UnitServiceMock? get unitService => _unitService;
+  UnitServiceMock? _unitService;
 
-  UnitBloc get unitBloc => _unitBloc;
-  UnitBloc _unitBloc;
+  UnitBloc? get unitBloc => _unitBloc;
+  UnitBloc? _unitBloc;
   bool _withUnitBloc = false;
 
-  TrackingServiceMock get trackingService => _trackingService;
-  TrackingServiceMock _trackingService;
+  TrackingServiceMock? get trackingService => _trackingService;
+  TrackingServiceMock? _trackingService;
 
-  TrackingBloc get trackingBloc => _trackingBloc;
-  TrackingBloc _trackingBloc;
+  TrackingBloc? get trackingBloc => _trackingBloc;
+  TrackingBloc? _trackingBloc;
   bool _withTrackingBloc = false;
 
   void install() {
-    Timer timer;
+    Timer? timer;
     Bloc.observer = this;
     setUpAll(() async {
       // Required since provider need access to service bindings prior to calling 'test()'
@@ -272,24 +273,24 @@ class BlocTestHarness implements BlocObserver {
 
       if (_authenticated) {
         assert(_userBloc != null);
-        await _userBloc.login(
+        await _userBloc!.login(
           username: _username,
           password: _password,
         );
         await Future.wait<void>([
-          _configBloc.init(),
+          _configBloc!.init(),
           expectThroughLater(
-            _userBloc.stream,
+            _userBloc!.stream,
             isA<UserAuthenticated>(),
           ),
           if (_withOperationBloc)
             expectThroughLater(
-              _operationsBloc.stream,
+              _operationsBloc!.stream,
               isA<OperationsLoaded>().having((event) => event.isRemote, 'Should be remote', isTrue),
             ),
           if (_withAffiliationBloc)
             expectThroughLater(
-              _affiliationBloc.stream,
+              _affiliationBloc!.stream,
               emitsThrough(isA<UserOnboarded>().having((event) => event.isRemote, 'Should be remote', isTrue)),
             ),
         ]);
@@ -474,13 +475,13 @@ class BlocTestHarness implements BlocObserver {
     final Map<String, String> storage = {};
     secureStorageChannel.setMockMethodCallHandler((MethodCall methodCall) async {
       if ('read' == methodCall.method) {
-        return storage[methodCall.arguments['key']];
+        storage[methodCall.arguments['key']];
       } else if ('write' == methodCall.method) {
-        return storage[methodCall.arguments['key']] = methodCall.arguments['value'];
+        storage[methodCall.arguments['key']] = methodCall.arguments['value'];
       } else if ('readAll' == methodCall.method) {
-        return storage.cast<String, String>();
+        storage.cast<String, String>();
       } else if ('delete' == methodCall.method) {
-        return storage.remove(methodCall.arguments['key']);
+        storage.remove(methodCall.arguments['key']);
       } else if ('deleteAll' == methodCall.method) {
         return storage.clear();
       }
@@ -517,7 +518,7 @@ class BlocTestHarness implements BlocObserver {
     // Required since provider need access to service bindings prior to calling 'test()'
     WidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger.setMockMessageHandler('flutter/assets', (message) {
       // The key is the asset key.
-      String key = utf8.decode(message.buffer.asUint8List());
+      String key = utf8.decode(message!.buffer.asUint8List());
       // Manually load the file.
       var file = File('$key');
       final Uint8List encoded = utf8.encoder.convert(file.readAsStringSync());
@@ -528,24 +529,24 @@ class BlocTestHarness implements BlocObserver {
   void _buildConnectivity() {
     _connectivity = ConnectivityServiceMock();
 
-    when(_connectivity.isOnline).thenAnswer((_) => ConnectivityStatus.offline != _connectivity.status);
-    when(_connectivity.isOffline).thenAnswer((_) => ConnectivityStatus.offline == _connectivity.status);
-    when(_connectivity.isWifi).thenAnswer((_) => ConnectivityStatus.wifi == _connectivity.status);
-    when(_connectivity.isCellular).thenAnswer((_) => ConnectivityStatus.cellular == _connectivity.status);
+    when(_connectivity!.isOnline).thenAnswer((_) => ConnectivityStatus.offline != _connectivity!.status);
+    when(_connectivity!.isOffline).thenAnswer((_) => ConnectivityStatus.offline == _connectivity!.status);
+    when(_connectivity!.isWifi).thenAnswer((_) => ConnectivityStatus.wifi == _connectivity!.status);
+    when(_connectivity!.isCellular).thenAnswer((_) => ConnectivityStatus.cellular == _connectivity!.status);
 
-    when(_connectivity.changes).thenAnswer((_) => _connectivity._controller.stream);
-    when(_connectivity.whenOnline).thenAnswer(
-      (_) => _connectivity._controller.stream.where(
+    when(_connectivity!.changes).thenAnswer((_) => _connectivity!._controller.stream);
+    when(_connectivity!.whenOnline).thenAnswer(
+      (_) => _connectivity!._controller.stream.where(
         (status) => ConnectivityStatus.offline != status,
       ),
     );
-    when(_connectivity.whenOffline).thenAnswer(
-      (_) => _connectivity._controller.stream.where(
+    when(_connectivity!.whenOffline).thenAnswer(
+      (_) => _connectivity!._controller.stream.where(
         (status) => ConnectivityStatus.offline == status,
       ),
     );
-    when(_connectivity.update()).thenAnswer((_) async => _connectivity.state);
-    when(_connectivity.test()).thenAnswer((_) async => ConnectivityStatus.offline != _connectivity.status);
+    when(_connectivity!.update()).thenAnswer((_) async => _connectivity!.state);
+    when(_connectivity!.test()).thenAnswer((_) async => ConnectivityStatus.offline != _connectivity!.status);
   }
 
   void _buildAppConfigBloc() {
@@ -582,29 +583,29 @@ class BlocTestHarness implements BlocObserver {
 
   Future _buildAffiliationBloc() async {
     assert(_withUserBloc, 'OperationBloc requires UserBloc');
-    _organisationService = OrganisationServiceMock.build();
-    _divisionService = DivisionServiceMock.build();
-    _departmentService = DepartmentServiceMock.build();
-    _personService = await PersonServiceMock.build();
-    _affiliationService = await AffiliationServiceMock.build(_personService);
+    _organisationService = OrganisationServiceMock.build() as OrganisationServiceMock?;
+    _divisionService = DivisionServiceMock.build() as DivisionServiceMock?;
+    _departmentService = DepartmentServiceMock.build() as DepartmentServiceMock?;
+    _personService = await (PersonServiceMock.build() as FutureOr<PersonServiceMock?>);
+    _affiliationService = await (AffiliationServiceMock.build(_personService) as FutureOr<AffiliationServiceMock?>);
     _affiliationBloc = AffiliationBloc(
       repo: AffiliationRepositoryImpl(
-        affiliationService,
+        affiliationService!,
         connectivity: _connectivity,
         orgs: OrganisationRepositoryImpl(
-          _organisationService,
+          _organisationService!,
           connectivity: _connectivity,
         ),
         divs: DivisionRepositoryImpl(
-          _divisionService,
+          _divisionService!,
           connectivity: _connectivity,
         ),
         deps: DepartmentRepositoryImpl(
-          _departmentService,
+          _departmentService!,
           connectivity: _connectivity,
         ),
         persons: PersonRepositoryImpl(
-          personService,
+          personService!,
           connectivity: _connectivity,
         ),
       ),
@@ -622,21 +623,21 @@ class BlocTestHarness implements BlocObserver {
     assert(_withUserBloc, 'OperationBloc requires UserBloc');
 
     _incidentService = IncidentServiceMock.build(
-      _userBloc.repo,
+      _userBloc!.repo,
       role: role,
       passcode: passcode,
-    );
+    ) as IncidentServiceMock?;
     _operationService = OperationServiceMock.build(
-      _userBloc.repo,
+      _userBloc!.repo,
       role: role,
       passcode: passcode,
-    );
+    ) as OperationServiceMock?;
     _operationsBloc = OperationBloc(
       OperationRepositoryImpl(
-        _operationService,
+        _operationService!,
         connectivity: _connectivity,
         incidents: IncidentRepositoryImpl(
-          _incidentService,
+          _incidentService!,
           connectivity: _connectivity,
         ),
       ),
@@ -656,9 +657,9 @@ class BlocTestHarness implements BlocObserver {
       tetraCount: tetraCount,
       appCount: appCount,
       simulate: simulate,
-    );
+    ) as DeviceServiceMock?;
     _deviceRepo = DeviceRepositoryImpl(
-      _deviceService,
+      _deviceService!,
       connectivity: _connectivity,
     );
     _deviceBloc = DeviceBloc(
@@ -680,9 +681,9 @@ class BlocTestHarness implements BlocObserver {
     );
     _personnelBloc = PersonnelBloc(
       PersonnelRepositoryImpl(
-        _personnelService,
-        affiliations: _affiliationBloc.repo,
-        units: _unitBloc.repo,
+        _personnelService!,
+        affiliations: _affiliationBloc!.repo,
+        units: _unitBloc!.repo,
         connectivity: _connectivity,
       ),
       _affiliationBloc,
@@ -695,10 +696,10 @@ class BlocTestHarness implements BlocObserver {
     int count = 0,
   }) {
     assert(_withOperationBloc, 'UnitBloc requires OperationBloc');
-    _unitService = UnitServiceMock.build(count);
+    _unitService = UnitServiceMock.build(count) as UnitServiceMock?;
     _unitBloc = UnitBloc(
       UnitRepositoryImpl(
-        _unitService,
+        _unitService!,
         connectivity: _connectivity,
       ),
       _operationsBloc,
@@ -721,14 +722,14 @@ class BlocTestHarness implements BlocObserver {
     );
     _trackingBloc = TrackingBloc(
       TrackingRepositoryImpl(
-        _trackingService,
+        _trackingService!,
         tracks: null,
         connectivity: _connectivity,
       ),
       operationBloc: _operationsBloc,
-      deviceBloc: _deviceBloc,
+      deviceBloc: _deviceBloc!,
       personnelBloc: _personnelBloc,
-      unitBloc: _unitBloc,
+      unitBloc: _unitBloc!,
       bus: bus,
     );
   }
@@ -738,17 +739,17 @@ class BlocTestHarness implements BlocObserver {
   @override
   void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
     errors.update(
-      bloc,
+      bloc as Bloc<dynamic, dynamic>,
       (errors) => errors..add(error),
       ifAbsent: () => [error],
     );
     debugPrintError('onError(${bloc.runtimeType})', error, stackTrace);
   }
 
-  final history = <Pair<Bloc, Object>>[];
+  final List<Pair<Bloc<dynamic, dynamic>, Object?>> history = <Pair<Bloc, Object>>[];
 
   @override
-  void onEvent(Bloc bloc, Object event) {
+  void onEvent(Bloc bloc, Object? event) {
     history.add(Pair.of(bloc, event));
     if (_debugCommands) {
       debugPrint('------COMMAND-------');
@@ -823,7 +824,7 @@ class ConnectivityServiceMock extends Mock implements ConnectivityService {
 Future<void> expectExactlyLater<B extends Bloc<dynamic, State>, State>(
   B bloc,
   Iterable expected, {
-  Duration duration,
+  Duration? duration,
   int skip = 0,
   bool close = false,
 }) async {
@@ -842,14 +843,14 @@ Future<void> expectExactlyLater<B extends Bloc<dynamic, State>, State>(
   await sub2.cancel();
 }
 
-void expectThrough<B extends Bloc<dynamic, State>, State>(
+void expectThrough<B extends Bloc<dynamic, State>?, State>(
   B bloc,
   expected, {
   bool close = false,
 }) async {
   assert(bloc != null);
   assert(expected != null);
-  final sub = _printStream('expectThrough', bloc.stream);
+  final sub = _printStream('expectThrough', bloc!.stream);
   expect(bloc.stream, emitsThrough(expected));
   if (close) {
     bloc.close();
@@ -857,14 +858,14 @@ void expectThrough<B extends Bloc<dynamic, State>, State>(
   await _cancelPrintStream('expectThrough', bloc.stream, sub);
 }
 
-void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
+void expectThroughInOrder<B extends Bloc<dynamic, State>?, State>(
   B bloc,
   Iterable expected, {
   bool close = false,
 }) async {
   assert(bloc != null);
   assert(expected != null);
-  final sub = _printStream('expectThroughInOrder', bloc.stream);
+  final sub = _printStream('expectThroughInOrder', bloc!.stream);
   expect(bloc.stream, emitsThrough(emitsInOrder(expected)));
   if (close) {
     bloc.close();
@@ -872,7 +873,7 @@ void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
   await _cancelPrintStream('expectThroughInOrder', bloc.stream, sub);
 }
 
-Future<void> expectThroughLater(Stream<BlocState> stream, expected) async {
+Future<void> expectThroughLater(Stream<BlocState?> stream, expected) async {
   assert(stream != null);
   assert(expected != null);
   var sub;
@@ -917,14 +918,14 @@ Future<void> expectThroughLaterIfNot<State extends BlocState>(
   }
 }
 
-Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>, State>(
+Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>?, State>(
   B bloc,
   Iterable expected, {
   bool close = false,
 }) async {
   assert(bloc != null);
   assert(expected != null);
-  final sub = _printStream('expectThroughInOrderLater', bloc.stream);
+  final sub = _printStream('expectThroughInOrderLater', bloc!.stream);
   await expectLater(bloc.stream, emitsThrough(emitsInOrder(expected)));
   if (close) {
     await bloc.close();
@@ -932,13 +933,13 @@ Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>, State>(
   await _cancelPrintStream('expectThroughInOrderLater', bloc.stream, sub);
 }
 
-Stream<StorageStatus> toStatusChanges(Stream<StorageTransition> changes) =>
-    changes.where((state) => state.to.isRemote).map((state) => state.to.status);
+Stream<StorageStatus> toStatusChanges(Stream<StorageTransition?> changes) =>
+    changes.where((state) => state!.to!.isRemote!).map((state) => state!.to!.status);
 
 void expectStorageStatus(
   StorageState actual,
   StorageStatus expected, {
-  @required bool remote,
+  required bool remote,
 }) {
   expect(
     actual.status,
@@ -953,10 +954,10 @@ void expectStorageStatus(
 }
 
 Future expectStorageStatusLater(
-  String uuid,
+  String? uuid,
   StatefulRepository repo,
   StorageStatus expected, {
-  @required bool remote,
+  required bool remote,
   dynamic key,
   Duration timeout = const Duration(milliseconds: 100),
 }) async {
@@ -969,7 +970,7 @@ Future expectStorageStatusLater(
           (transition) =>
               transition.status == expected &&
               transition.to?.value is Aggregate &&
-              (transition.to?.value as Aggregate)?.uuid == uuid &&
+              (transition.to?.value as Aggregate?)?.uuid == uuid &&
               (remote ? transition.isRemote : transition.isLocal),
           'is ${remote ? 'remote' : 'local'}',
           isTrue,
@@ -1027,7 +1028,7 @@ void _logStreamEvent(String key, StringBuffer buffer) {
   }
 }
 
-Future<void> _cancelPrintStream(String test, Stream stream, StreamSubscription sub) {
+Future<void>? _cancelPrintStream(String test, Stream stream, StreamSubscription? sub) {
   final key = '$test:${stream.runtimeType}';
   final buffer = StringBuffer();
   buffer.writeln('------STREAM------');

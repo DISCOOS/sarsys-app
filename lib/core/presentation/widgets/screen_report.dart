@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/utils/ui.dart';
@@ -17,16 +17,16 @@ class ScreenReportMode extends PageReportMode {
   });
 
   @override
-  void requestAction(Report report, BuildContext context) {
+  void requestAction(Report report, BuildContext? context) {
     _navigateToPageWidget(report, context);
   }
 
-  _navigateToPageWidget(Report report, BuildContext context) async {
+  _navigateToPageWidget(Report report, BuildContext? context) async {
     if (_reentrant) return;
     _reentrant = true;
     await Future.delayed(Duration.zero);
     await Navigator.push(
-      context,
+      context!,
       MaterialPageRoute(builder: (context) => ScreenReport(this, report)),
     );
     _reentrant = false;
@@ -64,12 +64,12 @@ class ScreenReportState extends State<ScreenReport> {
             tooltip: "Slett data",
             onPressed: () async {
               final delete = await prompt(
-                NavigationService().overlay.context,
+                NavigationService().overlay!.context,
                 "Slette alle data?",
                 "Dette vil slette alle data SarSys har lagret på telefonen unntatt kart. Vil du fortsette?",
               );
               if (delete) {
-                Navigator.pop(NavigationService().overlay.context);
+                Navigator.pop(NavigationService().overlay!.context);
                 await NavigationService().controller.reset();
               }
             },

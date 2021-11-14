@@ -6,11 +6,11 @@ part 'route_model.g.dart';
 @JsonSerializable()
 class RouteModel extends Equatable {
   RouteModel(this.data, this.name);
-  final String name;
+  final String? name;
   final dynamic data;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         data,
         name,
       ];

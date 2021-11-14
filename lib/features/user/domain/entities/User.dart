@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:convert';
 
@@ -18,7 +18,7 @@ part 'User.g.dart';
 @JsonSerializable()
 class User extends Equatable {
   User({
-    @required this.userId,
+    required this.userId,
     this.fname,
     this.lname,
     this.uname,
@@ -32,31 +32,31 @@ class User extends Equatable {
     this.passcodes = const [],
   });
 
-  final String userId;
-  final String fname;
-  final String lname;
-  final String uname;
-  final String email;
-  final String phone;
-  final String org;
-  final String div;
-  final String dep;
-  final Security security;
+  final String? userId;
+  final String? fname;
+  final String? lname;
+  final String? uname;
+  final String? email;
+  final String? phone;
+  final String? org;
+  final String? div;
+  final String? dep;
+  final Security? security;
 
   @JsonKey(
     defaultValue: <UserRole>[],
   )
-  final List<UserRole> roles;
+  final List<UserRole?> roles;
 
   @JsonKey(
     defaultValue: <String>[],
   )
-  final List<Passcodes> passcodes;
+  final List<Passcodes>? passcodes;
 
   bool get isAffiliated => org != null || div != null || dep != null;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         userId,
         fname,
         lname,
@@ -71,8 +71,8 @@ class User extends Equatable {
       ];
 
   String get fullName => '$fname $lname';
-  String get shortName => '${fname.substring(0, 1)} $lname';
-  String get initials => '${fname.substring(0, 1)}${lname.substring(0, 1)}'.toUpperCase();
+  String get shortName => '${fname!.substring(0, 1)} $lname';
+  String get initials => '${fname!.substring(0, 1)}${lname!.substring(0, 1)}'.toUpperCase();
 
   bool get hasRoles => roles.isNotEmpty;
 
@@ -87,11 +87,11 @@ class User extends Equatable {
   bool get isOperationsChief => roles.contains(UserRole.operations_chief);
   bool get isLeader => isCommander || isUnitLeader || isPlanningChief || isOperationsChief;
 
-  bool isAuthor(Operation operation) => operation.author.userId == userId;
+  bool isAuthor(Operation operation) => operation.author!.userId == userId;
 
-  User authorize(Passcodes codes) => copyWith(
-        passcodes: passcodes.contains(codes) ? passcodes : List<Passcodes>.from(passcodes)
-          ..add(codes),
+  User authorize(Passcodes? codes) => copyWith(
+        passcodes: (passcodes!.contains(codes) ? passcodes : List<Passcodes>.from(passcodes!))!
+          ..add(codes!),
       );
 
   /// Factory constructor for creating a new `User` instance
@@ -103,12 +103,12 @@ class User extends Equatable {
   /// Create user from token
   factory User.fromTokens(
     String accessToken, {
-    String org,
-    String div,
-    String dep,
-    String idToken,
-    Security security,
-    List<Passcodes> passcodes,
+    String? org,
+    String? div,
+    String? dep,
+    String? idToken,
+    Security? security,
+    List<Passcodes>? passcodes,
   }) {
     final json = _fromJWT(accessToken);
     final jwt = JwtClaim.fromMap(json);
@@ -145,14 +145,14 @@ class User extends Equatable {
     return user;
   }
 
-  static Iterable<UserRole> _toRoles(Iterable roles) => roles
-      ?.where(
+  static Iterable<UserRole?> _toRoles(Iterable roles) => roles
+      .where(
         _$UserRoleEnumMap.containsValue,
       )
-      ?.map(
+      .map(
         (e) => _$enumDecodeNullable(_$UserRoleEnumMap, e),
       )
-      ?.toSet();
+      .toSet();
 
   static Map<String, dynamic> _fromJWT(String token) {
     final parts = token.split('.');
@@ -187,18 +187,18 @@ class User extends Equatable {
   }
 
   User copyWith({
-    String userId,
-    String fname,
-    String lname,
-    String uname,
-    String email,
-    String phone,
-    String org,
-    String div,
-    String dep,
-    Security security,
-    List<UserRole> roles,
-    List<Passcodes> passcodes,
+    String? userId,
+    String? fname,
+    String? lname,
+    String? uname,
+    String? email,
+    String? phone,
+    String? org,
+    String? div,
+    String? dep,
+    Security? security,
+    List<UserRole>? roles,
+    List<Passcodes>? passcodes,
   }) =>
       User(
         userId: userId ?? this.userId,
@@ -228,7 +228,7 @@ enum UserRole {
   personnel,
 }
 
-String translateUserRole(UserRole role) {
+String translateUserRole(UserRole? role) {
   switch (role) {
     case UserRole.commander:
       return "Aksjonsleder";
@@ -244,7 +244,7 @@ String translateUserRole(UserRole role) {
   }
 }
 
-String translateUserRoleAbbr(UserRole role) {
+String translateUserRoleAbbr(UserRole? role) {
   switch (role) {
     case UserRole.commander:
       return "AL";

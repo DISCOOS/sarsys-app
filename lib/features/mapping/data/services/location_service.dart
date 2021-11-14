@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/mapping/data/services/background_geolocation_service.dart';
@@ -15,7 +15,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 abstract class LocationService extends Service {
   /// Get [Device.uuid] being tracked
-  String get duuid;
+  String? get duuid;
 
   /// Check if service is able to store
   /// positions locally. Storing is only
@@ -46,7 +46,7 @@ abstract class LocationService extends Service {
   bool get isSharing;
 
   /// Get current [Position]
-  Position get current;
+  Position? get current;
 
   /// Get estimated activity if supported
   Activity get activity;
@@ -55,10 +55,10 @@ abstract class LocationService extends Service {
   Future<PermissionStatus> get status;
 
   /// Check if service is ready
-  bool get isReady;
+  bool? get isReady;
 
   /// Get stream of positions
-  Stream<Position> get stream;
+  Stream<Position?> get stream;
 
   /// Get stream of events
   Stream<LocationEvent> get onEvent;
@@ -69,23 +69,23 @@ abstract class LocationService extends Service {
 
   /// Get positions gathered since
   /// last application start
-  Iterable<Position> get positions;
+  Iterable<Position?> get positions;
 
   /// Distance moved since app started
   double get odometer;
 
   /// Get backlog of positions stored on this device pending push to backend
-  Future<Iterable<Position>> backlog();
+  Future<Iterable<Position?>> backlog();
 
   /// Clear all positions stored on this device
   Future clear();
 
   /// Get current options
-  LocationOptions get options;
+  LocationOptions? get options;
 
   /// Get authentication token required
   /// to publish positions to backend
-  AuthToken get token;
+  AuthToken? get token;
 
   /// Get event from index
   LocationEvent operator [](int index);
@@ -97,17 +97,17 @@ abstract class LocationService extends Service {
   /// Use [token] to change which authorisation token to publish positions with
   /// Use [share] to control pushing positions with id [duuid]
   /// Use [force] to force reconfiguration of service
-  Future<LocationOptions> configure({
-    bool share,
-    bool debug,
-    String duuid,
-    AuthToken token,
+  Future<LocationOptions?> configure({
+    bool? share,
+    bool? debug,
+    String? duuid,
+    AuthToken? token,
     bool force = false,
-    LocationOptions options,
+    LocationOptions? options,
   });
 
   /// Request location update manually.
-  Future<Position> update();
+  Future<Position?> update();
 
   /// Push buffered positions to backend.
   /// Returns number of positions pushed.
@@ -126,11 +126,11 @@ abstract class LocationService extends Service {
   /// be created again.
   Future dispose();
 
-  static LatLng toLatLng(Position position) => position == null ? Defaults.origo : LatLng(position?.lat, position?.lon);
+  static LatLng toLatLng(Position? position) => position == null ? Defaults.origo : LatLng(position.lat!, position.lon!);
 
-  static Point toPoint(Position position) => utils.toPoint(toLatLng(position));
+  static Point toPoint(Position? position) => utils.toPoint(toLatLng(position));
 
-  static String toAccuracyName(LocationAccuracy value) {
+  static String toAccuracyName(LocationAccuracy? value) {
     switch (value) {
       case LocationAccuracy.lowest:
         return "Lavest";
@@ -151,26 +151,26 @@ abstract class LocationService extends Service {
     }
   }
 
-  static LocationService _singleton;
-  static LocationService get instance => _singleton;
+  static LocationService? _singleton;
+  static LocationService? get instance => _singleton;
   static bool get exists => _singleton?.disposed == false;
   static const String pref_location_debug = 'location_debug';
   static const String pref_location_manual = 'location_manual';
 
   factory LocationService({
-    LocationOptions options,
-    String duuid,
-    String token,
+    LocationOptions? options,
+    String? duuid,
+    String? token,
   }) {
     if (!exists) {
       _singleton = BackgroundGeolocationService(
         share: _singleton?.share,
         duuid: duuid ?? _singleton?.duuid,
-        token: token ?? _singleton?.token,
-        options: options ?? _singleton?.options,
+        token: token as AuthToken? ?? _singleton?.token,
+        options: (options ?? _singleton?.options!)!,
       );
     }
-    return _singleton;
+    return _singleton!;
   }
 
   /// Send log to given [address]
@@ -216,11 +216,11 @@ class LocationOptions {
 
   /// Tells service to track location also when app is terminated by OS
   ///
-  final bool locationAlways;
+  final bool? locationAlways;
 
   /// Tells service to track location only when app is in use
   ///
-  final bool locationWhenInUse;
+  final bool? locationWhenInUse;
 
   /// Tells service to use activity recognition service to optimize location tracking
   ///
@@ -239,7 +239,7 @@ class LocationOptions {
   /// Defines the desired accuracy that should be used to determine the location data.
   ///
   /// The default value for this field is [LocationAccuracy.best].
-  final LocationAccuracy accuracy;
+  final LocationAccuracy? accuracy;
 
   /// The minimum distance (measured in meters) a device must move horizontally before an update event is generated.
   ///
@@ -249,7 +249,7 @@ class LocationOptions {
   /// Uses [FusedLocationProviderClient] by default and falls back to [LocationManager] when set to true.
   ///
   /// On platforms other then Android this parameter is ignored.
-  final bool forceAndroidLocationManager;
+  final bool? forceAndroidLocationManager;
 
   /// The desired interval for active location updates, in milliseconds (Android only).
   ///
@@ -257,15 +257,15 @@ class LocationOptions {
   final int timeInterval;
 
   LocationOptions copyWith({
-    bool debug,
-    int timeInterval,
-    int distanceFilter,
-    bool locationAlways,
-    bool locationWhenInUse,
-    bool activityRecognition,
-    bool locationStoreLocally,
-    bool locationAllowSharing,
-    bool forceAndroidLocationManager,
+    bool? debug,
+    int? timeInterval,
+    int? distanceFilter,
+    bool? locationAlways,
+    bool? locationWhenInUse,
+    bool? activityRecognition,
+    bool? locationStoreLocally,
+    bool? locationAllowSharing,
+    bool? forceAndroidLocationManager,
     LocationAccuracy accuracy = LocationAccuracy.best,
   }) =>
       LocationOptions(
@@ -338,7 +338,7 @@ class LocationOptions {
 
 abstract class LocationEvent {
   LocationEvent(this.stackTrace);
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
   final DateTime timestamp = DateTime.now();
 }
 
@@ -348,9 +348,9 @@ class CreateEvent extends LocationEvent {
     this.duuid,
     this.maxEvents,
   }) : super(StackTrace.current);
-  final bool share;
-  final String duuid;
-  final int maxEvents;
+  final bool? share;
+  final String? duuid;
+  final int? maxEvents;
 
   @override
   String toString() => '$runtimeType\n'
@@ -366,8 +366,8 @@ class ConfigureEvent extends LocationEvent {
     this.duuid,
     this.options,
   ) : super(StackTrace.current);
-  final String duuid;
-  final LocationOptions options;
+  final String? duuid;
+  final LocationOptions? options;
 
   @override
   String toString() => '$runtimeType\n'
@@ -383,8 +383,8 @@ class PositionEvent extends LocationEvent {
     this.historic = false,
     this.heartbeat = false,
   }) : super(StackTrace.current);
-  final Position position;
-  final bool sample;
+  final Position? position;
+  final bool? sample;
   final bool historic;
   final bool heartbeat;
 
@@ -396,22 +396,22 @@ class PositionEvent extends LocationEvent {
         'Historic: $historic,\n'
         'Heartbeat: $heartbeat,\n'
         'Position: {\n'
-        '   lat: ${position.lat}\n'
-        '   lon: ${position.lon}\n'
-        '   alt: ${position.alt}\n'
-        '   acc: ${position.acc}\n'
-        '   speed: ${position.speed}\n'
-        '   heading: ${position.bearing}\n'
-        '   isMoving: ${position.isMoving}\n'
-        '   activity: ${position.activity}\n'
-        '   time: ${position.timestamp.toIso8601String()}\n'
+        '   lat: ${position!.lat}\n'
+        '   lon: ${position!.lon}\n'
+        '   alt: ${position!.alt}\n'
+        '   acc: ${position!.acc}\n'
+        '   speed: ${position!.speed}\n'
+        '   heading: ${position!.bearing}\n'
+        '   isMoving: ${position!.isMoving}\n'
+        '   activity: ${position!.activity}\n'
+        '   time: ${position!.timestamp!.toIso8601String()}\n'
         '}';
   }
 }
 
 class SubscribeEvent extends LocationEvent {
   SubscribeEvent(this.options) : super(StackTrace.current);
-  final LocationOptions options;
+  final LocationOptions? options;
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()},\n'
@@ -420,7 +420,7 @@ class SubscribeEvent extends LocationEvent {
 
 class UnsubscribeEvent extends LocationEvent {
   UnsubscribeEvent(this.options) : super(StackTrace.current);
-  final LocationOptions options;
+  final LocationOptions? options;
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()},\n'
@@ -446,10 +446,10 @@ class ProviderChangeEvent extends LocationEvent {
     this.network,
     this.enabled,
   }) : super(StackTrace.current);
-  final bool gps;
-  final bool network;
-  final bool enabled;
-  final String status;
+  final bool? gps;
+  final bool? network;
+  final bool? enabled;
+  final String? status;
 
   @override
   String toString() => '$runtimeType\n'
@@ -461,15 +461,15 @@ class ProviderChangeEvent extends LocationEvent {
 }
 
 class ActivityChangeEvent extends LocationEvent {
-  final Position position;
+  final Position? position;
 
   ActivityChangeEvent(this.position) : super(StackTrace.current);
 
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()},\n'
-      'IsMoving: ${position.isMoving},\n'
-      'Activity: ${position.activity},\n'
+      'IsMoving: ${position!.isMoving},\n'
+      'Activity: ${position!.activity},\n'
       'Position: $position';
 }
 
@@ -486,10 +486,10 @@ class PushEvent extends LocationEvent {
 
 class HttpServiceEvent extends LocationEvent {
   HttpServiceEvent(this.url, this.options, this.status, this.reason) : super(null);
-  final String url;
-  final int status;
-  final String reason;
-  final LocationOptions options;
+  final String? url;
+  final int? status;
+  final String? reason;
+  final LocationOptions? options;
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()}\n'
@@ -502,7 +502,7 @@ class HttpServiceEvent extends LocationEvent {
 }
 
 class ClearEvent extends LocationEvent {
-  final Position position;
+  final Position? position;
 
   ClearEvent(this.position) : super(StackTrace.current);
 
@@ -514,7 +514,7 @@ class ClearEvent extends LocationEvent {
 class ErrorEvent extends LocationEvent {
   ErrorEvent(this.options, this.error, StackTrace stackTrace) : super(stackTrace);
   final Object error;
-  final LocationOptions options;
+  final LocationOptions? options;
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()}\n'

@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'Point.dart';
@@ -10,7 +8,7 @@ part of 'Point.dart';
 
 Point _$PointFromJson(Map json) {
   return Point(
-    coordinates: coordsFromJson(json['coordinates'] as List),
+    coordinates: coordsFromJson(json['coordinates'] as List?),
   );
 }
 

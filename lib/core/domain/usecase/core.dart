@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/error_handler.dart';
@@ -19,7 +19,7 @@ abstract class UseCase<E, T, P> {
   });
 
   /// Value returned on failure
-  final E failure;
+  final E? failure;
 
   /// Flag controlling
   /// if concurrent executions
@@ -53,7 +53,7 @@ abstract class UseCase<E, T, P> {
     if (pending == 1 && isModal) {
       _isModalOpen = true;
       showDialog(
-        context: NavigationService().overlay.context,
+        context: NavigationService().overlay!.context,
         builder: (context) => ProgressPage(),
       ).then((_) => _isModalOpen = false);
     }
@@ -78,7 +78,7 @@ abstract class UseCase<E, T, P> {
   /// Execute use case checked.
   /// Returns [null] if operation fails.
   @protected
-  Future<Either<E, T>> call(P params) {
+  Future<Either<E?, T>>? call(P params) {
     try {
       if (_push() || isConcurrent) {
         return execute(params);
@@ -88,10 +88,10 @@ abstract class UseCase<E, T, P> {
     } finally {
       _pop();
     }
-    return Future.value(left<E, T>(failure));
+    return Future.value(left<E?, T>(failure));
   }
 
-  Future<Either<E, T>> execute(P params);
+  Future<Either<E, T>>? execute(P params);
 }
 
 class NoParams extends Equatable {
@@ -100,16 +100,16 @@ class NoParams extends Equatable {
 }
 
 class BlocParams<B extends Bloc, T> extends Equatable {
-  BlocParams(this.data, {B bloc}) : this.bloc = bloc ?? BlocProvider.of<B>(NavigationService().context);
+  BlocParams(this.data, {B? bloc}) : this.bloc = bloc ?? BlocProvider.of<B>(NavigationService().context!);
 
   @override
-  List<Object> get props => [data];
+  List<Object?> get props => [data];
 
   final B bloc;
   final T data;
-  OverlayState get overlay => navigation.overlay;
-  BuildContext get context => navigation.context;
-  BlocEventBus get bus => bloc is BaseBloc ? (bloc as BaseBloc).bus : null;
+  OverlayState? get overlay => navigation.overlay;
+  BuildContext? get context => navigation.context;
+  BlocEventBus? get bus => bloc is BaseBloc ? (bloc as BaseBloc).bus : null;
 
   /// Check if [context] and [overlay] is available
   bool get navigationAvailable => _navigation.context != null;
@@ -123,7 +123,7 @@ class BlocParams<B extends Bloc, T> extends Equatable {
 
   final NavigationService _navigation = NavigationService();
 
-  Future<T> pushReplacementNamed<T extends Object>(String path, {Object arguments}) =>
+  Future<T?> pushReplacementNamed<T extends Object>(String path, {Object? arguments}) =>
       navigation.pushReplacementNamed<T>(
         path,
         arguments: arguments,

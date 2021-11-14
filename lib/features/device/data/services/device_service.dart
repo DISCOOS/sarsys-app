@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,6 +15,7 @@ import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'device_service.chopper.dart';
 
 /// Service for consuming the devices endpoint
@@ -51,7 +52,7 @@ class DeviceService extends StatefulServiceDelegate<Device, DeviceModel>
   void dispose() {
     _controller.close();
     DeviceMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -69,7 +70,7 @@ enum DeviceMessageType {
 class DeviceMessage extends MessageModel {
   DeviceMessage(Map<String, dynamic> data) : super(data);
 
-  factory DeviceMessage.positionChanged(String uuid, List<Map<String, dynamic>> patches) => DeviceMessage({
+  factory DeviceMessage.positionChanged(String? uuid, List<Map<String, dynamic>> patches) => DeviceMessage({
         'type': enumName(DeviceMessageType.DevicePositionChanged),
         'data': {
           'uuid': uuid,
@@ -77,9 +78,9 @@ class DeviceMessage extends MessageModel {
         }
       });
 
-  DeviceMessageType get type {
+  DeviceMessageType? get type {
     final type = data.elementAt('type');
-    return DeviceMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return DeviceMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -88,13 +89,13 @@ abstract class DeviceServiceImpl extends StatefulService<Device, DeviceModel> {
   DeviceServiceImpl()
       : super(
           decoder: (json) => DeviceModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<DeviceModel>(value, remove: const [
+          reducer: (value) => JsonUtils.toJson<DeviceModel?>(value, remove: const [
             'position',
             'messages',
             'transitions',
           ]),
         );
-  static DeviceServiceImpl newInstance([ChopperClient client]) => _$DeviceServiceImpl(client);
+  static DeviceServiceImpl newInstance([ChopperClient? client]) => _$DeviceServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Device> state) => create(
@@ -104,7 +105,7 @@ abstract class DeviceServiceImpl extends StatefulService<Device, DeviceModel> {
 
   @Post()
   Future<Response<String>> create(
-    @Path() String uuid,
+    @Path() String? uuid,
     @Body() Device body,
   );
 
@@ -116,21 +117,21 @@ abstract class DeviceServiceImpl extends StatefulService<Device, DeviceModel> {
 
   @Patch(path: '{uuid}')
   Future<Response<StorageState<Device>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Device body,
   );
 
   @override
   Future<Response<StorageState<Device>>> onDelete(StorageState<Device> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Device>>);
 
   @Delete(path: '{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
-  Future<Response<PagedList<StorageState<Device>>>> onGetPage(int offset, int limit, List<String> options) => fetch();
+  Future<Response<PagedList<StorageState<Device>>>> onGetPage(int? offset, int? limit, List<String> options) => fetch();
 
   @Get()
   Future<Response<PagedList<StorageState<Device>>>> fetch();

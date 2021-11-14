@@ -85,7 +85,7 @@ class _AppDrawerState extends State<AppDrawer> {
                 final answer = await prompt(
                   context,
                   'Bekreftelse',
-                  user.isTrusted
+                  user!.isTrusted
                       ? 'Du logges nå ut. Vil du fortsette?'
                       : 'Du er innlogget med en bruker som krever at pinkoden slettes ved utlogging. Vil du logge ut?',
                 );
@@ -260,8 +260,8 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   Stack _buildHeader(BuildContext context, UserBloc bloc) {
-    final user = bloc.user;
-    final gravatar = Gravatar(user.email);
+    final user = bloc.user!;
+    final gravatar = Gravatar(user.email!);
     final url = gravatar.imageUrl(
       size: 100,
       defaultImage: GravatarImage.mp,
@@ -269,7 +269,7 @@ class _AppDrawerState extends State<AppDrawer> {
     );
     final avatar = Image.network(url);
     final roles = user.roles.toList();
-    roles.sort((UserRole e1, UserRole e2) => e1.index - e2.index);
+    roles.sort((UserRole? e1, UserRole? e2) => e1!.index - e2!.index);
     return Stack(
       children: <Widget>[
         UserAccountsDrawerHeader(
@@ -278,7 +278,7 @@ class _AppDrawerState extends State<AppDrawer> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           accountEmail: Text(
-            user.email,
+            user.email!,
             style: TextStyle(fontWeight: FontWeight.w400),
           ),
           currentAccountPicture: CircleAvatar(
@@ -310,7 +310,7 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  Widget _buildUserRoles(BuildContext context, List<UserRole> roles) {
+  Widget _buildUserRoles(BuildContext context, List<UserRole?> roles) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       child: Chip(
@@ -353,7 +353,7 @@ class _AppDrawerState extends State<AppDrawer> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              '${bloc.user.isTrusted ? translateSecurityMode(bloc.securityMode) : 'Begrenset'}',
+              '${bloc.user!.isTrusted ? translateSecurityMode(bloc.securityMode) : 'Begrenset'}',
               style: TextStyle(color: Colors.white38),
             ),
             Padding(
@@ -373,7 +373,7 @@ class _AppDrawerState extends State<AppDrawer> {
           title: "Bruksmodus og sikkerhet",
           content: bloc.isShared
               ? SecurityModeSharedDescription()
-              : SecurityModePersonalDescription(untrusted: bloc.user.isUntrusted),
+              : SecurityModePersonalDescription(untrusted: bloc.user!.isUntrusted),
         );
       },
     );

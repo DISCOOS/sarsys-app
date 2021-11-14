@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:io';
 
@@ -30,13 +30,13 @@ class FirstSetupScreen extends StatefulWidget {
 class _FirstSetupScreenState extends State<FirstSetupScreen> {
   final _permissionsKey = GlobalKey<PermissionSetupState>();
 
-  List<Widget> views;
+  List<Widget>? views;
 
   int _index = 0;
 
-  SecurityMode _mode = SecurityMode.personal;
+  SecurityMode? _mode = SecurityMode.personal;
 
-  String _idpHint = 'rodekors';
+  String? _idpHint = 'rodekors';
   final _idpHints = {
     'rodekors': 'Røde Kors Hjelpekorps',
   };
@@ -116,7 +116,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
     _index = 1;
   }
 
-  void _onSecuritySettingResponse(SecurityMode value) {
+  void _onSecuritySettingResponse(SecurityMode? value) {
     setState(() {
       _mode = value;
       _index = 0;
@@ -172,7 +172,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
           ),
           value: SecurityMode.personal,
           groupValue: _mode,
-          onChanged: (value) => _onSecuritySettingResponse(value),
+          onChanged: (dynamic value) => _onSecuritySettingResponse(value),
           secondary: IconButton(
             icon: Icon(Icons.info_outline),
             onPressed: () => alert(
@@ -191,7 +191,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
           ),
           value: SecurityMode.shared,
           groupValue: _mode,
-          onChanged: (value) => _onSecuritySettingResponse(value),
+          onChanged: (dynamic value) => _onSecuritySettingResponse(value),
           secondary: IconButton(
             icon: Icon(Icons.info_outline),
             onPressed: () => alert(
@@ -220,14 +220,14 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                       ),
                     ),
                     Expanded(
-                      child: buildDropdown<String>(
+                      child: buildDropdown<String?>(
                         value: _idpHint,
                         isDense: false,
                         items: _idpHints.keys
                             .map(
                               (idpHint) => DropdownMenuItem(
                                 value: idpHint,
-                                child: Text(_idpHints[idpHint]),
+                                child: Text(_idpHints[idpHint]!),
                               ),
                             )
                             .toList(),
@@ -244,19 +244,19 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
   }
 
   Widget _buildSettingPage({
-    @required String title,
-    @required String explanation,
-    @required Widget child,
+    required String title,
+    required String explanation,
+    required Widget child,
   }) {
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final titleStyle = textTheme.headline6.copyWith(
+    final titleStyle = textTheme.headline6!.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
       fontSize: SizeConfig.safeBlockHorizontal * 6,
     );
-    final explanationStyle = Theme.of(context).textTheme.caption.copyWith(
+    final explanationStyle = Theme.of(context).textTheme.caption!.copyWith(
           fontSize: SizeConfig.safeBlockHorizontal * 3.8,
         );
 

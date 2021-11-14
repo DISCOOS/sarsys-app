@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:convert';
 
@@ -22,13 +22,13 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 class MissionsPage extends StatefulWidget {
   final bool withActions;
-  final String query;
-  final bool Function(Unit unit) where;
-  final void Function(Unit unit) onSelection;
-  final Comparator<Unit> compareTo;
+  final String? query;
+  final bool Function(Unit? unit)? where;
+  final void Function(Unit unit)? onSelection;
+  final Comparator<Unit?>? compareTo;
 
   const MissionsPage({
-    Key key,
+    Key? key,
     this.withActions = true,
     this.onSelection,
     this.query,
@@ -42,9 +42,9 @@ class MissionsPage extends StatefulWidget {
 
 class MissionsPageState extends State<MissionsPage> {
   static const STATE = "missions_filter";
-  StreamGroup<dynamic> _group;
+  StreamGroup<dynamic>? _group;
 
-  Set<UnitStatus> _filter;
+  Set<UnitStatus>? _filter;
 
   @override
   void initState() {
@@ -60,7 +60,7 @@ class MissionsPageState extends State<MissionsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_group != null) _group.close();
+    if (_group != null) _group!.close();
     _group = StreamGroup.broadcast()
       ..add(context.read<UnitBloc>().stream)
       ..add(context.read<TrackingBloc>().stream)
@@ -69,7 +69,7 @@ class MissionsPageState extends State<MissionsPage> {
 
   @override
   void dispose() {
-    _group.close();
+    _group!.close();
     _group = null;
     super.dispose();
   }
@@ -85,7 +85,7 @@ class MissionsPageState extends State<MissionsPage> {
           child: Container(
 //            color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
-              stream: _group.stream,
+              stream: _group!.stream,
               initialData: context.read<UnitBloc>().state,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
@@ -94,7 +94,7 @@ class MissionsPageState extends State<MissionsPage> {
                     ? toRefreshable(
                         viewportConstraints,
                         message: snapshot.hasError
-                            ? snapshot.error
+                            ? snapshot.error as String?
                             : widget.query == null
                                 ? "Legg til oppdrag"
                                 : "Ingen oppdrag funnet",
@@ -108,19 +108,19 @@ class MissionsPageState extends State<MissionsPage> {
     );
   }
 
-  List<Unit> _filteredUnits() {
+  List<Unit?> _filteredUnits() {
     return context
         .read<UnitBloc>()
         .units
         .values
-        .where((unit) => _filter.contains(unit.status))
-        .where((unit) => widget.where == null || widget.where(unit))
-        .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
+        .where((unit) => _filter!.contains(unit!.status))
+        .where((unit) => widget.where == null || widget.where!(unit))
+        .where((unit) => widget.query == null || _prepare(unit!).contains(widget.query!.toLowerCase()))
         .toList()
           ..sort(
             (u1, u2) => widget.compareTo == null
-                ? u1.callsign.toLowerCase().compareTo(u2.callsign.toLowerCase())
-                : widget.compareTo(u1, u2),
+                ? u1!.callsign!.toLowerCase().compareTo(u2!.callsign!.toLowerCase())
+                : widget.compareTo!(u1, u2),
           );
   }
 
@@ -131,19 +131,19 @@ class MissionsPageState extends State<MissionsPage> {
       itemCount: units.length + 1,
       itemExtent: 72.0,
       itemBuilder: (context, index) {
-        return _buildUnit(units, index);
+        return _buildUnit(units as List<Unit?>, index);
       },
     );
   }
 
-  Widget _buildUnit(List<Unit> units, int index) {
+  Widget _buildUnit(List<Unit?> units, int index) {
     if (index == units.length) {
       return Center(
         child: Text("Antall oppdrag: $index"),
       );
     }
-    var unit = units[index];
-    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking.uuid];
+    var unit = units[index]!;
+    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking!.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && isCommander
@@ -161,7 +161,7 @@ class MissionsPageState extends State<MissionsPage> {
     );
   }
 
-  Widget _buildUnitTile(Unit unit, TrackingStatus status, Tracking tracking) {
+  Widget _buildUnitTile(Unit unit, TrackingStatus status, Tracking? tracking) {
     return Container(
       key: ObjectKey(unit.uuid),
       color: Colors.white,
@@ -216,7 +216,7 @@ class MissionsPageState extends State<MissionsPage> {
     if (widget.onSelection == null) {
       Navigator.pushNamed(context, UnitScreen.ROUTE, arguments: unit);
     } else {
-      widget.onSelection(unit);
+      widget.onSelection!(unit);
     }
   }
 
@@ -284,10 +284,10 @@ class MissionsPageState extends State<MissionsPage> {
 }
 
 class UnitAvatar extends StatelessWidget {
-  final Unit unit;
-  final Tracking tracking;
+  final Unit? unit;
+  final Tracking? tracking;
   const UnitAvatar({
-    Key key,
+    Key? key,
     this.unit,
     this.tracking,
   }) : super(key: key);
@@ -295,10 +295,10 @@ class UnitAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
-      backgroundColor: toUnitStatusColor(unit.status),
+      backgroundColor: toUnitStatusColor(unit!.status),
       child: Stack(
         children: <Widget>[
-          Center(child: Icon(toUnitIconData(unit.type))),
+          Center(child: Icon(toUnitIconData(unit!.type))),
           Positioned(
             left: 20,
             top: 20,
@@ -322,11 +322,11 @@ class UnitAvatar extends StatelessWidget {
   }
 }
 
-class MissionSearch extends SearchDelegate<Unit> {
+class MissionSearch extends SearchDelegate<Unit?> {
   static final _storage = Storage.secure;
   static const RECENT_KEY = "search/mission/recent";
 
-  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+  ValueNotifier<Set<String>?> _recent = ValueNotifier(null);
 
   MissionSearch() {
     _init();
@@ -369,9 +369,9 @@ class MissionSearch extends SearchDelegate<Unit> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return ValueListenableBuilder<Set<String>>(
+    return ValueListenableBuilder<Set<String>?>(
       valueListenable: _recent,
-      builder: (BuildContext context, Set<String> suggestions, Widget child) {
+      builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
         return _buildSuggestionList(
           context,
           suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))?.toList() ?? [],
@@ -388,7 +388,7 @@ class MissionSearch extends SearchDelegate<Unit> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
@@ -414,25 +414,25 @@ class MissionSearch extends SearchDelegate<Unit> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final recent = _recent.value.toSet()..add(query);
+    final recent = _recent.value!.toSet()..add(query);
     _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     return MissionsPage(query: query);
   }
 
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     buildSuggestions(context);
   }
 }
 
-Future<Unit> selectMission(
+Future<Unit?> selectMission(
   BuildContext context, {
-  String query,
-  bool where(Unit unit),
-  Comparator<Unit> compareTo,
+  String? query,
+  required bool where(Unit? unit),
+  Comparator<Unit?>? compareTo,
 }) async {
   return await showDialog<Unit>(
     context: context,

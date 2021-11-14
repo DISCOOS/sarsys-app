@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'device_model.dart';
@@ -10,26 +8,26 @@ part of 'device_model.dart';
 
 DeviceModel _$DeviceModelFromJson(Map json) {
   return DeviceModel(
-    uuid: json['uuid'] as String,
+    uuid: json['uuid'] as String?,
     type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
-    alias: json['alias'] as String,
-    number: json['number'] as String,
-    manual: json['manual'] as bool,
-    trackable: json['trackable'] as bool,
-    network: json['network'] as String,
-    networkId: json['networkId'] as String,
+    alias: json['alias'] as String?,
+    number: json['number'] as String?,
+    manual: json['manual'] as bool?,
+    trackable: json['trackable'] as bool?,
+    network: json['network'] as String?,
+    networkId: json['networkId'] as String?,
     allocatedTo: toIncidentRef(json['allocatedTo']),
     position: json['position'] == null
         ? null
-        : Position.fromJson((json['position'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : Position.fromJson(Map<String, dynamic>.from(json['position'] as Map)),
     status: _$enumDecodeNullable(_$DeviceStatusEnumMap, json['status']),
   );
 }
 
 Map<String, dynamic> _$DeviceModelToJson(DeviceModel instance) {
-  final val = <String, dynamic>{};
+  final val = <String, dynamic>{
+    'uuid': instance.uuid,
+  };
 
   void writeNotNull(String key, dynamic value) {
     if (value != null) {
@@ -37,7 +35,6 @@ Map<String, dynamic> _$DeviceModelToJson(DeviceModel instance) {
     }
   }
 
-  writeNotNull('uuid', instance.uuid);
   writeNotNull('position', instance.position?.toJson());
   writeNotNull('manual', instance.manual);
   writeNotNull('type', _$DeviceTypeEnumMap[instance.type]);
@@ -51,36 +48,41 @@ Map<String, dynamic> _$DeviceModelToJson(DeviceModel instance) {
   return val;
 }
 
-T _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
-T _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
+K? _$enumDecodeNullable<K, V>(
+  Map<K, V> enumValues,
   dynamic source, {
-  T unknownValue,
+  K? unknownValue,
 }) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
 }
 
 const _$DeviceTypeEnumMap = {

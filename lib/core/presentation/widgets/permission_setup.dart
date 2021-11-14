@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:io';
@@ -14,19 +14,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionSetup extends StatefulWidget {
-  PermissionSetup({Key key, this.onChanged}) : super(key: key);
+  PermissionSetup({Key? key, this.onChanged}) : super(key: key);
 
-  final ValueChanged<PermissionResponse> onChanged;
+  final ValueChanged<PermissionResponse>? onChanged;
   @override
   PermissionSetupState createState() => PermissionSetupState();
 }
 
 class PermissionSetupState extends State<PermissionSetup> {
-  PermissionController _permissions;
-  Future<PermissionStatus> _storageStatus;
-  Future<PermissionStatus> _locationAlwaysStatus;
-  Future<PermissionStatus> _locationWhenInUseStatus;
-  Future<PermissionStatus> _activityRecognitionStatus;
+  PermissionController? _permissions;
+  Future<PermissionStatus>? _storageStatus;
+  Future<PermissionStatus>? _locationAlwaysStatus;
+  Future<PermissionStatus>? _locationWhenInUseStatus;
+  Future<PermissionStatus>? _activityRecognitionStatus;
 
   bool get isStorageGranted => _storageGranted;
   bool _storageGranted = false;
@@ -52,53 +52,53 @@ class PermissionSetupState extends State<PermissionSetup> {
         onPrompt: _onPrompt,
       );
       // Track permission changes and update views
-      _permissions.responses.listen((response) async {
+      _permissions!.responses.listen((response) async {
         final Permission permission = response.request.permission;
         if (permission == Permission.locationAlways) {
           setState(() {
             _locationAlwaysStatus = Future.value(response.status);
-            _storageStatus ??= _permissions.check(_permissions.storageRequest);
-            _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
-            _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
+            _storageStatus ??= _permissions!.check(_permissions!.storageRequest);
+            _locationWhenInUseStatus ??= _permissions!.check(_permissions!.locationWhenInUseRequest);
+            _activityRecognitionStatus ??= _permissions!.check(_permissions!.activityRecognitionRequest);
           });
         } else if (permission == Permission.locationWhenInUse) {
           setState(() {
             _locationWhenInUseStatus = Future.value(response.status);
-            _storageStatus ??= _permissions.check(_permissions.storageRequest);
-            _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
-            _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
+            _storageStatus ??= _permissions!.check(_permissions!.storageRequest);
+            _locationAlwaysStatus ??= _permissions!.check(_permissions!.locationAlwaysRequest);
+            _activityRecognitionStatus ??= _permissions!.check(_permissions!.activityRecognitionRequest);
           });
         } else {
           if (permission == Permission.activityRecognition) {
             setState(() {
               _activityRecognitionStatus = Future.value(response.status);
-              _storageStatus ??= _permissions.check(_permissions.storageRequest);
-              _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
-              _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
+              _storageStatus ??= _permissions!.check(_permissions!.storageRequest);
+              _locationWhenInUseStatus ??= _permissions!.check(_permissions!.locationWhenInUseRequest);
+              _locationAlwaysStatus ??= _permissions!.check(_permissions!.locationAlwaysRequest);
             });
           } else if (permission == Permission.storage) {
             setState(() {
               _storageStatus = Future.value(response.status);
-              _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
-              _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
-              _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
+              _locationAlwaysStatus ??= _permissions!.check(_permissions!.locationAlwaysRequest);
+              _locationWhenInUseStatus ??= _permissions!.check(_permissions!.locationWhenInUseRequest);
+              _activityRecognitionStatus ??= _permissions!.check(_permissions!.activityRecognitionRequest);
             });
           }
         }
         if (widget.onChanged != null) {
-          widget.onChanged(response);
+          widget.onChanged!(response);
         }
       });
     }
-    _storageStatus = _permissions.check(_permissions.storageRequest);
-    _locationAlwaysStatus ??= _permissions.check(_permissions.locationAlwaysRequest);
-    _locationWhenInUseStatus ??= _permissions.check(_permissions.locationWhenInUseRequest);
-    _activityRecognitionStatus ??= _permissions.check(_permissions.activityRecognitionRequest);
+    _storageStatus = _permissions!.check(_permissions!.storageRequest);
+    _locationAlwaysStatus ??= _permissions!.check(_permissions!.locationAlwaysRequest);
+    _locationWhenInUseStatus ??= _permissions!.check(_permissions!.locationWhenInUseRequest);
+    _activityRecognitionStatus ??= _permissions!.check(_permissions!.activityRecognitionRequest);
   }
 
   @override
   void dispose() {
-    _permissions.dispose();
+    _permissions!.dispose();
     super.dispose();
   }
 
@@ -113,7 +113,7 @@ class PermissionSetupState extends State<PermissionSetup> {
         ? FutureBuilder<AndroidDeviceInfo>(
             future: DeviceInfoPlugin().androidInfo,
             builder: (context, snapshot) {
-              final isAndroid10 = snapshot.hasData ? snapshot.data.version.sdkInt > 28 : false;
+              final isAndroid10 = snapshot.hasData ? snapshot.data!.version.sdkInt > 28 : false;
               return snapshot.hasData ? _buildPermissions(isAndroid10) : _buildPermissions(false);
             })
         : _buildPermissions(true);
@@ -137,7 +137,7 @@ class PermissionSetupState extends State<PermissionSetup> {
         title: 'Tilgang til lagring',
         reason: 'For lagring av kartdata på eksternt sd-kort',
         status: _storageStatus,
-        request: _permissions.storageRequest,
+        request: _permissions!.storageRequest,
         onGranted: (value) => _storageGranted = value,
       );
 
@@ -145,7 +145,7 @@ class PermissionSetupState extends State<PermissionSetup> {
         title: 'Tilgang til posisjon',
         reason: 'For å finne deg selv i kartet og til sporing',
         status: _locationWhenInUseStatus,
-        request: _permissions.locationRequest,
+        request: _permissions!.locationRequest,
         onGranted: (value) => _locationWhenInUseGranted = value,
       );
 
@@ -153,7 +153,7 @@ class PermissionSetupState extends State<PermissionSetup> {
         title: 'Tilgang til posisjon når appen er i bruk',
         reason: 'For å finne deg selv i kartet og til sporing',
         status: _locationWhenInUseStatus,
-        request: _permissions.locationWhenInUseRequest,
+        request: _permissions!.locationWhenInUseRequest,
         onGranted: (value) => _locationWhenInUseGranted = value,
       );
 
@@ -163,7 +163,7 @@ class PermissionSetupState extends State<PermissionSetup> {
             'vises, for eksempel når telefonen bæres i '
             'lommen eller er låst',
         status: _locationAlwaysStatus,
-        request: _permissions.locationAlwaysRequest,
+        request: _permissions!.locationAlwaysRequest,
         onGranted: (value) => _locationWhenInUseGranted = value,
       );
 
@@ -172,16 +172,16 @@ class PermissionSetupState extends State<PermissionSetup> {
         reason: "Lokasjonstjenesten trenger denne tilgangen for å kunne "
             "spare batteri når appen ikke er i bevegelse",
         status: _activityRecognitionStatus,
-        request: _permissions.activityRecognitionRequest,
+        request: _permissions!.activityRecognitionRequest,
         onGranted: (value) => _activityRecognitionGranted = value,
       );
 
   ListTile _buildPermissionCheck({
-    @required String title,
-    @required String reason,
-    @required PermissionRequest request,
-    @required ValueSetter<bool> onGranted,
-    @required Future<PermissionStatus> status,
+    required String title,
+    required String reason,
+    required PermissionRequest request,
+    required ValueSetter<bool> onGranted,
+    required Future<PermissionStatus>? status,
   }) {
     return ListTile(
       title: Text(title),
@@ -200,7 +200,7 @@ class PermissionSetupState extends State<PermissionSetup> {
                         value: false,
                         onChanged: (value) async {
                           if (value) {
-                            await _permissions.ask(request);
+                            await _permissions!.ask(request);
                           }
                         },
                       )

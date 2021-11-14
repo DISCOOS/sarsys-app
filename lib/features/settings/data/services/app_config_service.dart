@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async' show Future;
 
@@ -27,11 +27,11 @@ abstract class AppConfigServiceImpl extends StatefulService<AppConfig, AppConfig
   AppConfigServiceImpl()
       : super(
           decoder: (json) => AppConfigModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<AppConfigModel>(value, remove: const [
+          reducer: (value) => JsonUtils.toJson<AppConfigModel?>(value, remove: const [
             'locationDebug',
           ]),
         );
-  static AppConfigServiceImpl newInstance([ChopperClient client]) => _$AppConfigServiceImpl(client);
+  static AppConfigServiceImpl newInstance([ChopperClient? client]) => _$AppConfigServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<AppConfig> state) => create(
@@ -41,7 +41,7 @@ abstract class AppConfigServiceImpl extends StatefulService<AppConfig, AppConfig
 
   @Post()
   Future<Response<String>> create(
-    @Path() String uuid,
+    @Path() String? uuid,
     @Body() AppConfig body,
   );
 
@@ -53,22 +53,22 @@ abstract class AppConfigServiceImpl extends StatefulService<AppConfig, AppConfig
 
   @Patch(path: '{uuid}')
   Future<Response<StorageState<AppConfig>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() AppConfig body,
   );
 
   @override
   Future<Response<StorageState<AppConfig>>> onDelete(StorageState<AppConfig> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<AppConfig>>);
 
   @Delete(path: '{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
   Future<Response<StorageState<AppConfig>>> onGetFromId(
-    String id, {
+    String? id, {
     List<String> options = const [],
   }) =>
       get(id);

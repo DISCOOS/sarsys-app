@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:io';
@@ -83,28 +83,28 @@ class MapWidget extends StatefulWidget {
   final bool readCenter;
   final bool readLayers;
 
-  final String writeKeySuffix;
+  final String? writeKeySuffix;
 
-  final TapCallback onTap;
-  final Operation operation;
-  final ActionCallback onMessage;
-  final ToolCallback onToolChange;
-  final PositionCallback onPositionChanged;
+  final TapCallback? onTap;
+  final Operation? operation;
+  final ActionCallback? onMessage;
+  final ToolCallback? onToolChange;
+  final PositionCallback? onPositionChanged;
   final MapWidgetController mapController;
 
-  final GestureTapCallback onOpenDrawer;
+  final GestureTapCallback? onOpenDrawer;
 
   /// Zoom map on given
-  final double zoom;
+  final double? zoom;
 
   /// Center map on given point [center]. If [fitBounds] is given [center] is overridden
-  final LatLng center;
+  final LatLng? center;
 
   /// Fit map to given bounds. If [fitBounds] is given [center] is overridden
-  final LatLngBounds fitBounds;
+  final LatLngBounds? fitBounds;
 
   /// If [fitBounds] is given, control who bounds is fitted with [fitBoundOptions]
-  final FitBoundsOptions fitBoundOptions;
+  final FitBoundsOptions? fitBoundOptions;
 
   /// Show retired units and personnel
   final bool showRetired;
@@ -116,10 +116,10 @@ class MapWidget extends StatefulWidget {
   final double withControlsOffset;
 
   /// [GlobalKey] for sharing map state between parent widgets
-  final GlobalKey sharedKey;
+  final GlobalKey? sharedKey;
 
   MapWidget({
-    Key key,
+    Key? key,
     this.zoom,
     this.center,
     this.operation,
@@ -155,9 +155,9 @@ class MapWidget extends StatefulWidget {
     this.onPositionChanged,
     this.onToolChange,
     this.onOpenDrawer,
-    Image placeholder,
-    MapController mapController,
-  })  : this.mapController = mapController ?? MapWidgetController(),
+    Image? placeholder,
+    MapController? mapController,
+  })  : this.mapController = mapController as MapWidgetController? ?? MapWidgetController(),
         super(key: key);
 
   @override
@@ -200,34 +200,34 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   final _uniqueMapKey = UniqueKey();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
-  BaseMap _currentBaseMap;
-  BaseMapService _baseMapService;
+  BaseMap? _currentBaseMap;
+  BaseMapService? _baseMapService;
 
-  LatLng _center;
-  LatLng _searchMatch;
-  double _zoom = Defaults.zoom;
+  LatLng? _center;
+  LatLng? _searchMatch;
+  double? _zoom = Defaults.zoom;
 
-  MapControls _mapControls;
-  MapWidgetController _mapController;
-  MapToolController _mapToolController;
-  MyLocationLayerController _locationController;
-  PermissionController _permissionController;
+  MapControls? _mapControls;
+  MapWidgetController? _mapController;
+  MapToolController? _mapToolController;
+  MyLocationLayerController? _locationController;
+  PermissionController? _permissionController;
 
   /// Conditionally set during initialization
-  Future<LatLng> _locationRequest;
+  Future<LatLng>? _locationRequest;
   final _subscriptions = <StreamSubscription>[];
 
-  ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
-  ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
+  ValueNotifier<MapControlState>? _isLocating = ValueNotifier(MapControlState());
+  ValueNotifier<MapControlState>? _isMeasuring = ValueNotifier(MapControlState());
 
-  Set<String> _useLayers;
-  List<LayerOptions> _fixedLayerOptions = [];
-  List<LayerOptions> _rotatedLayerOptions = [];
+  Set<String>? _useLayers;
+  List<LayerOptions?> _fixedLayerOptions = [];
+  List<LayerOptions?> _rotatedLayerOptions = [];
 
   // Prevent location updates after dispose
   bool _disposed = false;
 
-  bool _wakeLockWasOn;
+  bool? _wakeLockWasOn;
   bool _hasFitToBounds = false;
   bool _attemptRestore = true;
 
@@ -244,7 +244,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   bool _offline = false;
 
   /// Tile provider
-  ManagedCacheTileProvider _tileProvider;
+  ManagedCacheTileProvider? _tileProvider;
 
   @override
   void initState() {
@@ -255,8 +255,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   @override
   void dispose() {
     _disposed = true;
-    _mapController.cancel();
-    _mapController.progress.removeListener(_onMoveProgress);
+    _mapController!.cancel();
+    _mapController!.progress.removeListener(_onMoveProgress);
     _mapToolController?.dispose();
     _locationController?.dispose();
     _isLocating?.dispose();
@@ -361,7 +361,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   Future _ensureBaseMaps() async {
     if (_baseMapService == null) {
       _baseMapService = BaseMapService();
-      final controller = _ensurePermissionController();
+      final controller = _ensurePermissionController()!;
       final used = await controller.ask(
         controller.storageRequest.copyWith(
           onReady: () async => await _asyncBaseMapLoad(true),
@@ -377,18 +377,18 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void _initWakeLock() async {
     _wakeLockWasOn = await Wakelock.enabled;
     if (mounted) {
-      await Wakelock.toggle(enable: context.read<AppConfigBloc>().config.keepScreenOn);
+      await Wakelock.toggle(enable: context.read<AppConfigBloc>().config!.keepScreenOn);
     }
   }
 
   void _restoreWakeLock() async {
     final wakeLock = await Wakelock.enabled;
-    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(enable: _wakeLockWasOn);
+    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(enable: _wakeLockWasOn!);
   }
 
   Future _asyncBaseMapLoad(bool update) async {
     if (mounted) {
-      await _baseMapService.init();
+      await _baseMapService!.init();
       if (mounted && update) setState(() {});
     }
   }
@@ -406,10 +406,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     );
     _useLayers = _resolveLayers();
     if (_mapController != null) {
-      _mapController.progress.removeListener(_onMoveProgress);
+      _mapController!.progress.removeListener(_onMoveProgress);
     }
     _mapController = widget.mapController;
-    _mapController.progress.addListener(_onMoveProgress);
+    _mapController!.progress.addListener(_onMoveProgress);
   }
 
   void _update() {
@@ -417,16 +417,16 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _offline = (status == null || ConnectivityStatus.offline == status);
   }
 
-  void _setBaseMap(BaseMap map) {
+  void _setBaseMap(BaseMap? map) {
     _currentBaseMap = map;
   }
 
-  Set<String> _resolveLayers() {
+  Set<String>? _resolveLayers() {
     final layers = widget.withRead && widget.readLayers ? _readLayers() : _withLayers();
     return layers;
   }
 
-  Set<String> _readLayers() => FilterSheet.read(
+  Set<String>? _readLayers() => FilterSheet.read(
         context,
         STATE_FILTERS,
         defaultValue: _withLayers()..retainAll(DEFAULT_LAYERS_ENABLED),
@@ -441,28 +441,28 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
             context.read<OperationBloc>(),
             controller: _mapController,
             onMessage: widget.onMessage,
-            active: () => _useLayers.contains(LAYER_POI),
+            active: () => _useLayers!.contains(LAYER_POI),
           ),
           UnitTool(
             context.read<TrackingBloc>(),
             user: context.read<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
-            active: () => _useLayers.contains(LAYER_UNIT),
+            active: () => _useLayers!.contains(LAYER_UNIT),
           ),
           PersonnelTool(
             context.read<TrackingBloc>(),
-            user: context.read<UserBloc>().user,
+            user: context.read<UserBloc>().user!,
             controller: _mapController,
             onMessage: widget.onMessage,
-            active: () => _useLayers.contains(LAYER_PERSONNEL),
+            active: () => _useLayers!.contains(LAYER_PERSONNEL),
           ),
           DeviceTool(
             context.read<TrackingBloc>(),
             user: context.read<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
-            active: () => _useLayers.contains(LAYER_DEVICE),
+            active: () => _useLayers!.contains(LAYER_DEVICE),
           ),
           MyLocationTool(),
           PositionTool(
@@ -470,7 +470,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
             onMessage: widget.onMessage,
             onHide: () => setState(() => _searchMatch = null),
             onShow: (point) => setState(() => _searchMatch = point),
-            onCopy: (value) => setState(() => _searchFieldKey.currentState.setQuery(value)),
+            onCopy: (value) => setState(() => _searchFieldKey.currentState!.setQuery(value!)),
           ),
         ],
       );
@@ -484,15 +484,15 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         tickerProvider: this,
         mapController: widget.mapController,
         onTrackingChanged: _onTrackingChanged,
-        permissionController: _ensurePermissionController(),
+        permissionController: _ensurePermissionController()!,
       );
       _scheduleInitLocation((_) {
         _refreshOptions();
         _subscriptions.add(
-          _locationController.service.onEvent.where((event) => event is ConfigureEvent).listen((event) {
-            final following = _readState(STATE_FOLLOWING, defaultValue: false);
+          _locationController!.service!.onEvent.where((event) => event is ConfigureEvent).listen((event) {
+            final following = _readState(STATE_FOLLOWING, defaultValue: false)!;
             if (following) {
-              _locationController.goto(locked: true);
+              _locationController!.goto(locked: true);
               _updateLocationToolState(force: true);
             }
             _refreshOptions();
@@ -504,16 +504,16 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   void _scheduleInitLocation(ValueChanged<LatLng> callback) {
     if (_locationRequest == null) {
-      _locationRequest = _locationController.configure();
+      _locationRequest = _locationController!.configure();
       _subscriptions.add(
-        _locationRequest.asStream().listen((point) {
+        _locationRequest!.asStream().listen((point) {
           callback(point);
         }),
       );
     }
   }
 
-  PermissionController _ensurePermissionController() {
+  PermissionController? _ensurePermissionController() {
     _permissionController ??= PermissionController(
       configBloc: context.read<AppConfigBloc>(),
       onMessage: widget.onMessage,
@@ -522,7 +522,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   LatLng _ensureCenter() {
-    Position current = _tryCenterOnMe();
+    Position? current = _tryCenterOnMe();
     LatLng candidate = _centerFromIncident(current);
     /*
     if (_currentBaseMap?.bounds?.contains(candidate) == false) {
@@ -537,17 +537,17 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     return candidate;
   }
 
-  LatLng _centerFromIncident(Position current) {
+  LatLng _centerFromIncident(Position? current) {
     final candidate = widget.center ??
         (context.read<OperationBloc>()?.selected?.meetup != null
             ? toLatLng(context.read<OperationBloc>()?.selected?.meetup?.point)
             : null) ??
-        (current != null ? LatLng(current.lat, current.lon) : Defaults.origo);
+        (current != null ? LatLng(current.lat!, current.lon!) : Defaults.origo);
     return candidate;
   }
 
-  Position _tryCenterOnMe() {
-    final current = widget.withControlsLocateMe ? _locationController.current : null;
+  Position? _tryCenterOnMe() {
+    final current = widget.withControlsLocateMe ? _locationController!.current : null;
     if (widget.withControlsLocateMe && _center == null && current == null) {
       _scheduleInitLocation((location) {
         _refreshOptions();
@@ -564,7 +564,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       clipBehavior: Clip.none,
       children: [
         _buildMap(),
-        if (widget.withControls) _buildControls(),
+        if (widget.withControls) _buildControls()!,
         if (widget.withSearch) _buildSearchBar(),
       ],
     );
@@ -576,14 +576,14 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       key: _mapKey,
       mapController: _mapController,
       options: MapOptions(
-        zoom: _zoom,
+        zoom: _zoom!,
         center: _center,
         minZoom: _minZoom(),
         maxZoom: _maxZoom(),
         interactiveFlags: widget.interactive ? InteractiveFlag.all - InteractiveFlag.rotate : InteractiveFlag.none,
         // Ensure _center is inside given bounds
-        nePanBoundary: _currentBaseMap.bounds?.northEast,
-        swPanBoundary: _currentBaseMap.bounds?.southWest,
+        nePanBoundary: _currentBaseMap!.bounds?.northEast,
+        swPanBoundary: _currentBaseMap!.bounds?.southWest,
         onTap: (point) => _onTap(point),
         onPositionChanged: _onPositionChanged,
         onLongPress: (point) => _onLongPress(point),
@@ -598,8 +598,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
           MeasureLayer(),
         ],
       ),
-      layers: _setRotatedLayerOptions(),
-      nonRotatedLayers: _setFixedLayerOptions(),
+      layers: _setRotatedLayerOptions() as List<LayerOptions>,
+      nonRotatedLayers: _setFixedLayerOptions() as List<LayerOptions>,
     );
     return widget.interactive ? map : AbsorbPointer(child: map);
   }
@@ -626,13 +626,13 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   ///
   Key get _mapKey => widget.operation == null ? widget.sharedKey ?? _uniqueMapKey : ObjectKey(widget.operation);
 
-  bool get isFollowing => _isLocating.value.locked || _readState(STATE_FOLLOWING, defaultValue: false);
+  bool get isFollowing => _isLocating!.value.locked || _readState(STATE_FOLLOWING, defaultValue: false)!;
 
   void _fitToBoundsOnce() async {
     if (_hasFitToBounds == false) {
       if (!isFollowing && widget.fitBounds?.isValid == true) {
         // Listen for ready event
-        _mapController.onReady.then((_) => _fitBounds());
+        _mapController!.onReady.then(((_) => _fitBounds()));
       }
       // Only do this once per state instance
       _hasFitToBounds = true;
@@ -640,8 +640,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _fitBounds() {
-    _mapController.fitBounds(
-      widget.fitBounds,
+    _mapController!.fitBounds(
+      widget.fitBounds!,
       options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
     );
   }
@@ -650,45 +650,45 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     setState(() => {});
   }
 
-  List<LayerOptions> _setRotatedLayerOptions() {
+  List<LayerOptions?> _setRotatedLayerOptions() {
     _rotatedLayerOptions
       ..clear()
       ..addAll([
         _buildBaseMapLayer(),
-        if (_useLayers.contains(LAYER_DEVICE)) _buildDeviceOptions(),
-        if (_useLayers.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
-        if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
-        if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
+        if (_useLayers!.contains(LAYER_DEVICE)) _buildDeviceOptions(),
+        if (_useLayers!.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
+        if (_useLayers!.contains(LAYER_UNIT)) _buildUnitOptions(),
+        if (_useLayers!.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
       ]);
     return _rotatedLayerOptions;
   }
 
-  List<LayerOptions> _setFixedLayerOptions() {
+  List<LayerOptions?> _setFixedLayerOptions() {
     final tool = _mapToolController?.of<MeasureTool>();
     _fixedLayerOptions
       ..clear()
       ..addAll([
-        if (_searchMatch != null) _buildMatchOptions(_searchMatch),
+        if (_searchMatch != null) _buildMatchOptions(_searchMatch!),
         if (widget.withControlsLocateMe && _locationController?.isReady == true)
-          _locationController.build(
-            withTail: _useLayers.contains(LAYER_TRACKING),
+          _locationController!.build(
+            withTail: _useLayers!.contains(LAYER_TRACKING),
           ),
-        if (widget.withCoordsPanel && _useLayers.contains(LAYER_COORDS)) CoordinateLayerOptions(),
-        if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
+        if (widget.withCoordsPanel && _useLayers!.contains(LAYER_COORDS)) CoordinateLayerOptions(),
+        if (widget.withScaleBar && _useLayers!.contains(LAYER_SCALE)) _buildScaleBarOptions(),
         if (tool != null && tool.active()) MeasureLayerOptions(tool),
       ]);
     return _fixedLayerOptions;
   }
 
   TileLayerOptions _buildBaseMapLayer() => TileLayerOptions(
-        tms: _currentBaseMap.tms,
+        tms: _currentBaseMap!.tms!,
         retinaMode: useRetinaMode,
-        tileProvider: _tileProvider,
-        urlTemplate: _currentBaseMap.url,
+        tileProvider: _tileProvider!,
+        urlTemplate: _currentBaseMap!.url,
         tileFadeInStartWhenOverride: 1.0,
         overrideTilesWhenUrlChanges: true,
-        subdomains: _currentBaseMap.subdomains,
-        errorTileCallback: _tileProvider.onError,
+        subdomains: _currentBaseMap!.subdomains,
+        errorTileCallback: _tileProvider!.onError,
         minZoom: _currentBaseMap?.minZoom ?? Defaults.minZoom,
         maxZoom: _currentBaseMap?.maxZoom ?? Defaults.maxZoom,
         evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
@@ -697,17 +697,17 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       );
 
   bool get useRetinaMode =>
-      context.read<AppConfigBloc>().config.mapRetinaMode && MediaQuery.of(context).devicePixelRatio > 1.0;
+      context.read<AppConfigBloc>().config!.mapRetinaMode && MediaQuery.of(context).devicePixelRatio > 1.0;
 
   void _onTap(LatLng point) {
     if (_searchMatch == null) _clearSearchField();
-    if (_mapToolController != null) _mapToolController.onTap(context, point, _zoom, ScalebarOption.SCALES);
-    if (widget.onTap != null) widget.onTap(point);
+    if (_mapToolController != null) _mapToolController!.onTap(context, point, _zoom!, ScalebarOption.SCALES);
+    if (widget.onTap != null) widget.onTap!(point);
   }
 
   void _onLongPress(LatLng point) {
     if (_searchMatch == null) _clearSearchField();
-    if (_mapToolController != null) _mapToolController.onLongPress(context, point, _zoom, ScalebarOption.SCALES);
+    if (_mapToolController != null) _mapToolController!.onLongPress(context, point, _zoom!, ScalebarOption.SCALES);
   }
 
   ScalebarOption _buildScaleBarOptions() {
@@ -724,7 +724,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     final size = MediaQuery.of(context).size;
     final orientation = MediaQuery.of(context).orientation;
     final maxWidth = orientation != Orientation.landscape ||
-            _searchFieldKey.currentState != null && _searchFieldKey.currentState.hasFocus
+            _searchFieldKey.currentState != null && _searchFieldKey.currentState!.hasFocus
         ? size.width + (orientation == Orientation.landscape ? -56.0 : 0.0)
         : math.min(size.width, size.height) * 0.7;
     return SafeArea(
@@ -738,15 +738,15 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
               key: _searchFieldKey,
               zoom: _zoom,
               mapController: _mapController,
-              onError: (message) => widget.onMessage(message),
+              onError: (message) => widget.onMessage!(message),
               onMatch: _onSearchMatch,
               onCleared: _onSearchCleared,
               prefixIcon: IconButton(
                 icon: Icon(Icons.menu),
                 onPressed: () {
-                  _searchFieldKey.currentState.clear();
+                  _searchFieldKey.currentState!.clear();
                   if (widget.onOpenDrawer != null) {
-                    widget.onOpenDrawer();
+                    widget.onOpenDrawer!();
                   }
                 },
               ),
@@ -757,7 +757,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildControls() {
+  Widget? _buildControls() {
     if (_mapControls == null) {
       _mapControls = MapControls(
         top: widget.withControlsOffset,
@@ -777,15 +777,15 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
             MapControl(
               icon: Icons.add,
               onPressed: () {
-                _zoom = _writeState(STATE_ZOOM, math.min(_zoom + 1, _maxZoom()));
-                _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
+                _zoom = _writeState(STATE_ZOOM, math.min(_zoom! + 1, _maxZoom()));
+                _mapController!.animatedMove(_center, _zoom, this, milliSeconds: 250);
               },
             ),
             MapControl(
               icon: Icons.remove,
               onPressed: () {
-                _zoom = _writeState(STATE_ZOOM, math.max(_zoom - 1, _minZoom()));
-                _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
+                _zoom = _writeState(STATE_ZOOM, math.max(_zoom! - 1, _minZoom()));
+                _mapController!.animatedMove(_center, _zoom, this, milliSeconds: 250);
               },
             )
           ],
@@ -794,11 +794,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
               icon: Icons.gps_fixed,
               listenable: _isLocating,
               onPressed: () {
-                _locationController.goto();
+                _locationController!.goto();
                 _writeState(STATE_FOLLOWING, false);
               },
               onLongPress: () {
-                _locationController.goto(locked: true);
+                _locationController!.goto(locked: true);
                 _writeState(STATE_FOLLOWING, true);
               },
             ),
@@ -811,23 +811,23 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
                   icon: MdiIcons.mapMarkerPlus,
                   state: MapControlState(),
                   onPressed: () {
-                    _mapToolController.of<MeasureTool>().add(_center);
+                    _mapToolController!.of<MeasureTool>().add(_center);
                   },
                 ),
                 MapControl(
                   icon: MdiIcons.mapMarkerMinus,
                   state: MapControlState(),
                   onPressed: () {
-                    _mapToolController.of<MeasureTool>().remove();
+                    _mapToolController!.of<MeasureTool>().remove();
                   },
                 )
               ],
               onPressed: () {
-                final tool = _mapToolController.of<MeasureTool>();
+                final tool = _mapToolController!.of<MeasureTool>();
                 tool.state = !tool.state;
                 tool.init();
-                _isMeasuring.value = MapControlState(toggled: tool.active());
-                if (widget.onToolChange != null) widget.onToolChange(tool);
+                _isMeasuring!.value = MapControlState(toggled: tool.active());
+                if (widget.onToolChange != null) widget.onToolChange!(tool);
               },
             ),
         ],
@@ -843,12 +843,12 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     return useRetinaMode ? zoom - 1 : zoom;
   }
 
-  POILayerOptions _buildPoiOptions() {
+  POILayerOptions? _buildPoiOptions() {
     return widget.operation == null
         ? null
         : POILayerOptions(
             context.read<OperationBloc>(),
-            ouuid: widget.operation.uuid,
+            ouuid: widget.operation!.uuid,
             align: AnchorAlign.top,
             icon: Icon(
               Icons.location_on,
@@ -863,7 +863,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     return DeviceLayerOptions(
       bloc: context.read<TrackingBloc>(),
       onMessage: widget.onMessage,
-      showTail: _useLayers.contains(LAYER_TRACKING),
+      showTail: _useLayers!.contains(LAYER_TRACKING),
     );
   }
 
@@ -872,7 +872,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       bloc: context.read<TrackingBloc>(),
       onMessage: widget.onMessage,
       showRetired: widget.showRetired,
-      showTail: _useLayers.contains(LAYER_TRACKING),
+      showTail: _useLayers!.contains(LAYER_TRACKING),
     );
   }
 
@@ -881,7 +881,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       bloc: context.read<TrackingBloc>(),
       onMessage: widget.onMessage,
       showRetired: widget.showRetired,
-      showTail: _useLayers.contains(LAYER_TRACKING),
+      showTail: _useLayers!.contains(LAYER_TRACKING),
     );
   }
 
@@ -909,11 +909,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void _onPositionChanged(MapPosition position, bool hasGesture) {
     var center = position.center;
     if (hasGesture) {
-      _zoom = _writeState(STATE_ZOOM, _mapController.zoom);
+      _zoom = _writeState(STATE_ZOOM, _mapController!.zoom);
       if (widget.withControlsLocateMe) {
-        if (_locationController.isLocked) {
+        if (_locationController!.isLocked) {
           center = _center;
-          _mapController.move(_center, _zoom);
+          _mapController!.move(_center!, _zoom!);
         }
       }
     }
@@ -921,14 +921,14 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       _updateLocationToolState();
     }
     _center = _writeState(STATE_CENTER, center);
-    if (widget.onPositionChanged != null) widget.onPositionChanged(position, hasGesture);
+    if (widget.onPositionChanged != null) widget.onPositionChanged!(position, hasGesture);
   }
 
   void _updateLocationToolState({bool force = false}) {
-    if (force || _locationController.isLocated != _isLocating.value?.toggled) {
-      _isLocating.value = MapControlState(
-        toggled: _locationController.isLocated,
-        locked: _locationController.isLocked,
+    if (force || _locationController!.isLocated != _isLocating!.value?.toggled) {
+      _isLocating!.value = MapControlState(
+        toggled: _locationController!.isLocated,
+        locked: _locationController!.isLocked,
       );
     }
   }
@@ -937,11 +937,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _searchFieldKey?.currentState?.clear();
   }
 
-  void _onSearchMatch(LatLng point) {
+  void _onSearchMatch(LatLng? point) {
     _searchMatch = point;
     _refreshOptions();
     _locationController?.stop();
-    _mapController.animatedMove(point, _zoom, this);
+    _mapController!.animatedMove(point, _zoom, this);
   }
 
   void _onSearchCleared() {
@@ -981,7 +981,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   List<Widget> _toBaseMapCards(BuildContext context) {
     final List<Widget> _cards = [];
 
-    for (BaseMap map in _baseMapService.baseMaps) {
+    for (BaseMap map in _baseMapService!.baseMaps) {
       _cards.add(
         GestureDetector(
           child: Center(child: BaseMapCard(map: map)),
@@ -993,10 +993,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _onBaseMapChanged(BaseMap map) {
-    if (_zoom > (map.maxZoom ?? 1.0) || _zoom < (map.minZoom ?? 20.0)) {
-      _zoom = _writeState(STATE_ZOOM, math.min(_zoom, map.maxZoom ?? 20.0));
-      _zoom = _writeState(STATE_ZOOM, math.max(_zoom, map.minZoom ?? 1.0));
-      _mapController.move(_center, _zoom);
+    if (_zoom! > (map.maxZoom ?? 1.0) || _zoom! < (map.minZoom ?? 20.0)) {
+      _zoom = _writeState(STATE_ZOOM, math.min(_zoom!, map.maxZoom ?? 20.0));
+      _zoom = _writeState(STATE_ZOOM, math.max(_zoom!, map.minZoom ?? 1.0));
+      _mapController!.move(_center!, _zoom!);
     }
 
     _setBaseMap(_writeState(STATE_BASE_MAP, map));
@@ -1006,7 +1006,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   void _onTrackingChanged(bool isLocated, bool isLocked) {
     if (_disposed) return;
-    _isLocating.value = MapControlState(
+    _isLocating!.value = MapControlState(
       toggled: isLocated,
       locked: isLocked,
     );
@@ -1050,11 +1050,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _onMoveProgress() {
-    _zoom = _writeState(STATE_ZOOM, _mapController.progress.value.zoom);
-    _center = _writeState(STATE_CENTER, _mapController.progress.value.center);
+    _zoom = _writeState(STATE_ZOOM, _mapController!.progress.value.zoom);
+    _center = _writeState(STATE_CENTER, _mapController!.progress.value.center);
   }
 
-  T _readState<T>(String identifier, {T defaultValue, bool read = true, T orElse}) {
+  T? _readState<T>(String identifier, {T? defaultValue, bool read = true, T? orElse}) {
     if (widget.withRead && read) {
       final model = getPageState<MapWidgetStateModel>(
         context,
@@ -1063,15 +1063,15 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       );
       switch (identifier) {
         case STATE_CENTER:
-          return model?.center ?? defaultValue;
+          return model?.center as T? ?? defaultValue;
         case STATE_ZOOM:
-          return model?.zoom ?? defaultValue;
+          return model?.zoom as T? ?? defaultValue;
         case STATE_BASE_MAP:
-          return model?.baseMap ?? defaultValue;
+          return model?.baseMap as T? ?? defaultValue;
         case STATE_FOLLOWING:
-          return model?.following ?? defaultValue;
+          return model?.following as T? ?? defaultValue;
         case STATE_FILTERS:
-          return model?.filters ?? defaultValue;
+          return model?.filters as T? ?? defaultValue;
         default:
           throw '_writeState: Unexpected identifier $identifier';
       }
@@ -1088,31 +1088,31 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       );
       switch (identifier) {
         case STATE_CENTER:
-          model = model.cloneWith(
+          model = model!.cloneWith(
             center: value as LatLng,
             incident: widget.operation?.uuid,
           );
           break;
         case STATE_ZOOM:
-          model = model.cloneWith(
+          model = model!.cloneWith(
             zoom: value as double,
             incident: widget.operation?.uuid,
           );
           break;
         case STATE_BASE_MAP:
-          model = model.cloneWith(
+          model = model!.cloneWith(
             baseMap: value as BaseMap,
             incident: widget.operation?.uuid,
           );
           break;
         case STATE_FOLLOWING:
-          model = model.cloneWith(
+          model = model!.cloneWith(
             following: value as bool,
             incident: widget.operation?.uuid,
           );
           break;
         case STATE_FILTERS:
-          model = model.cloneWith(
+          model = model!.cloneWith(
             filters: value as List<String>,
             incident: widget.operation?.uuid,
           );
@@ -1131,8 +1131,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       center: _center,
       ouuid: widget.operation?.uuid,
       baseMap: _currentBaseMap,
-      filters: _readLayers().toList(),
-      following: _isLocating.value.locked,
+      filters: _readLayers()!.toList(),
+      following: _isLocating!.value.locked,
     );
   }
 }
@@ -1143,35 +1143,35 @@ class MapWidgetController extends MapControllerImpl {
 
   final StreamRequestQueue _queue = StreamRequestQueue();
 
-  AnimationController _controller;
+  AnimationController? _controller;
   bool get isAnimating => _controller != null;
 
   void cancel() {
     if (_controller != null) {
-      _controller.dispose();
+      _controller!.dispose();
       _controller = null;
     }
   }
 
   /// Move to given point and zoom
-  void animatedMove(LatLng point, double zoom, TickerProvider provider,
-      {int milliSeconds: 500, void onMove(LatLng point)}) {
+  void animatedMove(LatLng? point, double? zoom, TickerProvider? provider,
+      {int milliSeconds: 500, void onMove(LatLng? point)?}) {
     if (!isAnimating) {
       _queue.add(StreamRequest(execute: () {
         // Create some tweens. These serve to split up the transition from one location to another.
         // In our case, we want to split the transition be<tween> our current map center and the destination.
-        final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
+        final _latTween = Tween<double>(begin: center.latitude, end: point!.latitude);
         final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
         final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
 
         // Create a animation controller that has a duration and a TickerProvider.
-        _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
+        _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider!);
 
         // The animation determines what path the animation will take. You can try different Curves values, although I found
         // fastOutSlowIn to be my favorite.
-        Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
+        Animation<double> animation = CurvedAnimation(parent: _controller!, curve: Curves.fastOutSlowIn);
 
-        _controller.addListener(() {
+        _controller!.addListener(() {
           final state = MapMoveState(
             LatLng(
               _latTween.evaluate(animation),
@@ -1179,7 +1179,7 @@ class MapWidgetController extends MapControllerImpl {
             ),
             _zoomTween.evaluate(animation),
           );
-          move(state.center, state.zoom);
+          move(state.center!, state.zoom!);
           progress.value = state;
           if (onMove != null) onMove(state.center);
         });
@@ -1189,7 +1189,7 @@ class MapWidgetController extends MapControllerImpl {
             cancel();
           }
         });
-        _controller.forward();
+        _controller!.forward();
         return Future.value(
           StreamResult.none(),
         );
@@ -1199,8 +1199,8 @@ class MapWidgetController extends MapControllerImpl {
 }
 
 class MapMoveState {
-  final LatLng center;
-  final double zoom;
+  final LatLng? center;
+  final double? zoom;
 
   MapMoveState(this.center, this.zoom);
 

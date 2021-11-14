@@ -1,7 +1,8 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -18,7 +19,7 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
     implements DeviceRepository {
   DeviceRepositoryImpl(
     DeviceService service, {
-    @required ConnectivityService connectivity,
+    required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
@@ -31,15 +32,15 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   /// Get [Device.uuid] from [value]
   @override
   String toKey(Device value) {
-    return value?.uuid;
+    return value!.uuid;
   }
 
   /// Create [Device] from json
-  Device fromJson(Map<String, dynamic> json) => DeviceModel.fromJson(json);
+  Device fromJson(Map<String, dynamic>? json) => DeviceModel.fromJson(json!);
 
   /// Load all devices
   Future<Iterable<Device>> load({
-    Completer<Iterable<Device>> onRemote,
+    Completer<Iterable<Device>>? onRemote,
   }) async {
     await prepare();
     return _load(
@@ -55,12 +56,12 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
           ? length
           : values
               .where(
-                (device) => !exclude.contains(device.status),
+                (device) => !exclude.contains(device!.status),
               )
               .length;
 
-  Iterable<Device> _load({Completer<Iterable<Device>> onRemote}) {
-    return requestQueue.load(
+  Iterable<Device> _load({Completer<Iterable<Device>>? onRemote}) {
+    return requestQueue!.load(
       service.getList,
       shouldEvict: true,
       onResult: onRemote,
@@ -68,13 +69,13 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   }
 
   @override
-  Future<Iterable<Device>> onReset({Iterable<Device> previous}) => Future.value(_load());
+  Future<Iterable<Device>> onReset({Iterable<Device>? previous}) => Future.value(_load());
 
   @override
   Future<StorageState<Device>> onCreate(StorageState<Device> state) async {
     var response = await service.create(state);
     if (response.isOK) {
-      return response.body;
+      return response.body!;
     }
     throw DeviceServiceException(
       'Failed to create Device ${state.value}',
@@ -84,7 +85,7 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   }
 
   @override
-  Future<StorageState<Device>> onUpdate(StorageState<Device> state) async {
+  Future<StorageState<Device>?> onUpdate(StorageState<Device> state) async {
     var response = await service.update(state);
     if (response.isOK) {
       return response.body;
@@ -97,8 +98,8 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   }
 
   @override
-  Future<StorageState<Device>> onDelete(StorageState<Device> state) async {
-    var response = await service.delete(state);
+  Future<StorageState<Device>?> onDelete(StorageState<Device> state) async {
+    ServiceResponse<StorageState<Device>> response = await service.delete(state);
     if (response.isOK) {
       return response.body;
     }

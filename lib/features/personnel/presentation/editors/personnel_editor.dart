@@ -1,6 +1,9 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
+import 'package:SarSys/features/affiliation/data/models/division_model.dart';
+import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/FleetMap.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:flutter/material.dart';
@@ -31,23 +34,23 @@ import 'package:SarSys/features/tracking/presentation/widgets/position_field.dar
 
 class PersonnelEditor extends StatefulWidget {
   const PersonnelEditor({
-    Key key,
+    Key? key,
     this.personnel,
     this.affiliation,
     this.devices = const [],
     this.status = PersonnelStatus.alerted,
   }) : super(key: key);
 
-  final Personnel personnel;
-  final Affiliation affiliation;
-  final Iterable<Device> devices;
+  final Personnel? personnel;
+  final Affiliation? affiliation;
+  final Iterable<Device>? devices;
 
   final PersonnelStatus status;
 
   @override
   _PersonnelEditorState createState() => _PersonnelEditorState();
 
-  static String findPersonnelPhone(BuildContext context, Personnel personnel) {
+  static String? findPersonnelPhone(BuildContext context, Personnel? personnel) {
     var phone = personnel?.phone;
     if (personnel != null && phone == null) {
       if (personnel?.tracking != null) {
@@ -57,9 +60,9 @@ class PersonnelEditor extends StatefulWidget {
           exclude: [],
         ).toList();
         final userId = personnel?.person?.userId;
-        final apps = devices.where((d) => d.type == DeviceType.app).where((a) => a.number != null).toList();
+        final apps = devices.where((d) => d!.type == DeviceType.app).where((a) => a!.number != null).toList();
         if (apps.isNotEmpty) {
-          phone = apps.firstWhere((a) => a.networkId == userId, orElse: () => apps.first)?.number;
+          phone = apps.firstWhere((a) => a!.networkId == userId, orElse: () => apps.first)?.number;
         }
       }
     }
@@ -78,9 +81,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   final TextEditingController _lnameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
-  List<Device> _devices;
-  FleetMap fleetMap;
-  ValueNotifier<String> _editedName = ValueNotifier(null);
+  List<Device>? _devices;
+  FleetMap? fleetMap;
+  ValueNotifier<String?> _editedName = ValueNotifier(null);
 
   bool get managed => widget.personnel?.userId != null;
 
@@ -263,17 +266,17 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   AffiliationBloc get affiliationBloc => context.read<AffiliationBloc>();
-  Affiliation _currentAffiliation() => widget.affiliation ?? affiliationBloc.repo[widget.personnel?.affiliation?.uuid];
+  Affiliation _currentAffiliation() => widget.affiliation ?? affiliationBloc.repo[widget.personnel?.affiliation.uuid] ?? AffiliationModel();
 
   Affiliation _ensureAffiliation() {
     final affiliation = _affiliationKey?.currentState?.save() ?? _currentAffiliation();
     if (affiliation == null) {
-      final use = affiliationBloc.findUserAffiliation();
+      final use = affiliationBloc.findUserAffiliation()!;
       if (!use.isEmpty) {
         return AffiliationModel(
-          org: use.org,
-          div: use.div,
-          dep: use.dep,
+          org: use.org as AggregateRef<OrganisationModel>?,
+          div: use.div as AggregateRef<DivisionModel>?,
+          dep: use.dep as AggregateRef<DepartmentModel>?,
         );
       }
     }
@@ -283,7 +286,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   Widget _buildNameField() {
     return _buildDecorator(
       label: "Kortnavn",
-      child: ValueListenableBuilder<String>(
+      child: ValueListenableBuilder<String?>(
           valueListenable: _editedName,
           builder: (context, name, _) {
             return _buildReadOnlyText(context, name ?? _defaultName() ?? '');
@@ -291,7 +294,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
-  Text _buildReadOnlyText(BuildContext context, String text) {
+  Text _buildReadOnlyText(BuildContext context, String? text) {
     return Text(
       text ?? '-',
       style: Theme.of(context).textTheme.subtitle2,
@@ -299,9 +302,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Widget _buildDecorator({
-    String label,
-    Widget child,
-    VoidCallback onTap,
+    String? label,
+    Widget? child,
+    VoidCallback? onTap,
   }) {
     return GestureDetector(
       child: InputDecorator(
@@ -319,7 +322,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
-  String _defaultName() => widget?.personnel?.formal;
+  String? _defaultName() => widget?.personnel?.formal;
 
   Widget _buildFNameField() {
     return managed
@@ -397,29 +400,28 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           );
   }
 
-  String _validateName(String fname, String lname) {
-    Personnel personnel = context
+  String? _validateName(String? fname, String lname) {
+    Personnel? personnel = context
         .read<PersonnelBloc>()
         .repo
         .map
         .values
         .where(
-          (personnel) => PersonnelStatus.retired != personnel.status,
+          (personnel) => PersonnelStatus.retired != personnel!.status,
         )
-        .firstWhere(
-          (Personnel personnel) => _isSameName(personnel, _defaultName()),
-          orElse: () => null,
-        );
+        .where(
+          (Personnel? personnel) => _isSameName(personnel, _defaultName()),
+        ).firstOrNull;
     return personnel != null ? "${personnel.name} har samme" : null;
   }
 
-  bool _isSameName(Personnel personnel, String name) {
+  bool _isSameName(Personnel? personnel, String? name) {
     return name?.isNotEmpty == true &&
         personnel?.uuid != widget?.personnel?.uuid &&
         personnel?.name?.toLowerCase() == name?.toLowerCase();
   }
 
-  void _setText(TextEditingController controller, String value) {
+  void _setText(TextEditingController controller, String? value) {
     setText(controller, value);
     _formKey?.currentState?.save();
   }
@@ -507,30 +509,29 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           );
   }
 
-  String _validatePhone(phone) {
-    Personnel match = context
+  String? _validatePhone(phone) {
+    Personnel? match = context
         .read<PersonnelBloc>()
         .repo
         .map
         .values
         .where(
-          (unit) => PersonnelStatus.retired != unit.status,
+          (unit) => PersonnelStatus.retired != unit!.status,
         )
-        .firstWhere(
+        .where(
           (Personnel personnel) => _isSamePhone(personnel, phone),
-          orElse: () => null,
-        );
+        ).firstOrNull;
     return match != null ? "${match.name} har samme" : null;
   }
 
-  bool _isSamePhone(Personnel personnel, String phone) {
+  bool _isSamePhone(Personnel? personnel, String? phone) {
     return phone?.isNotEmpty == true &&
         personnel?.uuid != widget?.personnel?.uuid &&
         personnel?.phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
             phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
 
-  String _defaultPhone() {
+  String? _defaultPhone() {
     return PersonnelEditor.findPersonnelPhone(context, widget?.personnel);
   }
 
@@ -568,33 +569,33 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
-  List<Device> _findDevices(String type, String query) {
-    var actual = _getActualDevices().map((device) => device.uuid);
+  List<Device> _findDevices(String? type, String? query) {
+    var actual = _getActualDevices().map((device) => device!.uuid);
     return context
         .read<DeviceBloc>()
         .values
-        .where((device) => _canAddDevice(actual, device))
-        .where((device) => _deviceMatch(device, type, query))
+        .where((device) => _canAddDevice(actual, device!))
+        .where((device) => _deviceMatch(device!, type, query))
         .take(5)
         .toList(growable: false);
   }
 
-  bool _deviceMatch(Device device, String type, String query) {
-    final function = fleetMap != null ? AffiliationUtils.findFunction(fleetMap, device.number ?? '') : '';
+  bool _deviceMatch(Device device, String? type, String? query) {
+    final function = fleetMap != null ? AffiliationUtils.findFunction(fleetMap!, device.number ?? '') : '';
     final test = '${device.searchable}$function';
     return test.toLowerCase().contains(query ?? '') &&
-        (type?.toLowerCase() == 'alle' || enumName(device.type).contains(type?.toLowerCase()));
+        (type?.toLowerCase() == 'alle' || enumName(device.type).contains(type!.toLowerCase()));
   }
 
-  bool _canAddDevice(Iterable<String> actual, Device match) {
+  bool _canAddDevice(Iterable<String?> actual, Device match) {
     if (actual.contains(match.uuid)) {
       return true;
     }
     final bloc = context.read<TrackingBloc>();
     if (widget.personnel?.tracking?.uuid != null) {
       // Was device tracked by this personnel earlier?
-      final trackings = bloc.find(match).map((t) => t.uuid);
-      if (trackings.contains(widget.personnel.tracking.uuid)) {
+      final trackings = bloc.find(match).map((t) => t!.uuid);
+      if (trackings.contains(widget.personnel!.tracking!.uuid)) {
         return true;
       }
     }
@@ -614,13 +615,13 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
-  String _toTrackingHelperText(Position position) {
+  String _toTrackingHelperText(Position? position) {
     return PositionSource.manual == position?.source
         ? 'Manuell lagt inn'
         : 'Gjennomsnitt av siste posisjon til apparater';
   }
 
-  Position _toPosition() {
+  Position? _toPosition() {
     final tracking = context.read<TrackingBloc>().trackings[widget?.personnel?.tracking?.uuid];
     return tracking?.position;
   }
@@ -629,10 +630,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       context.read<TrackingBloc>().findAvailablePersonnel().isNotEmpty || _getActualDevices().isNotEmpty;
 
   List<Device> _getLocalDevices() =>
-      _formKey.currentState == null || _formKey.currentState.fields['devices'].value == null
+      _formKey.currentState == null || _formKey.currentState!.fields['devices']!.value == null
           ? _getActualDevices()
           : List<Device>.from(
-              _formKey.currentState.fields['devices'].value ?? <Device>[],
+              _formKey.currentState!.fields['devices']!.value ?? <Device>[],
             );
 
   List<Device> _getActualDevices() {
@@ -648,8 +649,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   void _submit() async {
-    if (_formKey.currentState.validate() && (managed || _affiliationKey.currentState.validate())) {
-      _formKey.currentState.save();
+    if (_formKey.currentState!.validate() && (managed || _affiliationKey.currentState!.validate())) {
+      _formKey.currentState!.save();
       final isNew = widget.personnel == null;
 
       final affiliation = _toAffiliation();
@@ -664,7 +665,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         );
       }
       if (response) {
-        List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
+        List<Device> devices = List<Device>.from(_formKey.currentState!.value["devices"]);
         Navigator.pop(
           context,
           PersonnelParams(
@@ -685,41 +686,41 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     if (managed) {
       return _currentAffiliation();
     }
-    final next = _affiliationKey.currentState.save();
+    final next = _affiliationKey.currentState!.save();
     return next.uuid == null ? next.copyWith(uuid: widget.personnel?.affiliation?.uuid ?? Uuid().v4()) : next;
   }
 
-  Personnel _createPersonnel(Affiliation affiliation) => PersonnelModel.fromJson(_formKey.currentState.value).copyWith(
+  Personnel _createPersonnel(Affiliation affiliation) => PersonnelModel.fromJson(_formKey.currentState!.value).copyWith(
         uuid: Uuid().v4(),
         affiliation: affiliation,
-        fname: _formKey.currentState.value['fname'],
-        lname: _formKey.currentState.value['lname'],
-        phone: _formKey.currentState.value['phone'],
+        fname: _formKey.currentState!.value['fname'],
+        lname: _formKey.currentState!.value['lname'],
+        phone: _formKey.currentState!.value['phone'],
         // Backend will use this as tuuid to create new tracking
         tracking: AggregateRef.fromType<Tracking>(Uuid().v4()),
       );
 
   Personnel _updatePersonnel(Affiliation affiliation) =>
-      widget.personnel.mergeWith(_formKey.currentState.value).copyWith(
+      widget.personnel!.mergeWith(_formKey.currentState!.value).copyWith(
             affiliation: affiliation,
-            fname: _formKey.currentState.value['fname'],
-            lname: _formKey.currentState.value['lname'],
-            phone: _formKey.currentState.value['phone'],
+            fname: _formKey.currentState!.value['fname'],
+            lname: _formKey.currentState!.value['lname'],
+            phone: _formKey.currentState!.value['phone'],
           );
 
-  Position _preparePosition() {
-    final position = _formKey.currentState.value['position'] == null
+  Position? _preparePosition() {
+    final position = _formKey.currentState!.value['position'] == null
         ? null
-        : Position.fromJson(_formKey.currentState.value['position']);
+        : Position.fromJson(_formKey.currentState!.value['position']);
     // Only manually added points are allowed
     return PositionSource.manual == position?.source ? position : null;
   }
 
-  String _defaultFName() {
+  String? _defaultFName() {
     return widget?.personnel?.fname;
   }
 
-  String _defaultLName() {
+  String? _defaultLName() {
     return widget?.personnel?.lname;
   }
 }

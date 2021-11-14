@@ -1,19 +1,20 @@
-// @dart=2.11
+
 
 import 'dart:math';
 
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 
 class MapControls extends StatefulWidget {
   final double top;
-  final List<MapControl> _controls;
-  final MapToolController _controller;
+  final List<MapControl>? _controls;
+  final MapToolController? _controller;
 
   MapControls({
-    Key key,
-    List<MapControl> controls,
-    MapToolController controller,
+    Key? key,
+    List<MapControl>? controls,
+    MapToolController? controller,
     this.top = 100.0,
   })  : this._controls = controls,
         this._controller = controller,
@@ -38,9 +39,9 @@ class _MapControlsState extends State<MapControls> {
   }
 
   void _init() {
-    widget._controls
+    widget._controls!
         .where((control) => control.listenable != null)
-        .forEach((control) => control.listenable.addListener(_onChange));
+        .forEach((control) => control.listenable!.addListener(_onChange));
   }
 
   @override
@@ -59,7 +60,7 @@ class _MapControlsState extends State<MapControls> {
   }
 
   void _dispose() {
-    return widget._controls.forEach((control) {
+    return widget._controls!.forEach((control) {
       control.listenable?.removeListener(_onChange);
       control.dispose();
     });
@@ -68,15 +69,14 @@ class _MapControlsState extends State<MapControls> {
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
-    final active = widget._controller?.tools?.firstWhere(
+    final active = widget._controller?.tools?.firstWhereOrNull(
           (tool) => tool.active(),
-          orElse: () => null,
         ) !=
         null;
     final count = ((height - (active ? PADDING : PADDING + FAB)) / (SIZE + SPACING)).floor();
 
-    final visible = widget._controls
-        .expand((control) => [control, if (control.state.toggled && control.children.isNotEmpty) ...control.children])
+    final visible = widget._controls!
+        .expand((control) => [control, if (control.state!.toggled && control.children.isNotEmpty) ...control.children])
         .toList(growable: false);
 
     final vertical = _buildList(context, visible, count, false);
@@ -126,18 +126,18 @@ class _MapControlsState extends State<MapControls> {
     return control.listenable == null
         ? _buildPressable(control, control.state)
         : ValueListenableBuilder(
-            valueListenable: control.listenable,
-            builder: (BuildContext context, MapControlState state, Widget child) {
+            valueListenable: control.listenable!,
+            builder: (BuildContext context, MapControlState state, Widget? child) {
               return _buildPressable(control, state);
             },
           );
   }
 
-  Widget _buildPressable(MapControl control, MapControlState state) {
+  Widget _buildPressable(MapControl control, MapControlState? state) {
     return control.onLongPress == null
-        ? _buildWithState(control, state)
+        ? _buildWithState(control, state!)
         : GestureDetector(
-            child: _buildWithState(control, state),
+            child: _buildWithState(control, state!),
             onLongPress: control.onLongPress,
           );
   }
@@ -187,30 +187,30 @@ class _MapControlsState extends State<MapControls> {
 
 class MapControl {
   final IconData icon;
-  MapControlState _state;
-  final VoidCallback onPressed;
-  final GestureLongPressCallback onLongPress;
-  final ValueNotifier<MapControlState> listenable;
+  MapControlState? _state;
+  final VoidCallback? onPressed;
+  final GestureLongPressCallback? onLongPress;
+  final ValueNotifier<MapControlState>? listenable;
   final List<MapControl> children;
 
-  MapControlState get state => _state;
+  MapControlState? get state => _state;
 
   MapControl({
-    @required this.icon,
+    required this.icon,
     this.listenable,
     this.onPressed,
     this.onLongPress,
-    MapControlState state,
+    MapControlState? state,
     this.children = const [],
   }) {
     _state = state ?? const MapControlState();
     if (listenable != null) {
-      listenable.addListener(_onChange);
+      listenable!.addListener(_onChange);
     }
   }
 
   void _onChange() {
-    _state = listenable.value;
+    _state = listenable!.value;
   }
 
   void dispose() {

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/activity/presentation/blocs/activity_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
@@ -21,7 +21,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   final _displacement = TextEditingController();
   final _interval = TextEditingController();
 
-  bool _manual;
+  bool? _manual;
 
   AppConfigBloc get bloc => context.read<AppConfigBloc>();
 
@@ -33,18 +33,18 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
     _displacement.text = "$distanceFilter";
   }
 
-  LocationOptions get options => context.read<ActivityBloc>().options;
-  int get timeInterval => _manual ? bloc.config.locationFastestInterval : options.timeInterval;
+  LocationOptions? get options => context.read<ActivityBloc>().options;
+  int get timeInterval => _manual! ? bloc.config!.locationFastestInterval : options!.timeInterval;
 
-  int get distanceFilter => _manual ? bloc.config.locationSmallestDisplacement : options.distanceFilter;
+  int get distanceFilter => _manual! ? bloc.config!.locationSmallestDisplacement : options!.distanceFilter;
 
   bool get locationStoreLocally =>
-      _manual ? context.read<AppConfigBloc>().config.locationStoreLocally : options.locationStoreLocally;
+      _manual! ? context.read<AppConfigBloc>().config!.locationStoreLocally : options!.locationStoreLocally;
 
   bool get locationAllowSharing =>
-      _manual ? context.read<AppConfigBloc>().config.locationAllowSharing : options.locationAllowSharing;
+      _manual! ? context.read<AppConfigBloc>().config!.locationAllowSharing : options!.locationAllowSharing;
 
-  bool get _locationDebug => _manual ? context.read<AppConfigBloc>().config.locationDebug : options.debug;
+  bool get _locationDebug => _manual! ? context.read<AppConfigBloc>().config!.locationDebug : options!.debug;
 
   @override
   void dispose() {
@@ -75,7 +75,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 future: future,
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
-                    _manual = snapshot.data.getBool(LocationService.pref_location_manual) ?? _manual;
+                    _manual = snapshot.data!.getBool(LocationService.pref_location_manual) ?? _manual;
                   }
                   _interval.text = "${timeInterval ~/ 1000}";
                   _displacement.text = "$distanceFilter";
@@ -133,10 +133,10 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                   future: future,
                   builder: (context, snapshot) {
                     _manual = snapshot.hasData
-                        ? snapshot.data.getBool(LocationService.pref_location_manual) ?? _manual
+                        ? snapshot.data!.getBool(LocationService.pref_location_manual) ?? _manual
                         : _manual;
                     return Switch(
-                      value: _manual,
+                      value: _manual!,
                       onChanged: (value) async {
                         if (snapshot.hasData) {
                           await context.read<ActivityBloc>().apply(
@@ -177,7 +177,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                         child: Text("${LocationService.toAccuracyName(value)}", textAlign: TextAlign.center),
                       ))
                   .toList(),
-              onChanged: _manual
+              onChanged: _manual!
                   ? (value) async {
                       await bloc.updateWith(
                         locationAccuracy: enumName(value),
@@ -186,7 +186,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                     }
                   : null,
               hint: Text(
-                LocationService.toAccuracyName(options.accuracy),
+                LocationService.toAccuracyName(options!.accuracy),
               ),
               value: bloc.config?.toLocationAccuracy(),
             ),
@@ -222,11 +222,11 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 FilteringTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
-              onChanged: _manual
+              onChanged: _manual!
                   ? (value) {
                       if (value.isNotEmpty) {
                         bloc.updateWith(
-                          locationSmallestDisplacement: int.parse(value ?? 0),
+                          locationSmallestDisplacement: int.parse(value ?? 0 as String),
                         );
                       }
                     }
@@ -264,11 +264,11 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 FilteringTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
-              onChanged: _manual
+              onChanged: _manual!
                   ? (value) {
                       if (value.isNotEmpty) {
                         bloc.updateWith(
-                          locationFastestInterval: int.parse(value ?? 0) * 1000,
+                          locationFastestInterval: int.parse(value ?? 0 as String) * 1000,
                         );
                       }
                     }
@@ -285,7 +285,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
       value: locationAllowSharing,
       title: Text('Del posisjoner'),
       subtitle: Text('Posisjonen kan bli lagret i aksjonen'),
-      onChanged: _manual
+      onChanged: _manual!
           ? (value) {
               context.read<AppConfigBloc>().updateWith(
                     locationAllowSharing: value,
@@ -301,7 +301,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
       value: locationStoreLocally,
       title: Text('Bufre posisjoner'),
       subtitle: Text('Lagres lokalt når du er uten nett'),
-      onChanged: _manual
+      onChanged: _manual!
           ? (value) {
               context.read<AppConfigBloc>().updateWith(
                     locationStoreLocally: value,
@@ -329,5 +329,5 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   }
 
   Future<SharedPreferences> get future => _prefs ??= SharedPreferences.getInstance();
-  Future<SharedPreferences> _prefs;
+  Future<SharedPreferences>? _prefs;
 }

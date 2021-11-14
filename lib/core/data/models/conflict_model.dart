@@ -1,5 +1,3 @@
-// @dart=2.11
-
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/foundation.dart';
@@ -16,7 +14,7 @@ enum ConflictType {
 @JsonSerializable()
 class ConflictModel extends JsonObject<Map<String, dynamic>> {
   ConflictModel({
-    @required this.type,
+    required this.type,
     this.code,
     this.base,
     this.mine,
@@ -31,21 +29,21 @@ class ConflictModel extends JsonObject<Map<String, dynamic>> {
           error,
         ]);
 
-  final String code;
-  final String error;
-  final ConflictType type;
+  final String? code;
+  final String? error;
+  final ConflictType? type;
 
   /// Paths with conflicts
-  final List<String> paths;
+  final List<String?>? paths;
 
   /// Remote state
-  final Map<String, dynamic> base;
+  final Map<String, dynamic>? base;
 
   /// Remote conflicts
-  final List<Map<String, dynamic>> mine;
+  final List<Map<String, dynamic>>? mine;
 
   /// Local conflicts
-  final List<Map<String, dynamic>> yours;
+  final List<Map<String, dynamic>>? yours;
 
   /// Factory constructor for creating a new `ConflictModel` instance
   factory ConflictModel.fromJson(Map<String, dynamic> json) => _$ConflictModelFromJson(json);

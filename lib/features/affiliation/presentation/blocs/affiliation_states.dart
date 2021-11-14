@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -15,7 +15,7 @@ abstract class AffiliationState<T> extends PushableBlocEvent<T> {
   AffiliationState(
     T data, {
     props = const [],
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
     bool isRemote = false,
   }) : super(
           data,
@@ -39,20 +39,20 @@ class AffiliationsEmpty extends AffiliationState<void> {
   String toString() => '$runtimeType';
 }
 
-class AffiliationsLoaded extends AffiliationState<Iterable<String>> {
+class AffiliationsLoaded extends AffiliationState<Iterable<String?>?> {
   AffiliationsLoaded({
     this.orgs,
     this.deps,
     this.divs,
     this.persons,
     bool isRemote = false,
-    Iterable<String> affiliations,
+    Iterable<String?>? affiliations,
   }) : super(affiliations, isRemote: isRemote);
 
-  final Iterable<String> orgs;
-  final Iterable<String> deps;
-  final Iterable<String> divs;
-  final Iterable<String> persons;
+  final Iterable<String?>? orgs;
+  final Iterable<String?>? deps;
+  final Iterable<String?>? divs;
+  final Iterable<String?>? persons;
 
   @override
   String toString() => '$runtimeType {'
@@ -65,14 +65,14 @@ class AffiliationsLoaded extends AffiliationState<Iterable<String>> {
       '}';
 }
 
-class AffiliationsFetched extends AffiliationState<Iterable<String>> {
+class AffiliationsFetched extends AffiliationState<Iterable<String?>?> {
   AffiliationsFetched({
     this.persons,
     bool isRemote = false,
-    Iterable<String> affiliations,
+    Iterable<String?>? affiliations,
   }) : super(affiliations, isRemote: isRemote);
 
-  final Iterable<String> persons;
+  final Iterable<String>? persons;
 
   @override
   String toString() => '$runtimeType {'
@@ -85,12 +85,12 @@ class AffiliationsFetched extends AffiliationState<Iterable<String>> {
 class UserOnboarded extends AffiliationState<Affiliation> {
   UserOnboarded({
     this.userId,
-    this.person,
+    required this.person,
     bool isRemote = false,
-    Affiliation affiliation,
-  }) : super(affiliation, isRemote: isRemote);
+    required Affiliation affiliation,
+  }) : super(affiliation!, isRemote: isRemote);
 
-  final String userId;
+  final String? userId;
   final Person person;
 
   @override
@@ -108,7 +108,7 @@ class AffiliationCreated extends AffiliationState<Affiliation> {
     bool isRemote = false,
   }) : super(affiliation, isRemote: isRemote);
 
-  Person get person => data.person;
+  Person get person => data.person!;
 
   @override
   String toString() => '$runtimeType {'
@@ -250,19 +250,19 @@ class DepartmentDeleted extends AffiliationState<Department> {
   String toString() => '$runtimeType {isRemote: $isRemote, department: $data}';
 }
 
-class AffiliationsUnloaded extends AffiliationState<Iterable<String>> {
+class AffiliationsUnloaded extends AffiliationState<Iterable<String?>?> {
   AffiliationsUnloaded({
     this.orgs,
     this.deps,
     this.divs,
     this.persons,
-    Iterable<String> affiliations,
+    Iterable<String?>? affiliations,
   }) : super(affiliations);
 
-  final Iterable<String> orgs;
-  final Iterable<String> deps;
-  final Iterable<String> divs;
-  final Iterable<String> persons;
+  final Iterable<String?>? orgs;
+  final Iterable<String?>? deps;
+  final Iterable<String?>? divs;
+  final Iterable<String?>? persons;
 
   @override
   String toString() => '$runtimeType {'
@@ -280,7 +280,7 @@ class AffiliationsUnloaded extends AffiliationState<Iterable<String>> {
 class AffiliationBlocError extends AffiliationState<Object> {
   AffiliationBlocError(
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) : super(error, stackTrace: stackTrace);
 
   @override
@@ -295,8 +295,8 @@ class AffiliationBlocException implements Exception {
   AffiliationBlocException(this.error, this.state, {this.command, this.stackTrace});
   final Object error;
   final AffiliationState state;
-  final StackTrace stackTrace;
-  final AffiliationCommand command;
+  final StackTrace? stackTrace;
+  final AffiliationCommand? command;
 
   @override
   String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';

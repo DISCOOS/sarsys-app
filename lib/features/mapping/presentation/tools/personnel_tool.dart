@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -20,12 +20,12 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/presentation/widgets/list_selector_widget.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
 
-class PersonnelTool extends MapTool with MapSelectable<Personnel> {
+class PersonnelTool extends MapTool with MapSelectable<Personnel?> {
   final User user;
   final TrackingBloc bloc;
   final bool includeRetired;
-  final MapController controller;
-  final ActionCallback onMessage;
+  final MapController? controller;
+  final ActionCallback? onMessage;
 
   final bool Function() _active;
 
@@ -34,9 +34,9 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
 
   PersonnelTool(
     this.bloc, {
-    @required this.user,
-    @required this.controller,
-    @required bool Function() active,
+    required this.user,
+    required this.controller,
+    required bool Function() active,
     this.onMessage,
     this.includeRetired = false,
     // Added debugging information, see https://github.com/DISCOOS/sarsys-app/issues/16
@@ -44,23 +44,23 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
         _active = active;
 
   @override
-  Iterable<Personnel> get targets => bloc.personnels
+  Iterable<Personnel?> get targets => bloc.personnels
       .where(
         exclude: includeRetired ? [] : [TrackingStatus.closed],
       )
       .trackables;
 
   @override
-  void doProcessTap(BuildContext context, List<Personnel> personnel) {
+  void doProcessTap(BuildContext context, List<Personnel?> personnel) {
     _show(context, personnel);
   }
 
   @override
-  LatLng toPoint(Personnel personnel) {
-    return toLatLng(bloc.trackings[personnel.tracking.uuid]?.position?.geometry);
+  LatLng toPoint(Personnel? personnel) {
+    return toLatLng(bloc.trackings[personnel!.tracking!.uuid]?.position?.geometry);
   }
 
-  void _show(BuildContext context, List<Personnel> personnel) {
+  void _show(BuildContext context, List<Personnel?> personnel) {
     if (personnel.length == 1) {
       _showInfo(context, personnel.first);
     } else {
@@ -73,14 +73,14 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
           return Dialog(
             elevation: 0,
             backgroundColor: Colors.white,
-            child: ListSelectorWidget<Personnel>(
+            child: ListSelectorWidget<Personnel?>(
               size: size,
               style: style,
               icon: Icons.group,
               title: "Velg personnel",
               items: personnel,
               onSelected: _showInfo,
-              itemBuilder: (BuildContext context, Personnel personnel) => Text("${personnel.name}"),
+              itemBuilder: (BuildContext context, Personnel? personnel) => Text("${personnel!.name}"),
             ),
           );
         },
@@ -88,7 +88,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
     }
   }
 
-  void _showInfo(BuildContext context, Personnel personnel) async {
+  void _showInfo(BuildContext context, Personnel? personnel) async {
     await showDialog(
       context: context,
       barrierDismissible: true,
@@ -97,24 +97,24 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SingleChildScrollView(
-            child: StreamBuilder<Personnel>(
+            child: StreamBuilder<Personnel?>(
               initialData: personnel,
               stream: context.read<PersonnelBloc>().onChanged(personnel),
               builder: (context, snapshot) {
                 if (snapshot.data is Personnel) {
                   personnel = snapshot.data;
                 }
-                final tracking = bloc.trackings[personnel.tracking.uuid];
+                final tracking = bloc.trackings[personnel!.tracking!.uuid];
                 return PersonnelWidget(
                   withMap: false,
                   tracking: tracking,
-                  personnel: personnel,
+                  personnel: personnel!,
                   onMessage: onMessage,
                   onDeleted: () => Navigator.pop(context),
                   onCompleted: (_) => Navigator.pop(context),
                   onGoto: (point) => _goto(context, point),
-                  devices: bloc.devices(personnel.tracking.uuid),
-                  unit: context.read<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
+                  devices: bloc.devices(personnel!.tracking!.uuid),
+                  unit: context.read<UnitBloc>().repo.findPersonnel(personnel!.uuid).firstOrNull,
                   withActions: context.read<OperationBloc>().isAuthorizedAs(UserRole.commander),
                 );
               },
@@ -126,7 +126,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
   }
 
   void _goto(BuildContext context, Point point) {
-    controller.move(toLatLng(point), controller.zoom);
+    controller!.move(toLatLng(point), controller!.zoom);
     Navigator.pop(context);
   }
 }

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:math';
 
@@ -26,10 +26,10 @@ class UnitLayerOptions extends LayerOptions {
   bool showTail;
   bool showRetired;
   final TrackingBloc bloc;
-  final ActionCallback onMessage;
+  final ActionCallback? onMessage;
 
   UnitLayerOptions({
-    @required this.bloc,
+    required this.bloc,
     this.size = 8.0,
     this.opacity = 0.6,
     this.showLabels = true,
@@ -63,14 +63,14 @@ class UnitLayer extends MapPlugin {
   Widget _build(BuildContext context, Size size, UnitLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final tracking = options.bloc.trackings;
-    final units = sortMapValues<String, Unit, TrackingStatus>(
+    final units = sortMapValues<String?, Unit?, TrackingStatus>(
             options.bloc.units.where(exclude: options.showRetired ? [] : [TrackingStatus.closed]).map,
-            (unit) => tracking[unit.tracking.uuid].status,
-            (s1, s2) => s1.index - s2.index)
+            (unit) => tracking[unit!.tracking!.uuid]!.status,
+            (s1, s2) => s1!.index - s2!.index)
         .values
-        .where((unit) => tracking[unit.tracking.uuid]?.position?.isNotEmpty == true)
-        .where((unit) => options.showRetired || unit.status != UnitStatus.retired)
-        .where((unit) => bounds.contains(toLatLng(tracking[unit.tracking.uuid]?.position?.geometry)));
+        .where((unit) => tracking[unit!.tracking!.uuid]?.position?.isNotEmpty == true)
+        .where((unit) => options.showRetired || unit!.status != UnitStatus.retired)
+        .where((unit) => bounds.contains(toLatLng(tracking[unit!.tracking!.uuid]?.position?.geometry)));
     return tracking.isEmpty
         ? Container()
         : Stack(
@@ -78,14 +78,14 @@ class UnitLayer extends MapPlugin {
             children: [
               if (options.showTail)
                 ...units
-                    .map((unit) => _buildTrack(context, size, options, map, unit, tracking[unit.tracking.uuid]))
-                    .toList(),
+                    .map((unit) => _buildTrack(context, size, options, map, unit, tracking[unit!.tracking!.uuid]!))
+                    .toList() as Iterable<Widget>,
               if (options.showLabels)
                 ...units
                     .map((unit) =>
-                        _buildLabel(context, options, map, unit, tracking[unit.tracking.uuid].position?.geometry))
-                    .toList(),
-              ...units.map((unit) => _buildPoint(context, options, map, unit, tracking[unit.tracking.uuid])).toList(),
+                        _buildLabel(context, options, map, unit!, tracking[unit.tracking!.uuid]!.position?.geometry))
+                    .toList() as Iterable<Widget>,
+              ...units.map((unit) => _buildPoint(context, options, map, unit!, tracking[unit.tracking!.uuid]!)).toList(),
             ],
           );
   }
@@ -95,11 +95,11 @@ class UnitLayer extends MapPlugin {
     Size size,
     UnitLayerOptions options,
     MapState map,
-    Unit unit,
+    Unit? unit,
     Tracking tracking,
   ) {
     var offsets = tracking.history.reversed.take(10).map((position) {
-      var pos = map.project(toLatLng(position.geometry));
+      var pos = map.project(toLatLng(position!.geometry));
       pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
       return Offset(pos.x.toDouble(), pos.y.toDouble());
     }).toList(growable: false);
@@ -122,11 +122,11 @@ class UnitLayer extends MapPlugin {
     var point = tracking.position?.geometry;
     var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, tracking.position);
+    var pixelRadius = _toPixelRadius(map, size, pos.x as double, pos.y as double, tracking.position);
 
     return Positioned(
-      top: pos.y,
-      left: pos.x,
+      top: pos.y as double?,
+      left: pos.x as double?,
       width: pixelRadius,
       height: pixelRadius,
       child: CustomPaint(
@@ -141,14 +141,14 @@ class UnitLayer extends MapPlugin {
     );
   }
 
-  _buildLabel(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Point point) {
+  _buildLabel(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Point? point) {
     var size = options.size;
     var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
     return Positioned(
       top: pos.y + size,
-      left: pos.x,
+      left: pos.x as double?,
       child: CustomPaint(
         painter: LabelPainter(unit.name, top: size),
         size: Size(size, size),
@@ -157,17 +157,17 @@ class UnitLayer extends MapPlugin {
   }
 }
 
-double _toPixelRadius(MapState map, double size, double x, double y, Position position) {
+double _toPixelRadius(MapState map, double size, double x, double y, Position? position) {
   if (position == null) return 0;
   var pixelRadius = size;
-  if (position.acc != null && position.acc > 0.0) {
+  if (position.acc != null && position.acc! > 0.0) {
     var coords = ProjMath.calculateEndingGlobalCoordinates(
-      position.lat,
+      position.lat!,
       position.lon,
       45.0,
-      position.acc,
+      position.acc!,
     );
-    var pos = map.project(LatLng(coords.y, coords.x));
+    var pos = map.project(LatLng(coords.y!, coords.x!));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
     pixelRadius = min(max((pos.x - x).abs(), size), max((pos.y - y).abs(), size).abs()).toDouble();
   }

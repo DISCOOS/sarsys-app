@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
@@ -9,15 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/utils/data.dart';
 
-class RepositoryPage<T extends Aggregate> extends StatefulWidget {
+class RepositoryPage<T extends Aggregate?> extends StatefulWidget {
   final bool withActions;
-  final StatefulRepository repository;
-  final bool Function(StorageState<T> state) where;
-  final String Function(StorageState<T> state) subject;
-  final String Function(StorageState<T> state) content;
+  final StatefulRepository? repository;
+  final bool Function(StorageState<T> state)? where;
+  final String Function(StorageState<T> state)? subject;
+  final String Function(StorageState<T> state)? content;
 
   RepositoryPage({
-    Key key,
+    Key? key,
     this.where,
     this.subject,
     this.content,
@@ -29,12 +29,12 @@ class RepositoryPage<T extends Aggregate> extends StatefulWidget {
   RepositoryPageState<T> createState() => RepositoryPageState<T>();
 }
 
-class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> {
+class RepositoryPageState<T extends Aggregate?> extends State<RepositoryPage<T?>> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: widget.repository.onChanged,
-        initialData: widget.repository.values,
+        stream: widget.repository!.onChanged,
+        initialData: widget.repository!.values,
         builder: (context, snapshot) {
           if (snapshot.hasData == false) return Container();
           var states = _filtered();
@@ -49,15 +49,15 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
         });
   }
 
-  List<StorageState<T>> _filtered() => widget.repository.states.values
-      .where((state) => widget.where?.call(state) ?? true)
+  List<StorageState<T>> _filtered() => widget.repository!.states.values
+      .where((state) => widget.where?.call(state as StorageState<T>) ?? true)
       .toList()
       .cast<StorageState<T>>();
 
   Widget _buildTile(BuildContext context, StorageState<T> state) {
-    final key = widget.repository.toKey(state.value);
+    final key = widget.repository!.toKey(state.value);
     return ListTile(
-      title: SelectableText(widget.subject(state)),
+      title: SelectableText(widget.subject!(state)),
       subtitle: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
@@ -69,7 +69,7 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
           ),
           if (widget.content != null)
             SelectableText(
-              '${widget.content(state)}',
+              '${widget.content!(state)}',
               onTap: () => onTap(context, state, key),
             ),
           SelectableText(
@@ -92,19 +92,19 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
   String toErrorString(StorageState state) {
     final error = state.error;
     if (error is ServiceException) {
-      return '${error.response.statusCode} ${error.response.error}';
+      return '${error.response!.statusCode} ${error.response!.error}';
     }
     return '${state.error.toString().substring(0, 100)}...';
   }
 
-  Future onTap(BuildContext context, StorageState<T> state, String key) {
+  Future onTap(BuildContext context, StorageState<T> state, String? key) {
     return Navigator.push(
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: Text("${typeOf<T>()} ...${key.substring(key.length - 7)}"),
+            title: Text("${typeOf<T>()} ...${key!.substring(key.length - 7)}"),
           ),
           body: StorageStatePage<T>(
             state: state,

@@ -8,8 +8,8 @@ void main() {
   const TOL_M = 0.005;
 
   double error(ProjCoordinate p, double x, double y) {
-    var dx = (p.x - x).abs();
-    var dy = (p.y - y).abs();
+    var dx = (p.x! - x).abs();
+    var dy = (p.y! - y).abs();
     return math.max(dx, dy);
   }
 

@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'personnel_service.dart';
@@ -10,7 +8,7 @@ part of 'personnel_service.dart';
 
 // ignore_for_file: always_put_control_body_on_new_line, always_specify_types, prefer_const_declarations
 class _$PersonnelServiceImpl extends PersonnelServiceImpl {
-  _$PersonnelServiceImpl([ChopperClient client]) {
+  _$PersonnelServiceImpl([ChopperClient? client]) {
     if (client == null) return;
     this.client = client;
   }
@@ -28,7 +26,7 @@ class _$PersonnelServiceImpl extends PersonnelServiceImpl {
 
   @override
   Future<Response<StorageState<Personnel>>> update(
-      String uuid, Personnel personnel) {
+      String? uuid, Personnel personnel) {
     final $url = 'personnels/$uuid';
     final $body = personnel;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
@@ -36,7 +34,7 @@ class _$PersonnelServiceImpl extends PersonnelServiceImpl {
   }
 
   @override
-  Future<Response<void>> delete(String uuid) {
+  Future<Response<void>> delete(String? uuid) {
     final $url = 'personnels/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
@@ -44,8 +42,8 @@ class _$PersonnelServiceImpl extends PersonnelServiceImpl {
 
   @override
   Future<Response<PagedList<StorageState<Personnel>>>> fetch(
-      dynamic ouuid, int offset, int limit,
-      {String expand}) {
+      dynamic ouuid, int? offset, int? limit,
+      {String? expand}) {
     final $url = '/operations/$ouuid/personnels';
     final $params = <String, dynamic>{
       'offset': offset,

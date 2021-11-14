@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'AuthToken.dart';
@@ -10,10 +8,10 @@ part of 'AuthToken.dart';
 
 AuthToken _$AuthTokenFromJson(Map json) {
   return AuthToken(
-    accessToken: json['accessToken'] as String,
-    idToken: json['idToken'] as String,
-    clientId: json['clientId'] as String,
-    refreshToken: json['refreshToken'] as String,
+    accessToken: json['accessToken'] as String?,
+    idToken: json['idToken'] as String?,
+    clientId: json['clientId'] as String?,
+    refreshToken: json['refreshToken'] as String?,
     accessTokenExpiration: json['accessTokenExpiration'] == null
         ? null
         : DateTime.parse(json['accessTokenExpiration'] as String),

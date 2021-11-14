@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,6 +15,7 @@ import 'package:SarSys/features/affiliation/data/models/organisation_model.dart'
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'organisation_service.chopper.dart';
 
 /// Service for consuming the organisations endpoint
@@ -51,7 +52,7 @@ class OrganisationService extends StatefulServiceDelegate<Organisation, Organisa
   void dispose() {
     _controller.close();
     OrganisationMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -65,9 +66,9 @@ enum OrganisationMessageType {
 class OrganisationMessage extends MessageModel {
   OrganisationMessage(Map<String, dynamic> data) : super(data);
 
-  OrganisationMessageType get type {
+  OrganisationMessageType? get type {
     final type = data.elementAt('type');
-    return OrganisationMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return OrganisationMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -76,10 +77,10 @@ abstract class OrganisationServiceImpl extends StatefulService<Organisation, Org
   OrganisationServiceImpl()
       : super(
           decoder: (json) => OrganisationModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<OrganisationModel>(value),
+          reducer: (value) => JsonUtils.toJson<OrganisationModel?>(value),
         );
 
-  static OrganisationServiceImpl newInstance([ChopperClient client]) => _$OrganisationServiceImpl(client);
+  static OrganisationServiceImpl newInstance([ChopperClient? client]) => _$OrganisationServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Organisation> state) => create(
@@ -89,7 +90,7 @@ abstract class OrganisationServiceImpl extends StatefulService<Organisation, Org
 
   @Post()
   Future<Response<String>> create(
-    @Path() String uuid,
+    @Path() String? uuid,
     @Body() Organisation body,
   );
 
@@ -101,22 +102,22 @@ abstract class OrganisationServiceImpl extends StatefulService<Organisation, Org
 
   @Patch(path: '{uuid}')
   Future<Response<StorageState<Organisation>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Organisation body,
   );
 
   @override
   Future<Response<StorageState<Organisation>>> onDelete(StorageState<Organisation> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Organisation>>);
 
   @Delete(path: '{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
   @override
-  Future<Response<PagedList<StorageState<Organisation>>>> onGetPage(int offset, int limit, List<String> options) =>
+  Future<Response<PagedList<StorageState<Organisation>>>> onGetPage(int? offset, int? limit, List<String> options) =>
       getAll(
         offset,
         limit,
@@ -124,7 +125,7 @@ abstract class OrganisationServiceImpl extends StatefulService<Organisation, Org
 
   @Get()
   Future<Response<PagedList<StorageState<Organisation>>>> getAll(
-    @Query('offset') int offset,
-    @Query('limit') int limit,
+    @Query('offset') int? offset,
+    @Query('limit') int? limit,
   );
 }

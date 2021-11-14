@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -8,19 +8,19 @@ part 'Author.g.dart';
 
 @JsonSerializable()
 class Author extends ValueObject<Map<String, dynamic>> {
-  final String userId;
-  final DateTime timestamp;
+  final String? userId;
+  final DateTime? timestamp;
 
   Author({
-    @required this.userId,
-    @required this.timestamp,
+    required this.userId,
+    required this.timestamp,
   }) : super([
           userId,
           timestamp,
         ]);
 
   /// Factory constructor for `Author` with timestamp now
-  factory Author.now(String userId) {
+  factory Author.now(String? userId) {
     return Author(
       userId: userId,
       timestamp: DateTime.now(),

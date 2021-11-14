@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:convert';
@@ -24,17 +24,17 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:grouped_list/grouped_list.dart';
 
 class AffiliationsPage extends StatefulWidget {
-  final String query;
+  final String? query;
   final bool withStatus;
   final bool withActions;
   final bool withGrouped;
   final bool withMultiSelect;
-  final Completer<List<Affiliation>> request;
-  final bool Function(Affiliation affiliation) where;
-  final void Function(Affiliation affiliation) onSelection;
+  final Completer<List<Affiliation>?>? request;
+  final bool Function(Affiliation affiliation)? where;
+  final void Function(Affiliation affiliation)? onSelection;
 
   const AffiliationsPage({
-    Key key,
+    Key? key,
     this.query,
     this.where,
     this.request,
@@ -51,9 +51,9 @@ class AffiliationsPage extends StatefulWidget {
 
 class AffiliationsPageState extends State<AffiliationsPage> {
   static const FILTER = "affiliation_filter";
-  StreamGroup<dynamic> _group;
+  StreamGroup<dynamic>? _group;
 
-  Set<AffiliationStandbyStatus> _filter;
+  Set<AffiliationStandbyStatus>? _filter;
 
   final _selected = <String>{};
 
@@ -71,7 +71,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_group != null) _group.close();
+    if (_group != null) _group!.close();
     _group = StreamGroup.broadcast()
       ..add(context.read<AffiliationBloc>().stream)
       ..add(context.read<TrackingBloc>().stream)
@@ -80,7 +80,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
 
   @override
   void dispose() {
-    _group.close();
+    _group!.close();
     _group = null;
     super.dispose();
   }
@@ -96,7 +96,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
           child: Container(
 //            color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
-              stream: _group.stream,
+              stream: _group!.stream,
               initialData: context.read<AffiliationBloc>().state,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
@@ -104,7 +104,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
                 return affiliations.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         constraints,
-                        message: _toEmptyListMessage(snapshot),
+                        message: _toEmptyListMessage(snapshot) as String?,
                       )
                     : _buildList(context.read<AffiliationBloc>(), affiliations);
               },
@@ -115,7 +115,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
     );
   }
 
-  Object _toEmptyListMessage(AsyncSnapshot snapshot) => snapshot.hasError
+  Object? _toEmptyListMessage(AsyncSnapshot snapshot) => snapshot.hasError
       ? snapshot.error
       : widget.query == null
           ? "Last ned eller opprett mannskap"
@@ -128,24 +128,24 @@ class AffiliationsPageState extends State<AffiliationsPage> {
         .read<AffiliationBloc>()
         .repo
         .values
-        .where((affiliation) => _filter.contains(affiliation.status))
-        .where((affiliation) => widget.where == null || widget.where(affiliation))
+        .where((affiliation) => _filter!.contains(affiliation!.status))
+        .where((affiliation) => widget.where == null || widget.where!(affiliation))
         .where((affiliation) => _matches(bloc, affiliation))
         .toList()
           ..sort(
-            (p1, p2) => _prepare(bloc, p1).compareTo(_prepare(bloc, p2)),
+            (p1, p2) => _prepare(bloc, p1!).compareTo(_prepare(bloc, p2!)),
           );
 
     if (!widget.withGrouped) {
       affiliations.sort(
-        (p1, p2) => _prepare(bloc, p1).compareTo(_prepare(bloc, p2)),
+        (p1, p2) => _prepare(bloc, p1!).compareTo(_prepare(bloc, p2!)),
       );
     }
     return affiliations;
   }
 
   bool _matches(AffiliationBloc bloc, Affiliation affiliation) =>
-      widget.query == null || _prepare(bloc, affiliation).contains(widget.query.toLowerCase());
+      widget.query == null || _prepare(bloc, affiliation!).contains(widget.query!.toLowerCase());
 
   String _prepare(AffiliationBloc bloc, Affiliation affiliation) =>
       "${bloc.toSearchable(affiliation.uuid)}".toLowerCase();
@@ -157,18 +157,18 @@ class AffiliationsPageState extends State<AffiliationsPage> {
         ? GroupedListView<Affiliation, AffiliationGroupEntry>(
             sort: true,
             floatingHeader: true,
-            elements: affiliations,
+            elements: affiliations as List<Affiliation>,
             order: GroupedListOrder.DESC,
             useStickyGroupSeparators: true,
             physics: AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, affiliation) {
               return Container(
                 height: 56.0,
-                child: _buildAffiliation(bloc, affiliation),
+                child: _buildAffiliation(bloc, affiliation!),
               );
             },
             groupBy: (affiliation) {
-              final org = affiliationBloc.orgs[affiliation.org?.uuid];
+              final org = affiliationBloc.orgs[affiliation!.org?.uuid];
               return AffiliationGroupEntry(
                 prefix: org?.prefix ?? '0',
                 name: affiliationBloc.toName(
@@ -193,7 +193,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
   }
 
   Widget _buildAffiliation(AffiliationBloc bloc, Affiliation affiliation) {
-    final person = bloc.persons[affiliation.person?.uuid];
+    final person = bloc.persons[affiliation.person!.uuid]!;
     return GestureDetector(
       child: widget.withActions && context.read<OperationBloc>().isAuthorizedAs(UserRole.commander)
           ? Slidable(
@@ -271,7 +271,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
     } else if (widget.onSelection == null) {
       Navigator.pop(context, affiliation);
     } else {
-      widget.onSelection(affiliation);
+      widget.onSelection!(affiliation);
     }
   }
 
@@ -335,8 +335,8 @@ class AffiliationsPageState extends State<AffiliationsPage> {
 
 class AffiliationGroupEntry implements Comparable {
   AffiliationGroupEntry({this.name, this.prefix});
-  final String name;
-  final String prefix;
+  final String? name;
+  final String? prefix;
 
   @override
   bool operator ==(Object other) =>
@@ -361,7 +361,7 @@ class AffiliationGroupEntry implements Comparable {
 class AffiliationGroupDelimiter extends StatelessWidget {
   const AffiliationGroupDelimiter(
     this.affiliation, {
-    Key key,
+    Key? key,
   }) : super(key: key);
   final AffiliationGroupEntry affiliation;
 
@@ -383,7 +383,7 @@ class AffiliationGroupDelimiter extends StatelessWidget {
             ),
             SizedBox(width: 8.0),
             Text(
-              affiliation.name,
+              affiliation.name!,
               style: Theme.of(context).textTheme.subtitle2,
             ),
           ],
@@ -393,16 +393,16 @@ class AffiliationGroupDelimiter extends StatelessWidget {
   }
 }
 
-class AffiliationSearch extends SearchDelegate<Affiliation> {
+class AffiliationSearch extends SearchDelegate<Affiliation?> {
   static final _storage = Storage.secure;
   static const RECENT_KEY = "search/affiliation/recent";
 
-  final bool Function(Affiliation affiliation) where;
-  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+  final bool Function(Affiliation affiliation)? where;
+  ValueNotifier<Set<String>?> _recent = ValueNotifier(null);
 
-  AffiliationBloc _bloc;
-  Debouncer<String> _debouncer;
-  Completer<List<Affiliation>> _request;
+  AffiliationBloc? _bloc;
+  late Debouncer<String> _debouncer;
+  Completer<List<Affiliation>?>? _request;
 
   AffiliationSearch({this.where}) {
     _init();
@@ -427,7 +427,7 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
           if (_request?.isCompleted != false) {
             _request = Completer();
           }
-          _request.complete(_bloc?.search(query));
+          _request!.complete(_bloc?.search(query));
         }
       },
     );
@@ -460,9 +460,9 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
   @override
   Widget buildSuggestions(BuildContext context) {
     return query.isEmpty
-        ? ValueListenableBuilder<Set<String>>(
+        ? ValueListenableBuilder<Set<String>?>(
             valueListenable: _recent,
-            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+            builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
               return _buildSuggestionList(
                 context,
                 suggestions?.where(_matches)?.toList() ?? [],
@@ -482,7 +482,7 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
@@ -513,9 +513,9 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
 
   AffiliationsPage _buildResults(BuildContext context, {bool store = false}) {
     if (store) {
-      final recent = _recent.value.toSet()..add(query);
+      final recent = _recent.value!.toSet()..add(query);
       _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-      _recent.value = recent.toSet() ?? [];
+      _recent.value = (recent.toSet() ?? []) as Set<String>?;
     }
     _bloc ??= context.read<AffiliationBloc>();
     if (translateAffiliationStandbyStatus(AffiliationStandbyStatus.available) == query) {
@@ -543,15 +543,15 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = recent.toSet() ?? [];
+    _recent.value = (recent.toSet() ?? []) as Set<String>?;
     buildSuggestions(context);
   }
 }
 
-Future<Affiliation> selectOrCreateAffiliation(
+Future<Affiliation?> selectOrCreateAffiliation(
   BuildContext context, {
-  String query,
-  bool where(Affiliation affiliation),
+  String? query,
+  bool where(Affiliation affiliation)?,
 }) async {
   return await showDialog<Affiliation>(
     context: context,
@@ -568,7 +568,7 @@ Future<Affiliation> selectOrCreateAffiliation(
               tooltip: "Søk etter mannskap og last dem ned lokalt",
               icon: Icon(Icons.file_download),
               onPressed: () async {
-                final affiliation = await showSearch<Affiliation>(
+                final affiliation = await showSearch<Affiliation?>(
                     context: context,
                     delegate: AffiliationSearch(
                       where: where,
@@ -591,11 +591,11 @@ Future<Affiliation> selectOrCreateAffiliation(
           label: Text("Manuell"),
           isExtended: true,
           onPressed: () async {
-            final result = await createPersonnel();
+            final result = await createPersonnel()!;
             Navigator.pop(
               context,
               result.isRight()
-                  ? context.read<AffiliationBloc>().repo[result.toIterable().first.affiliation.uuid]
+                  ? context.read<AffiliationBloc>().repo[result.toIterable().first.affiliation!.uuid]
                   : null,
             );
           },

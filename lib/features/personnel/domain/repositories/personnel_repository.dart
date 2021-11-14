@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -11,7 +11,7 @@ import 'package:SarSys/core/data/services/service.dart';
 
 abstract class PersonnelRepository implements StatefulRepository<String, Personnel, PersonnelService> {
   /// Get [Operation.uuid]
-  String get ouuid;
+  String? get ouuid;
 
   /// Get [Unit] repository
   UnitRepository get units;
@@ -32,24 +32,24 @@ abstract class PersonnelRepository implements StatefulRepository<String, Personn
   });
 
   /// Find personnel from user
-  Iterable<Personnel> findUser(
-    String userId, {
-    bool Function(Personnel personnel) where,
+  Iterable<Personnel?> findUser(
+    String? userId, {
+    bool Function(Personnel? personnel)? where,
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   });
 
   /// GET ../personnels
-  Future<List<Personnel>> load(
-    String ouuid, {
-    Completer<Iterable<Personnel>> onRemote,
+  Future<List<Personnel?>> load(
+    String? ouuid, {
+    Completer<Iterable<Personnel>>? onRemote,
   });
 }
 
 class PersonnelServiceException extends ServiceException {
   PersonnelServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(
           error,
           response: response,

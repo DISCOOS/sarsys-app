@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:collection';
@@ -22,9 +22,8 @@ import 'mixins.dart';
 abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extends S> extends Bloc<C, S> {
   BaseBloc(
     S initialState, {
-    @required this.bus,
+    required this.bus,
   }) : super(initialState) {
-    assert(bus != null, "bus can not be null");
     _subscriptions.add(stream.listen(
       (state) => bus.publish(this, state),
       onError: (e, stackTrace) => addError(e, stackTrace),
@@ -104,7 +103,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
       bus.subscribe<T>((Bloc bloc, T event) {
         if (_dispatchQueue.isEmpty) {
           try {
-            handler(bloc, event);
+            handler(bloc as BaseBloc<BlocCommand<dynamic, dynamic>, BlocState<dynamic>, BlocState<dynamic>>, event);
           } catch (error, stackTrace) {
             addError(error, stackTrace);
           }
@@ -179,14 +178,14 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
         StackTrace.current,
       );
     }
-    return command.callback.future;
+    return command.callback.future.then((value) => value as T);
   }
 
   /// Dispatch commands in
   /// sequence and return
   /// future list of type [T]
-  Future<List<T>> dispatchAll<T>(List<C> commands) async {
-    final results = <T>[];
+  Future<List<T?>> dispatchAll<T>(List<C> commands) async {
+    final results = <T?>[];
     for (var command in commands) {
       results.add(
         await dispatch(command),
@@ -233,9 +232,9 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
 
   void onComplete<T>(
     Iterable<Future<T>> list, {
-    @required C Function(S state) toCommand,
-    @required S Function(Iterable<T> results) toState,
-    @required S Function(Object error, StackTrace stackTrace) toError,
+    required C Function(S state) toCommand,
+    required S Function(Iterable<T> results) toState,
+    required S Function(Object error, StackTrace stackTrace) toError,
   }) async {
     try {
       final results = await Future.wait<T>(list);
@@ -247,9 +246,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
     } catch (e, stackTrace) {
       if (isOpen) {
         final state = toError(e, stackTrace);
-        if (state != null) {
-          dispatch(toCommand(state));
-        }
+         dispatch(toCommand(state));
       }
     }
   }
@@ -258,7 +255,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
   /// return given state
   ///
   @protected
-  S toOK(C event, S state, {Object result}) {
+  S toOK(C event, S state, {Object? result}) {
     if (result != null) {
       event.callback.complete(result);
     } else {
@@ -274,7 +271,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
   S toError(
     C command,
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) {
     final object = error is Error
         ? error
@@ -311,7 +308,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
   Stream<S> execute(C command);
 
   @visibleForOverriding
-  Error createError(Object error, {StackTrace stackTrace});
+  Error createError(Object error, {StackTrace? stackTrace});
 
   @override
   // ignore: must_call_super
@@ -342,7 +339,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocState, Error extend
 abstract class StatefulBloc<C extends BlocCommand, E extends BlocState, Error extends E, K, V extends JsonObject,
         S extends StatefulServiceDelegate<V, V>> extends BaseBloc<C, E, Error>
     with ReadyAwareBloc<K, V>, ConnectionAwareBloc<K, V, S> {
-  StatefulBloc(E initialState, {@required BlocEventBus bus})
+  StatefulBloc(E initialState, {required BlocEventBus bus})
       : super(
           initialState,
           bus: bus,
@@ -352,16 +349,15 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocState, Error ex
     C Function(StorageTransition<T>) builder, {
     bool remote = true,
     bool local = false,
-    StatefulRepository repo,
+    StatefulRepository? repo,
   }) {
     final match = repos.firstWhere(
-      (repo) => repo.aggregateType == typeOf<T>(),
+      (repo) => repo!.aggregateType == typeOf<T>(),
       orElse: () => typeOf<T>() == JsonObject ? this.repo : null,
-    );
-    assert(match != null);
+    )!;
     registerStreamSubscription(match.onChanged
         .where(
-          (e) => e.isRemote && remote || e.isLocal && local,
+          (e) => e!.isRemote && remote || e.isLocal && local,
         )
         .listen(
           (t) => _processStateChanged<T>(
@@ -377,10 +373,10 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocState, Error ex
   ) async {
     try {
       if (isOpen && !transition.isError) {
-        final device = transition.to.value;
+        final device = transition.to?.value;
         if (device != null) {
-          final next = transition.to;
-          if (next.isRemote) {
+          final next = transition.to!;
+          if (next.isRemote!) {
             dispatch(
               builder(transition),
             );
@@ -399,7 +395,7 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocState, Error ex
     } finally {
       // Allows for any close order
       await Future.wait(
-        repos.where((r) => r.isReady).map((r) => r.close()),
+        repos.where((r) => r!.isReady).map((r) => r!.close()),
       );
     }
   }
@@ -413,10 +409,10 @@ class BlocEventBus {
     void Function(Bloc, Object, StackTrace) onError,
   ) : _onError = onError;
 
-  StreamController<BlocState> _controller = StreamController.broadcast();
+  StreamController<BlocState?> _controller = StreamController.broadcast();
 
   /// Get events as stream
-  Stream<BlocState> get events => _controller.stream;
+  Stream<BlocState?> get events => _controller.stream;
 
   /// Forward all errors to this error handler
   final void Function(Bloc, Object, StackTrace) _onError;
@@ -462,7 +458,7 @@ class BlocEventBus {
     _controller = StreamController.broadcast();
   }
 
-  void publish(Bloc bloc, BlocState event) {
+  void publish(Bloc bloc, BlocState? event) {
     _controller.add(event);
     toHandlers(event).forEach((handler) {
       try {
@@ -478,7 +474,7 @@ class BlocEventBus {
   }
 
   /// Get all handlers for given event
-  Iterable<Function> toHandlers(BlocState event) => _routes[event.runtimeType] ?? [];
+  Iterable<Function> toHandlers(BlocState? event) => _routes[event.runtimeType] ?? [];
 }
 
 /// -------------
@@ -489,14 +485,14 @@ class BlocCommand<D, R> extends Equatable {
   BlocCommand(
     this.data, [
     props = const [],
-    Completer<R> callback,
+    Completer<R>? callback,
   ])  : callback = callback ?? Completer(),
         _props = [data, ...props];
 
-  final List<Object> _props;
+  final List<Object?> _props;
 
   @override
-  List<Object> get props => _props;
+  List<Object?> get props => _props;
 
   final D data;
   final Completer<R> callback;
@@ -524,15 +520,15 @@ mixin NotifyBlocStateChangedMixin<S extends BlocState<T>, T> on BlocCommand<S, T
 mixin NotifyRepositoryStateChangedMixin<T> on BlocCommand<StorageTransition<T>, T> {
   Type get type => typeOf<T>();
 
-  T get state => data.to.value;
-  T get previous => data.from?.value;
+  T get state => data.to!.value;
+  T? get previous => data.from?.value;
 
   bool get isCreated => data.isCreated;
   bool get isUpdated => data.isChanged;
   bool get isDeleted => data.isDeleted;
 
-  StorageStatus get status => data?.status;
-  StateVersion get version => data?.version;
+  StorageStatus? get status => data.status;
+  StateVersion? get version => data.version;
 
   bool get isRemote => data.to?.isRemote == true;
 
@@ -561,20 +557,20 @@ abstract class BlocState<T> extends Equatable {
 
   final T data;
 
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
 
   /// [DateTime] when state was created or mutated
-  DateTime get when => props.last;
+  DateTime? get when => props.last as DateTime?;
 
   @override
-  List<Object> get props => _props;
-  final List<Object> _props;
+  List<Object?> get props => _props;
+  final List<Object?> _props;
 }
 
 abstract class PushableBlocEvent<T> extends BlocState<T> {
   PushableBlocEvent(
     T data, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
     props = const [],
     this.isRemote = false,
   }) : super(
@@ -583,8 +579,8 @@ abstract class PushableBlocEvent<T> extends BlocState<T> {
           props: [...props, isRemote],
         );
 
-  final bool isRemote;
-  bool get isLocal => !isRemote;
+  final bool? isRemote;
+  bool get isLocal => !isRemote!;
 }
 
 class AppBlocObserver extends BlocObserver {
@@ -603,7 +599,7 @@ class AppBlocObserver extends BlocObserver {
   }
 
   @override
-  void onEvent(BlocBase bloc, Object command) {
+  void onEvent(BlocBase bloc, Object? command) {
     if (kDebugMode && Defaults.debugPrintCommands) {
       debugPrint(
         '--- Command ---\n'
@@ -612,7 +608,7 @@ class AppBlocObserver extends BlocObserver {
         '******************',
       );
     }
-    super.onEvent(bloc, command);
+    super.onEvent(bloc as Bloc<dynamic, dynamic>, command);
   }
 
   @override
@@ -630,7 +626,7 @@ class AppBlocObserver extends BlocObserver {
     super.onTransition(bloc, transition);
   }
 
-  String _toStateString(Object state) {
+  String _toStateString(Object? state) {
     if (state is PushableBlocEvent) {
       return '${state.runtimeType}[isRemote: ${state.isRemote}]';
     }
@@ -644,9 +640,9 @@ class AppBlocObserver extends BlocObserver {
 class BlocClosedException implements Exception {
   BlocClosedException(this.bloc, this.state, {this.command, this.stackTrace});
   final BaseBloc bloc;
-  final BlocState state;
-  final BlocCommand command;
-  final StackTrace stackTrace;
+  final BlocState? state;
+  final BlocCommand? command;
+  final StackTrace? stackTrace;
 
   @override
   String toString() => '${bloc.runtimeType} is closed {state: $state, command: $command, stackTrace: $stackTrace}';

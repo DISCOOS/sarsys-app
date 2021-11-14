@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:io';
@@ -9,6 +9,7 @@ import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -41,12 +42,12 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/extensions.dart';
 
 class OperationEditor extends StatefulWidget {
-  final sarsys.Point ipp;
-  final Incident incident;
-  final Operation operation;
+  final sarsys.Point? ipp;
+  final Incident? incident;
+  final Operation? operation;
 
   const OperationEditor({
-    Key key,
+    Key? key,
     this.ipp,
     this.incident,
     this.operation,
@@ -66,15 +67,15 @@ class _OperationEditorState extends State<OperationEditor> {
   bool _rememberUnits = true;
   bool _rememberTalkGroups = true;
 
-  Location _ipp;
-  Location _meetup;
+  Location? _ipp;
+  Location? _meetup;
 
-  MapSearchEngine _engine;
+  MapSearchEngine? _engine;
 
-  TextEditingController _ippController;
-  TextEditingController _meetupController;
+  TextEditingController? _ippController;
+  TextEditingController? _meetupController;
 
-  List<String> _templates;
+  List<String>? _templates;
 
   get createNew => widget.incident == null;
 
@@ -83,7 +84,7 @@ class _OperationEditorState extends State<OperationEditor> {
     super.initState();
     _ippController = TextEditingController(text: _ipp?.description ?? '');
     _meetupController = TextEditingController(text: _meetup?.description ?? '');
-    _templates ??= context.read<AppConfigBloc>().config.units;
+    _templates ??= context.read<AppConfigBloc>().config!.units;
   }
 
   @override
@@ -98,7 +99,7 @@ class _OperationEditorState extends State<OperationEditor> {
     _isExercise = widget.incident?.exercise ?? false;
 
     final org = context.read<AffiliationBloc>().findUserOrganisation();
-    final catalogs = (org?.fleetMap?.catalogs?.map((e) => e.name) ?? []).toList()..sort();
+    final catalogs = (org!.fleetMap!.catalogs!.map((e) => e.name!) ?? []).toList()..sort();
     _tgCatalog.value = catalogs;
   }
 
@@ -112,12 +113,12 @@ class _OperationEditorState extends State<OperationEditor> {
       _meetup,
       LocationService.toPoint(LocationService().current),
     );
-    _updateField('meetup', toPosition(_meetup.point));
+    _updateField('meetup', toPosition(_meetup!.point));
     _meetup = await _updateDescriptionFromPoint(
-      _meetup,
+      _meetup!,
       'meetup_description',
-      _meetupController,
-      point: _meetup.point,
+      _meetupController!,
+      point: _meetup!.point,
     );
     if (mounted) {
       setState(() {});
@@ -129,44 +130,44 @@ class _OperationEditorState extends State<OperationEditor> {
       _ipp,
       LocationService.toPoint(LocationService().current),
     );
-    _updateField('ipp', toPosition(_ipp.point));
+    _updateField('ipp', toPosition(_ipp!.point));
     _ipp = await _updateDescriptionFromPoint(
-      _ipp,
+      _ipp!,
       'ipp_description',
-      _ippController,
-      point: _ipp.point,
+      _ippController!,
+      point: _ipp!.point,
     );
     if (mounted) {
       setState(() {});
     }
   }
 
-  bool _isDescriptionEmpty(Location location, TextEditingController controller) =>
+  bool _isDescriptionEmpty(Location? location, TextEditingController controller) =>
       emptyAsNull(controller.text ?? location?.description) == null;
 
   void _updateDescriptions() async {
-    if (_isDescriptionEmpty(_ipp, _ippController) && _ipp?.point?.isNotEmpty == true) {
+    if (_isDescriptionEmpty(_ipp, _ippController!) && _ipp?.point?.isNotEmpty == true) {
       _ipp = await _updateDescriptionFromPoint(
-        _ipp,
+        _ipp!,
         'ipp_description',
-        _ippController,
-        point: _ipp.point,
+        _ippController!,
+        point: _ipp!.point,
       );
     }
-    if (_isDescriptionEmpty(_meetup, _meetupController) == null && _meetup?.point?.isNotEmpty == true) {
+    if (_isDescriptionEmpty(_meetup, _meetupController!) == null && _meetup?.point?.isNotEmpty == true) {
       _meetup = await _updateDescriptionFromPoint(
-        _meetup,
+        _meetup!,
         'meetup_description',
-        _meetupController,
-        point: _meetup.point,
+        _meetupController!,
+        point: _meetup!.point,
       );
     }
   }
 
   @override
   void dispose() {
-    _ippController.dispose();
-    _meetupController.dispose();
+    _ippController!.dispose();
+    _meetupController!.dispose();
     super.dispose();
   }
 
@@ -212,7 +213,7 @@ class _OperationEditorState extends State<OperationEditor> {
                   },
                   onStepContinue: _currentStep < 2 ? () => setState(() => _currentStep += 1) : null,
                   onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep -= 1) : null,
-                  controlsBuilder: (BuildContext context, {VoidCallback onStepContinue, VoidCallback onStepCancel}) {
+                  controlsBuilder: (BuildContext context, {VoidCallback? onStepContinue, VoidCallback? onStepCancel}) {
                     return Container();
                   },
                   steps: [
@@ -366,11 +367,11 @@ class _OperationEditorState extends State<OperationEditor> {
     final now = DateTime.now();
     return FormBuilderDateTimePicker(
       name: "occurred",
-      initialTime: null,
+//      initialTime: null,
       lastDate: DateTime(now.year, now.month, now.day, 23, 59, 59),
       initialValue: widget?.incident?.occurred ?? now,
       format: DateFormat("yyyy-MM-dd HH:mm"),
-      resetIcon: null,
+//      resetIcon: null,
       autocorrect: true,
       decoration: InputDecoration(
         labelText: "Hendelsestidspunkt",
@@ -380,7 +381,7 @@ class _OperationEditorState extends State<OperationEditor> {
       keyboardType: TextInputType.datetime,
       validator: FormBuilderValidators.compose([
         (value) {
-          return value.isAfter(DateTime.now()) ? "Du kan ikke sette klokkeslett frem i tid" : null;
+          return value!.isAfter(DateTime.now()) ? "Du kan ikke sette klokkeslett frem i tid" : null;
         }
       ]),
       valueTransformer: (dt) => dt.toString(),
@@ -536,11 +537,11 @@ class _OperationEditorState extends State<OperationEditor> {
         optional: false,
         onChanged: (Position position) async {
           _ipp = _toLocation(_ipp, position.geometry);
-          if (emptyAsNull(_ipp.description) == null) {
+          if (emptyAsNull(_ipp!.description) == null) {
             _ipp = await _updateDescriptionFromPoint(
-              _ipp,
+              _ipp!,
               'ipp_description',
-              _ippController,
+              _ippController!,
               point: position.geometry,
             );
           }
@@ -550,7 +551,7 @@ class _OperationEditorState extends State<OperationEditor> {
 
   void _saveAndSetState() {
     if (mounted) {
-      _formKey.currentState.save();
+      _formKey.currentState!.save();
       setState(() {});
     }
   }
@@ -568,9 +569,9 @@ class _OperationEditorState extends State<OperationEditor> {
         onChanged: (Position position) async {
           _meetup = _toLocation(_meetup, position.geometry);
           _meetup = await _updateDescriptionFromPoint(
-            _meetup,
+            _meetup!,
             'meetup_description',
-            _meetupController,
+            _meetupController!,
             point: position.geometry,
           );
           _saveAndSetState();
@@ -587,11 +588,11 @@ class _OperationEditorState extends State<OperationEditor> {
           suffixIcon: GestureDetector(
             child: Icon(Icons.search),
             onTap: () async {
-              if (_ipp.point is sarsys.Point) {
+              if (_ipp!.point is sarsys.Point) {
                 _ipp = await _updateDescriptionFromPoint(
-                  _ipp,
+                  _ipp!,
                   'ipp_description',
-                  _ippController,
+                  _ippController!,
                   search: true,
                 );
                 if (mounted) {
@@ -616,11 +617,11 @@ class _OperationEditorState extends State<OperationEditor> {
             suffixIcon: GestureDetector(
               child: Icon(Icons.search),
               onTap: () async {
-                if (_meetup.point is sarsys.Point) {
+                if (_meetup!.point is sarsys.Point) {
                   _meetup = await _updateDescriptionFromPoint(
-                    _meetup,
+                    _meetup!,
                     'meetup_description',
-                    _meetupController,
+                    _meetupController!,
                     search: true,
                   );
                 }
@@ -639,11 +640,11 @@ class _OperationEditorState extends State<OperationEditor> {
         label: Text("IPP"),
         onPressed: _ipp is Location
             ? () {
-                _meetup = _ipp.cloneWith();
-                _updateField('meetup', toPosition(_meetup.point));
+                _meetup = _ipp!.cloneWith();
+                _updateField('meetup', toPosition(_meetup!.point));
                 _updateDescription(
                   'meetup_description',
-                  _meetup.description,
+                  _meetup!.description,
                   _meetupController,
                 );
                 setState(() {});
@@ -656,11 +657,11 @@ class _OperationEditorState extends State<OperationEditor> {
         label: Text("Oppmøte"),
         onPressed: _meetup is Location
             ? () {
-                _ipp = _meetup.cloneWith();
-                _updateField('ipp', toPosition(_ipp.point));
+                _ipp = _meetup!.cloneWith();
+                _updateField('ipp', toPosition(_ipp!.point));
                 _updateDescription(
                   'ipp_description',
-                  _ipp.description,
+                  _ipp!.description,
                   _ippController,
                 );
                 setState(() {});
@@ -669,7 +670,7 @@ class _OperationEditorState extends State<OperationEditor> {
       );
 
   Widget _buildTGField() {
-    final config = context.read<AppConfigBloc>().config;
+    final config = context.read<AppConfigBloc>().config!;
     final catalogs = widget?.operation?.talkgroups ??
         FleetMapTalkGroupConverter.toList(
           config.talkGroups,
@@ -681,11 +682,11 @@ class _OperationEditorState extends State<OperationEditor> {
       selectorLabel: 'Lytt til',
       selectorTitle: 'Velg talegrupper',
       emptyText: 'Ingen talegrupper tilgjengelig',
-      builder: (context, tg) => Chip(label: Text(tg.name)),
+      builder: (context, tg) => Chip(label: Text(tg.name!)),
       categories: catalogs.map(
         (c) => DropdownMenuItem<String>(
           value: c.name,
-          child: Text(c.name),
+          child: Text(c.name!),
         ),
       ),
       category: config.talkGroupCatalog,
@@ -694,17 +695,17 @@ class _OperationEditorState extends State<OperationEditor> {
           FleetMapTalkGroupConverter.toList(
             config.talkGroups,
           ),
-      options: (String category, String query) {
+      options: (String? category, String? query) {
         final fleetMap = getFleetMap();
         if (fleetMap != null) {
           if (query?.isNotEmpty == true) {
             return AffiliationUtils.findTalkGroups(
               AffiliationUtils.findCatalog(fleetMap, category),
-              query,
+              query!,
             );
           }
           return getTgGroups(
-            category ?? _formKey.currentState.fields["tgCatalog"].value ?? config.talkGroupCatalog,
+            category ?? _formKey.currentState!.fields["tgCatalog"]!.value ?? config.talkGroupCatalog,
           );
         }
         return <TalkGroup>[];
@@ -712,12 +713,12 @@ class _OperationEditorState extends State<OperationEditor> {
     );
   }
 
-  FleetMap getFleetMap() {
+  FleetMap? getFleetMap() {
     return context.read<AffiliationBloc>().findUserOrganisation()?.fleetMap;
   }
 
   List<TalkGroup> getTgGroups(String catalog) {
-    return getFleetMap()?.catalogs?.firstWhere((c) => c.name == catalog, orElse: () => null)?.groups ?? <TalkGroup>[];
+    return getFleetMap()?.catalogs?.firstWhereOrNull((c) => c.name == catalog)?.groups ?? <TalkGroup>[];
   }
 
   Widget _buildRememberTalkGroupsField() {
@@ -781,19 +782,19 @@ class _OperationEditorState extends State<OperationEditor> {
       category: 'alle',
       options: _findUnits,
       items: () => _templates,
-      onChanged:  (templates) => _templates
+      onChanged:  (templates) => _templates!
         ..clear()
-        ..addAll(templates),
+        ..addAll(templates!),
 
     );
   }
 
-  List<String> _findUnits(String type, String query) {
-    var lowercaseQuery = query.toLowerCase();
+  List<String> _findUnits(String? type, String? query) {
+    var lowercaseQuery = query!.toLowerCase();
     final templates = asUnitTemplates(query, 15);
     return templates
         .where((template) =>
-            (template.toLowerCase().contains(type.toLowerCase())) || type.contains('alle'))
+            (template.toLowerCase().contains(type!.toLowerCase())) || type.contains('alle'))
         .where((template) => template.toLowerCase().contains(lowercaseQuery))
         .toList(growable: false);
   }
@@ -825,7 +826,7 @@ class _OperationEditorState extends State<OperationEditor> {
     );
   }
 
-  Location _toLocation(Location location, sarsys.Point point) {
+  Location _toLocation(Location? location, sarsys.Point? point) {
     return location?.cloneWith(
           point: point,
         ) ??
@@ -836,7 +837,7 @@ class _OperationEditorState extends State<OperationEditor> {
     Location location,
     String attribute,
     TextEditingController controller, {
-    sarsys.Point point,
+    sarsys.Point? point,
     bool search = false,
   }) async {
     try {
@@ -862,22 +863,22 @@ class _OperationEditorState extends State<OperationEditor> {
     T value,
   ) {
     if (_formKey.currentState != null) {
-      _formKey.currentState.patchValue({name: value});
-      _formKey.currentState.fields[name].didChange(value);
-      _formKey.currentState.save();
+      _formKey.currentState!.patchValue({name: value});
+      _formKey.currentState!.fields[name]!.didChange(value);
+      _formKey.currentState!.save();
     }
   }
 
   void _updateDescription(
     String attribute,
-    String description,
-    TextEditingController controller,
+    String? description,
+    TextEditingController? controller,
   ) {
     _updateField(attribute, description);
     setText(controller, description);
   }
 
-  Future<String> _lookup(sarsys.Point point, {bool search = false, String query}) async {
+  Future<String?> _lookup(sarsys.Point? point, {bool search = false, String? query}) async {
     if (point?.isNotEmpty == true) {
       if (search) {
         final result = await showSearch(
@@ -890,17 +891,17 @@ class _OperationEditorState extends State<OperationEditor> {
             ));
         return _toAddress(result);
       }
-      final results = await _engine.lookup(point);
+      final results = await _engine!.lookup(point!);
       if (results.isNotEmpty) {
         var idx = 0;
         var current = 0;
         var distance = double.infinity;
         results.forEach((result) {
           final next = ProjMath.eucledianDistance(
-            point.lat,
-            point.lon,
-            result.latitude,
-            result.longitude,
+            point.lat!,
+            point.lon!,
+            result.latitude!,
+            result.longitude!,
           );
           if (next < distance) {
             current = idx;
@@ -915,7 +916,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return null;
   }
 
-  String _toAddress(GeocodeResult closest) {
+  String? _toAddress(GeocodeResult? closest) {
     return closest != null
         ? '${[
             closest.title,
@@ -924,10 +925,10 @@ class _OperationEditorState extends State<OperationEditor> {
         : null;
   }
 
-  Position toPosition(sarsys.Point point, {sarsys.Point defaultValue}) {
+  Position? toPosition(sarsys.Point? point, {sarsys.Point? defaultValue}) {
     return point is sarsys.Point
         ? Position.fromPoint(
-            point ?? defaultValue,
+            point ?? defaultValue!,
             source: PositionSource.manual,
           )
         : null;
@@ -936,12 +937,12 @@ class _OperationEditorState extends State<OperationEditor> {
   _isValid(List<String> fields) {
     var state = _formKey.currentState;
     return _formKey.currentState == null ||
-        fields.where((name) => state.fields[name] == null || !state.fields[name].hasError).length == fields.length;
+        fields.where((name) => state!.fields[name] == null || !state.fields[name]!.hasError).length == fields.length;
   }
 
   Map<String, dynamic> _toIncidentJson(
     Map<String, dynamic> json, {
-    Incident current,
+    Incident? current,
   }) {
     return {
       'type': json['incident_type'],
@@ -953,7 +954,7 @@ class _OperationEditorState extends State<OperationEditor> {
 
   Map<String, dynamic> _toOperationJson(
     Map<String, dynamic> json, {
-    Operation current,
+    Operation? current,
   }) {
     var id = 0;
     // Ensure EntityObject contract is fulfilled
@@ -971,8 +972,8 @@ class _OperationEditorState extends State<OperationEditor> {
     }..addAll(json);
   }
 
-  Map<String, dynamic> _toJson({String uuid}) {
-    Map<String, dynamic> json = Map.from(_formKey.currentState.value);
+  Map<String, dynamic> _toJson({String? uuid}) {
+    Map<String, dynamic> json = Map.from(_formKey.currentState!.value);
     if (uuid != null) {
       json['uuid'] = uuid;
     }
@@ -989,11 +990,11 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   void _submit(BuildContext context) async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
 
       if (_rememberTalkGroups) {
-        final list = _formKey.currentState.value['talkgroups'] ?? <String>[];
+        final list = _formKey.currentState!.value['talkgroups'] ?? <String>[];
         final talkGroups = List<String>.from(
           list.map((tg) => tg.name),
         );
@@ -1014,7 +1015,7 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   Future _submitNew(BuildContext context) async {
-    final units = List<String>.from(_formKey.currentState.value['units']);
+    final units = List<String>.from(_formKey.currentState!.value['units']);
     if (_rememberUnits) {
       await context.read<AppConfigBloc>().updateWith(units: units);
     }
@@ -1030,11 +1031,11 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   Future _submitUpdate(BuildContext context) async {
-    final incident = widget.incident.mergeWith(_toIncidentJson(
+    final incident = widget.incident!.mergeWith(_toIncidentJson(
       _toJson(),
       current: widget.incident,
     ));
-    final operation = widget.operation.mergeWith(_toOperationJson(
+    final operation = widget.operation!.mergeWith(_toOperationJson(
       _toJson(),
       current: widget.operation,
     ));
@@ -1067,10 +1068,10 @@ class _OperationEditorState extends State<OperationEditor> {
 
   Future _prompt(
     BuildContext context, {
-    @required String title,
-    @required String message,
-    @required Incident incident,
-    @required Operation operation,
+    required String title,
+    required String message,
+    required Incident incident,
+    required Operation operation,
   }) async {
     final proceed = await prompt(
       context,
@@ -1088,34 +1089,34 @@ class _OperationEditorState extends State<OperationEditor> {
     }
   }
 
-  bool _shouldResolve(IncidentResolution next) =>
+  bool _shouldResolve(IncidentResolution? next) =>
       IncidentStatus.closed != widget?.incident?.status && IncidentResolution.resolved == next;
 
-  bool _shouldCancel(IncidentResolution next) =>
+  bool _shouldCancel(IncidentResolution? next) =>
       IncidentStatus.closed != widget?.incident?.status && IncidentResolution.cancelled == next;
 
   Incident _createIncident() => IncidentModel.fromJson(_toIncidentJson(_toJson(
         uuid: Uuid().v4(),
       )));
 
-  Operation _createOperation(String iuuid) => OperationModel.fromJson(_toOperationJson(_toJson(
+  Operation _createOperation(String? iuuid) => OperationModel.fromJson(_toOperationJson(_toJson(
         uuid: Uuid().v4(),
       )))
           .withAuthor(
             context.read<UserBloc>().userId,
           )
           .copyWith(
-            incident: AggregateRef.fromType<Incident>(iuuid),
+            incident: AggregateRef.fromType<Incident>(iuuid!),
           );
 }
 
 class OperationEditorResult {
   OperationEditorResult({
-    @required this.incident,
-    @required this.operation,
+    required this.incident,
+    required this.operation,
     this.units,
   });
   final Incident incident;
   final Operation operation;
-  final List<String> units;
+  final List<String>? units;
 }

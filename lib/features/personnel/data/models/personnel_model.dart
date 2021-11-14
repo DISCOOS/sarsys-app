@@ -1,5 +1,3 @@
-// @dart=2.11
-
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
@@ -22,15 +20,15 @@ part 'personnel_model.g.dart';
 @JsonSerializable()
 class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic>> {
   PersonnelModel({
-    @required String uuid,
-    @required this.affiliation,
-    @required AggregateRef<Tracking> tracking,
-    @required AggregateRef<Operation> operation,
-    PersonnelStatus status,
-    AggregateRef<Unit> unit,
-    OperationalFunctionType function,
+    required String uuid,
+    required this.affiliation,
+    required AggregateRef<Tracking> tracking,
+    required AggregateRef<Operation>? operation,
+    PersonnelStatus? status,
+    AggregateRef<Unit>? unit,
+    OperationalFunctionType? function,
   })  : unit = unit?.cast<UnitModel>(),
-        tracking = tracking?.cast<TrackingModel>(),
+        tracking = tracking.cast<TrackingModel>(),
         operation = operation?.cast<OperationModel>(),
         super(
           uuid: uuid,
@@ -43,22 +41,22 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
         );
 
   @override
-  PersonModel get person => affiliation?.person;
+  PersonModel get person => affiliation.person!;
 
   @override
   final AffiliationModel affiliation;
 
   @override
   @JsonKey(fromJson: toUnitRef)
-  final AggregateRef<UnitModel> unit;
+  final AggregateRef<UnitModel>? unit;
 
   @override
   @JsonKey(fromJson: toOperationRef)
-  final AggregateRef<OperationModel> operation;
+  final AggregateRef<OperationModel>? operation;
 
   @override
   @JsonKey(fromJson: toTrackingRef)
-  final AggregateRef<TrackingModel> tracking;
+  final AggregateRef<Tracking> tracking;
 
   /// Factory constructor for creating a new `Personnel` instance from json data
   factory PersonnelModel.fromJson(Map<String, dynamic> json) => _$PersonnelModelFromJson(json);
@@ -81,26 +79,26 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       function: clone.function,
       tracking: clone.tracking,
       operation: clone.operation,
-      affiliation: clone.affiliation,
+      affiliation: clone.affiliation!,
     );
   }
 
   Personnel copyWith({
-    String uuid,
-    String fname,
-    String lname,
-    String phone,
-    String email,
-    String userId,
-    bool temporary,
-    PersonnelStatus status,
-    Affiliation affiliation,
-    AggregateRef<Unit> unit,
-    AggregateRef<Tracking> tracking,
-    OperationalFunctionType function,
-    AggregateRef<Operation> operation,
+    String? uuid,
+    String? fname,
+    String? lname,
+    String? phone,
+    String? email,
+    String? userId,
+    bool? temporary,
+    PersonnelStatus? status,
+    Affiliation? affiliation,
+    AggregateRef<Unit>? unit,
+    AggregateRef<Tracking>? tracking,
+    OperationalFunctionType? function,
+    AggregateRef<Operation>? operation,
   }) {
-    final _affiliation = (affiliation ?? this.affiliation);
+    final _affiliation = (affiliation ?? this.affiliation!);
     final _person = _affiliation.person;
     return PersonnelModel(
       uuid: uuid ?? this.uuid,
@@ -114,27 +112,27 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
           phone: phone,
           email: email,
           userId: userId,
-          person: _person,
+          person: _person!,
           temporary: temporary,
         ),
-      ),
+      ) as AffiliationModel,
       tracking: tracking?.cast<TrackingModel>() ?? this.tracking,
       operation: operation?.cast<OperationModel>() ?? this.operation,
     );
   }
 
   Person _copyPerson({
-    String uuid,
-    String fname,
-    String lname,
-    String phone,
-    String email,
-    String userId,
-    Person person,
-    bool temporary,
+    String? uuid,
+    String? fname,
+    String? lname,
+    String? phone,
+    String? email,
+    String? userId,
+    required Person person,
+    bool? temporary,
   }) {
     final _person = person ?? this.person;
-    return person?.copyWith(
+    return person.copyWith(
       uuid: uuid ?? _person?.uuid,
       fname: fname ?? _person?.fname,
       lname: lname ?? _person?.lname,
@@ -154,7 +152,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       function: function,
       tracking: tracking,
       operation: operation,
-      affiliation: affiliation.copyWith(
+      affiliation: affiliation!.copyWith(
         person: person != null
             ? _copyPerson(
                 person: person,
@@ -162,7 +160,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
             : keep
                 ? this.person
                 : null,
-      ),
+      ) as AffiliationModel,
     );
   }
 }

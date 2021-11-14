@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -15,6 +15,7 @@ import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'personnel_service.chopper.dart';
 
 /// Service for consuming the personnels endpoint
@@ -51,7 +52,7 @@ class PersonnelService extends StatefulServiceDelegate<Personnel, PersonnelModel
   void dispose() {
     _controller.close();
     PersonnelMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -70,9 +71,9 @@ enum PersonnelMessageType {
 class PersonnelMessage extends MessageModel {
   PersonnelMessage(Map<String, dynamic> data) : super(data);
 
-  PersonnelMessageType get type {
+  PersonnelMessageType? get type {
     final type = data.elementAt('type');
-    return PersonnelMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return PersonnelMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -81,16 +82,16 @@ abstract class PersonnelServiceImpl extends StatefulService<Personnel, Personnel
   PersonnelServiceImpl()
       : super(
           decoder: (json) => PersonnelModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<PersonnelModel>(value, remove: const [
+          reducer: (value) => JsonUtils.toJson<PersonnelModel?>(value, remove: const [
             'unit',
             'operation',
           ]),
         );
-  static PersonnelServiceImpl newInstance([ChopperClient client]) => _$PersonnelServiceImpl(client);
+  static PersonnelServiceImpl newInstance([ChopperClient? client]) => _$PersonnelServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Personnel> state) => create(
-        state.value.operation.uuid,
+        state.value.operation!.uuid,
         state.value,
       );
 
@@ -108,25 +109,25 @@ abstract class PersonnelServiceImpl extends StatefulService<Personnel, Personnel
 
   @Patch(path: 'personnels/{uuid}')
   Future<Response<StorageState<Personnel>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Personnel personnel,
   );
 
   @override
   Future<Response<StorageState<Personnel>>> onDelete(StorageState<Personnel> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Personnel>>);
 
   @Delete(path: 'personnels/{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
   @override
   Future<Response<PagedList<StorageState<Personnel>>>> onGetPageFromId(
-    String id,
-    int offset,
-    int limit,
+    String? id,
+    int? offset,
+    int? limit,
     List<String> options,
   ) =>
       fetch(
@@ -139,8 +140,8 @@ abstract class PersonnelServiceImpl extends StatefulService<Personnel, Personnel
   @Get(path: '/operations/{ouuid}/personnels')
   Future<Response<PagedList<StorageState<Personnel>>>> fetch(
     @Path('ouuid') ouuid,
-    @Query('offset') int offset,
-    @Query('limit') int limit, {
-    @Query('expand') String expand,
+    @Query('offset') int? offset,
+    @Query('limit') int? limit, {
+    @Query('expand') String? expand,
   });
 }

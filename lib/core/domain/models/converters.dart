@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
@@ -33,11 +33,11 @@ class LatLngConverter implements JsonConverter<LatLng, Map<String, dynamic>> {
       };
 }
 
-class LatLngBoundsConverter implements JsonConverter<LatLngBounds, Map<String, dynamic>> {
+class LatLngBoundsConverter implements JsonConverter<LatLngBounds?, Map<String, dynamic>?> {
   const LatLngBoundsConverter();
 
   @override
-  LatLngBounds fromJson(Map<String, dynamic> json) => json != null
+  LatLngBounds? fromJson(Map<String, dynamic>? json) => json != null
       ? LatLngBounds(
           LatLngConverter().fromJson(json['ne']),
           LatLngConverter().fromJson(json['sw']),
@@ -45,10 +45,10 @@ class LatLngBoundsConverter implements JsonConverter<LatLngBounds, Map<String, d
       : null;
 
   @override
-  Map<String, dynamic> toJson(LatLngBounds bounds) => bounds != null
+  Map<String, dynamic>? toJson(LatLngBounds? bounds) => bounds != null
       ? {
-          "ne": LatLngConverter().toJson(bounds.northEast),
-          "sw": LatLngConverter().toJson(bounds.southWest),
+          "ne": LatLngConverter().toJson(bounds.northEast!),
+          "sw": LatLngConverter().toJson(bounds.southWest!),
         }
       : null;
 
@@ -64,7 +64,7 @@ class FleetMapTalkGroupConverter implements JsonConverter<List<TalkGroup>, List<
   List<TalkGroup> fromJson(List<dynamic> list) {
     var id = 0;
     final map = list.map(
-      (name) => to('${id++}', name as String),
+      (name) => to('${id++}', name as String?),
     );
     return map.toList();
   }
@@ -74,7 +74,7 @@ class FleetMapTalkGroupConverter implements JsonConverter<List<TalkGroup>, List<
     return items.map((tg) => tg.name).toList();
   }
 
-  static TalkGroup to(String id, String name) {
+  static TalkGroup to(String id, String? name) {
     return TalkGroup(
       id: id,
       name: name,
@@ -100,17 +100,17 @@ AggregateRef<AffiliationModel> toAffiliationRef(dynamic json) => AggregateRef<Af
 
 /// GeoJSON specifies longitude at index 0,
 /// see https://tools.ietf.org/html/rfc7946#section-3.1.1
-double lonFromJson(Object json) => _toDouble(json, 0);
+double? lonFromJson(Object? json) => _toDouble(json, 0);
 
 /// GeoJSON specifies latitude at index 1,
 /// see https://tools.ietf.org/html/rfc7946#section-3.1.1
-double latFromJson(Object json) => _toDouble(json, 1);
+double? latFromJson(Object? json) => _toDouble(json, 1);
 
 /// GeoJSON specifies altitude at index 2,
 /// see https://tools.ietf.org/html/rfc7946#section-3.1.1
-double altFromJson(Object json) => _toDouble(json, 2);
+double? altFromJson(Object? json) => _toDouble(json, 2);
 
-double _toDouble(Object json, int index) {
+double? _toDouble(Object? json, int index) {
   if (json is List) {
     if (index < json.length) {
       var value = json[index];
@@ -124,5 +124,5 @@ double _toDouble(Object json, int index) {
   return null;
 }
 
-Coordinates coordsFromJson(List json) => Coordinates.fromJson(json);
+Coordinates coordsFromJson(List? json) => Coordinates.fromJson(json);
 dynamic coordsToJson(Coordinates coords) => coords.toJson();

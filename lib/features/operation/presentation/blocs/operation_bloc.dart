@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -23,7 +23,7 @@ export 'operation_commands.dart';
 export 'operation_states.dart';
 
 class OperationBloc
-    extends StatefulBloc<OperationCommand, OperationState, OperationBlocError, String, Operation, OperationService>
+    extends StatefulBloc<OperationCommand, OperationState, OperationBlocError, String?, Operation, OperationService>
     with
         LoadableBloc<List<Operation>>,
         CreatableBloc<Operation>,
@@ -39,24 +39,20 @@ class OperationBloc
     BlocEventBus bus,
   ) : super(OperationsEmpty(), bus: bus) {
     assert(this.userBloc != null, "userBloc can not be null");
-    assert(this.repo != null, "operations repository can not be null");
-    assert(this.incidents != null, "incidents repository can not be null");
-    assert(this.repo.service != null, "operations service can not be null");
-    assert(this.incidents.service != null, "incidents service can not be null");
 
-    registerStreamSubscription(userBloc.stream.listen(
+    registerStreamSubscription(userBloc!.stream.listen(
       // Load and unload operations as needed
       _processUserState,
     ));
 
     // Notify when Incident state has changed
     forward<Incident>(
-      (t) => _NotifyRepositoryStateChanged<Incident>(t),
+      (t) => _NotifyRepositoryStateChanged<Incident?>(t!),
     );
 
     // Notify when Operation state has changed
     forward<Operation>(
-      (t) => _NotifyRepositoryStateChanged<Operation>(t),
+      (t) => _NotifyRepositoryStateChanged<Operation?>(t!),
     );
   }
 
@@ -88,15 +84,15 @@ class OperationBloc
   Iterable<Operation> get values => repo.values;
 
   /// Get [Operation] from [uuid]
-  Operation operator [](String uuid) => repo[uuid];
+  Operation? operator [](String? uuid) => repo[uuid!];
 
   /// All repositories
-  Iterable<StatefulRepository> get repos => [incidents, repo];
+  Iterable<StatefulRepository?> get repos => [incidents, repo];
 
   /// Get [OperationService]
   OperationService get service => repo.service;
 
-  String _ouuid;
+  String? _ouuid;
 
   void _processUserState(UserState state) {
     try {
@@ -119,43 +115,43 @@ class OperationBloc
   bool get isUnselected => _ouuid == null;
 
   /// Get selected [Operation]
-  Operation get selected => repo[_ouuid];
+  Operation? get selected => repo[_ouuid!];
 
   /// Get [Operation] from uuid
-  Operation get(String uuid) => repo[uuid];
+  Operation? get(String? uuid) => repo[uuid!];
 
   /// Get operations
-  List<Operation> get operations => repo.values;
+  List<Operation?> get operations => repo.values as List<Operation?>;
 
   /// Get operation uuids
-  List<String> get ouuids => repo.keys;
+  List<String?> get ouuids => repo.keys as List<String?>;
 
   /// Check if current [user] is authorized access to [operation] with given [role].
   ///
   /// If [operation] is not given, [selected] is used instead.
   ///
-  bool isAuthorizedAs(UserRole role, {Operation operation}) => userBloc.isAuthorizedAs(
+  bool isAuthorizedAs(UserRole role, {Operation? operation}) => userBloc!.isAuthorizedAs(
         operation ?? selected,
         role,
       );
 
   /// Stream of switched between given operations
-  Stream<Operation> get onSwitched => stream
+  Stream<Operation?> get onSwitched => stream
       .where(
-        (state) => state is OperationSelected && state.data.uuid != _ouuid,
+        (state) => state is OperationSelected && state.data!.uuid != _ouuid,
       )
-      .map((state) => state.data);
+      .map((state) => state!.data);
 
   /// Stream of operation changes
-  Stream<Operation> onChanged([Operation operation]) => stream
+  Stream<Operation?> onChanged([Operation? operation]) => stream
       .where(
-        (state) => _isOn(operation, state) && state.isCreated() || state.isUpdated() || state.isSelected(),
+        (state) => _isOn(operation, state) && state!.isCreated() || state!.isUpdated() || state.isSelected(),
       )
-      .map((state) => state.data);
+      .map((state) => state!.data);
 
-  bool _isOn(Operation operation, OperationState state) => (operation == null || state.data.uuid == operation.uuid);
+  bool _isOn(Operation? operation, OperationState? state) => (operation == null || state!.data.uuid == operation.uuid);
 
-  String _assertUuid(Operation data) {
+  String? _assertUuid(Operation? data) {
     if (data?.uuid == null) {
       throw ArgumentError(
         "Operation have no uuid",
@@ -176,7 +172,7 @@ class OperationBloc
         "Incident have no uuid",
       );
     }
-    final operation = command.data;
+    final Operation? operation = command.data;
     if (operation?.uuid == null) {
       throw ArgumentError(
         "Operation have no uuid",
@@ -184,13 +180,13 @@ class OperationBloc
     }
     if (operation?.incident?.uuid == null) {
       throw ArgumentError(
-        "Operation ${operation.uuid} have no incident uuid",
+        "Operation ${operation!.uuid} have no incident uuid",
       );
     }
-    if (operation?.incident?.uuid != command.incident.uuid) {
+    if (operation?.incident?.uuid != command.incident!.uuid) {
       throw ArgumentError(
-        "Operation ${operation.uuid} does not reference "
-        "incident ${command.incident.uuid}",
+        "Operation ${operation!.uuid} does not reference "
+        "incident ${command.incident!.uuid}",
       );
     }
   }
@@ -203,7 +199,7 @@ class OperationBloc
   }
 
   /// Select [Operation] with given [Operation.uuid]
-  Future<Operation> select(String uuid) {
+  Future<Operation?> select(String? uuid) {
     if (emptyAsNull(uuid) == null) {
       throw ArgumentError('Operation uuid can not be empty or null');
     }
@@ -211,14 +207,15 @@ class OperationBloc
   }
 
   /// Unselect [selected]
-  Future<Operation> unselect() {
+  Future<Operation?> unselect() {
     return dispatch(UnselectOperation());
   }
 
   /// Create given operation
+  @override
   Future<Operation> create(
     Operation operation, {
-    @required Incident incident,
+    required Incident incident,
     bool selected = true,
     List<String> units = const [],
   }) {
@@ -231,10 +228,11 @@ class OperationBloc
   }
 
   /// Update given operation
+  @override
   Future<Operation> update(
-    Operation operation, {
+    Operation? operation, {
     bool selected = true,
-    Incident incident,
+    Incident? incident,
   }) {
     return dispatch(UpdateOperation(
       operation,
@@ -271,9 +269,9 @@ class OperationBloc
     } else if (command is UnloadOperations) {
       yield* _unload(command);
     } else if (command is UnselectOperation) {
-      yield await _unselect(command);
+      yield await (_unselect(command) as FutureOr<OperationState<dynamic>>);
     } else if (command is _NotifyRepositoryStateChanged) {
-      yield _notify(command);
+      yield _notify(command)!;
     } else if (command is _NotifyBlocStateChanged) {
       yield command.data;
     } else {
@@ -283,7 +281,7 @@ class OperationBloc
 
   Stream<OperationState> _load(LoadOperations command) async* {
     // Get currently selected uuid
-    String ouuid = await _readSelected();
+    String? ouuid = await _readSelected();
 
     // Fetch cached and handle
     // response from remote when ready
@@ -300,18 +298,18 @@ class OperationBloc
 
     // Unselect and reselect
     final operation = operations.firstWhere(
-      (operation) => ouuid == operation.uuid,
+      (operation) => ouuid == operation!.uuid,
       orElse: () => null,
     );
     final unselected = await _unset(selected: operation);
     final selected = await _set(operation);
 
     // Complete request
-    final loaded = toOK(
+    final OperationState<dynamic>? loaded = toOK(
       command,
       OperationsLoaded(
         repo.keys,
-        incidents: incidents.keys,
+        incidents: incidents.keys as List<String?>?,
       ),
       result: operations,
     );
@@ -322,7 +320,7 @@ class OperationBloc
     if (selected != null) {
       yield selected;
     }
-    yield loaded;
+    yield loaded!;
 
     // Notify when states was fetched from remote storage
     onComplete(
@@ -333,7 +331,7 @@ class OperationBloc
       toState: (_) => OperationsLoaded(
         repo.keys,
         isRemote: true,
-        incidents: incidents.keys,
+        incidents: incidents.keys as List<String?>?,
       ),
       toCommand: (state) => _NotifyBlocStateChanged(state),
       toError: (error, stackTrace) => toError(
@@ -344,10 +342,10 @@ class OperationBloc
     );
   }
 
-  Future<String> _readSelected() async {
+  Future<String?> _readSelected() async {
     _ouuid = _ouuid ??
         await Storage.readUserValue(
-          userBloc.user,
+          userBloc!.user,
           suffix: SELECTED_KEY_SUFFIX,
         );
     return _ouuid;
@@ -356,12 +354,12 @@ class OperationBloc
   Stream<OperationState> _create(CreateOperation command) async* {
     _assertData(command);
     // Execute commands
-    incidents.apply(command.incident);
-    final operation = repo.apply(command.data);
+    incidents.apply(command.incident!);
+    final operation = repo.apply(command.data!)!;
     final unselected = command.selected ? await _unset() : null;
     final selected = command.selected ? await _set(operation) : null;
     // Complete request
-    final created = toOK(
+    final OperationState<dynamic>? created = toOK(
       command,
       OperationCreated(
         operation,
@@ -374,7 +372,7 @@ class OperationBloc
     if (unselected != null) {
       yield unselected;
     }
-    yield created;
+    yield created!;
     if (selected != null) {
       yield selected;
     }
@@ -383,7 +381,7 @@ class OperationBloc
     onComplete(
       [
         repo.onRemote(operation.uuid),
-        incidents.onRemote(operation.incident.uuid),
+        incidents.onRemote(operation.incident!.uuid!),
       ],
       toState: (_) => OperationCreated(
         operation,
@@ -401,17 +399,17 @@ class OperationBloc
   Stream<OperationState> _update(UpdateOperation command) async* {
     final uuid = _assertUuid(command.data);
     // Execute command
-    final previous = repo.get(uuid);
-    final operation = repo.apply(command.data);
+    final previous = repo.get(uuid!);
+    final operation = repo.apply(command.data!)!;
     if (command.incident != null) {
-      incidents.apply(command.incident);
+      incidents.apply(command.incident!);
     }
-    final select = command.selected && command.data.uuid != _ouuid;
+    final select = command.selected && command.data!.uuid != _ouuid;
     final unselected = select ? await _unset() : null;
     final selected = select ? await _set(operation) : null;
     final selectionChanged = unselected != selected;
     // Complete request
-    final updated = toOK(
+    final OperationState<dynamic>? updated = toOK(
       command,
       OperationUpdated(
         operation,
@@ -427,7 +425,7 @@ class OperationBloc
         yield unselected;
       }
     }
-    yield updated;
+    yield updated!;
     if (selectionChanged) {
       if (selected != null) {
         yield selected;
@@ -438,7 +436,7 @@ class OperationBloc
     onComplete(
       [
         repo.onRemote(operation.uuid),
-        incidents.onRemote(operation.incident.uuid),
+        incidents.onRemote(operation.incident!.uuid!),
       ],
       toState: (_) => OperationUpdated(
         operation,
@@ -460,11 +458,11 @@ class OperationBloc
     final unselected = command.data == _ouuid ? await _unset() : null;
     // Execute command
     var operation = repo.delete(
-      command.data,
+      command.data!,
       onResult: onRemote,
     );
     // Complete request
-    final deleted = toOK(
+    final OperationState<dynamic>? deleted = toOK(
       command,
       OperationDeleted(operation),
       result: operation,
@@ -473,7 +471,7 @@ class OperationBloc
     if (unselected != null) {
       yield unselected;
     }
-    yield deleted;
+    yield deleted!;
 
     // Notify when all states are remote
     onComplete(
@@ -497,10 +495,10 @@ class OperationBloc
 
     // Execute commands
     await incidents.close();
-    List<Operation> operations = await repo.close();
+    List<Operation?> operations = await repo.close();
 
     // Complete request
-    final unloaded = toOK(
+    final OperationState<dynamic>? unloaded = toOK(
       command,
       OperationsUnloaded(operations),
     );
@@ -508,16 +506,16 @@ class OperationBloc
     if (unselected != null) {
       yield unselected;
     }
-    yield unloaded;
+    yield unloaded!;
   }
 
   Stream<OperationState> _select(SelectOperation command) async* {
     if (repo.containsKey(command.data)) {
-      final operation = repo[command.data];
+      final operation = repo[command.data!];
       final unselected = await _unset(selected: operation);
-      final selected = toOK(
+      final OperationState<dynamic>? selected = toOK(
         command,
-        await _set(repo[command.data]),
+        await _set(repo[command.data!]),
         result: operation,
       );
       if (unselected != null) {
@@ -542,21 +540,21 @@ class OperationBloc
     }
   }
 
-  Future<OperationSelected> _set(Operation operation) async {
-    OperationSelected selected;
+  Future<OperationSelected> _set(Operation? operation) async {
+    OperationSelected? selected;
     if (_ouuid != operation?.uuid) {
       _ouuid = operation?.uuid;
       await Storage.writeUserValue(
-        userBloc.user,
+        userBloc!.user,
         suffix: SELECTED_KEY_SUFFIX,
         value: _ouuid,
       );
       selected = OperationSelected(operation);
     }
-    return selected;
+    return selected!;
   }
 
-  Future<OperationState> _unselect(OperationCommand command) async {
+  Future<OperationState?> _unselect(OperationCommand command) async {
     final unselected = await _unset();
     if (unselected != null) {
       return toOK(
@@ -571,17 +569,17 @@ class OperationBloc
     );
   }
 
-  Future<OperationState> _unset({
-    Operation selected,
+  Future<OperationState?> _unset({
+    Operation? selected,
   }) async {
-    OperationUnselected unselected;
+    OperationUnselected? unselected;
     if (selected?.uuid != _ouuid) {
-      final operation = repo[_ouuid];
+      final operation = repo[_ouuid!];
       if (operation != null) {
         unselected = OperationUnselected(operation);
       }
       await Storage.deleteUserValue(
-        userBloc.user,
+        userBloc!.user,
         suffix: SELECTED_KEY_SUFFIX,
       );
     }
@@ -589,7 +587,7 @@ class OperationBloc
     return unselected;
   }
 
-  OperationState _notify(_NotifyRepositoryStateChanged command) {
+  OperationState? _notify(_NotifyRepositoryStateChanged command) {
     final state = command.state;
 
     switch (command.type) {
@@ -601,7 +599,7 @@ class OperationBloc
       command,
       OperationIncidentUpdated(
         command.state as Incident,
-        command.previous as Incident,
+        command.previous as Incident?,
         selected,
         isRemote: command.isRemote,
       ),
@@ -609,7 +607,7 @@ class OperationBloc
     );
   }
 
-  OperationState _notifyOperationChanged(_NotifyRepositoryStateChanged command, state) {
+  OperationState? _notifyOperationChanged(_NotifyRepositoryStateChanged command, state) {
     switch (command.status) {
       case StorageStatus.created:
         return toOK(
@@ -618,7 +616,7 @@ class OperationBloc
             state,
             selected: selected != null,
             isRemote: command.isRemote,
-            incident: selected != null ? incidents[selected.incident?.uuid] : null,
+            incident: selected != null ? incidents[selected!.incident!.uuid!] : null,
           ),
           result: state,
         );
@@ -630,7 +628,7 @@ class OperationBloc
             command.previous,
             selected: selected != null,
             isRemote: command.isRemote,
-            incident: selected != null ? incidents[selected.incident?.uuid] : null,
+            incident: selected != null ? incidents[selected!.incident!.uuid!] : null,
           ),
           result: state,
         );
@@ -652,7 +650,7 @@ class OperationBloc
   }
 
   @override
-  OperationBlocError createError(Object error, {StackTrace stackTrace}) => OperationBlocError(
+  OperationBlocError createError(Object error, {StackTrace? stackTrace}) => OperationBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
@@ -669,5 +667,5 @@ class _NotifyRepositoryStateChanged<T> extends OperationCommand<StorageTransitio
 
 class _NotifyBlocStateChanged<T> extends OperationCommand<OperationState<T>, T>
     with NotifyBlocStateChangedMixin<OperationState<T>, T> {
-  _NotifyBlocStateChanged(OperationState state) : super(state);
+  _NotifyBlocStateChanged(OperationState? state) : super(state as OperationState<T>);
 }

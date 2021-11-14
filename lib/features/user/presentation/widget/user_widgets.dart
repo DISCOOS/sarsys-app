@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/core/size_config.dart';
@@ -26,17 +26,17 @@ class UserWidget extends StatelessWidget {
   final bool withHeader;
   final bool withActions;
   final User user;
-  final VoidCallback onDeleted;
-  final Organisation organisation;
+  final VoidCallback? onDeleted;
+  final Organisation? organisation;
   final MessageCallback onMessage;
-  final ValueChanged<Point> onGoto;
-  final ValueChanged<User> onChanged;
-  final ValueChanged<User> onCompleted;
+  final ValueChanged<Point>? onGoto;
+  final ValueChanged<User>? onChanged;
+  final ValueChanged<User>? onCompleted;
 
   const UserWidget({
-    Key key,
-    @required this.user,
-    @required this.onMessage,
+    Key? key,
+    required this.user,
+    required this.onMessage,
     this.onGoto,
     this.onDeleted,
     this.onChanged,
@@ -55,7 +55,7 @@ class UserWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) _buildHeader(context, user, theme),
+        if (withHeader) _buildHeader(context, user!, theme),
         if (withHeader) Divider() else SizedBox(height: 8.0),
         if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
         if (withActions) ...[
@@ -160,20 +160,20 @@ class UserWidget extends StatelessWidget {
     final affiliation = context.read<AffiliationBloc>().findUserAffiliation();
     return AffiliationView(
       onMessage: onMessage,
-      affiliation: affiliation,
+      affiliation: affiliation!,
       onComplete: () => _onComplete(user),
     );
   }
 
   void _onComplete([user]) {
-    if (onCompleted != null) onCompleted(user ?? this.user);
+    if (onCompleted != null) onCompleted!(user ?? this.user);
   }
 }
 
 class UserActionGroup extends StatelessWidget {
   UserActionGroup({
-    @required this.user,
-    @required this.type,
+    required this.user,
+    required this.type,
     this.onDeleted,
     this.onMessage,
     this.onChanged,
@@ -181,10 +181,10 @@ class UserActionGroup extends StatelessWidget {
   });
   final User user;
   final ActionGroupType type;
-  final VoidCallback onDeleted;
-  final MessageCallback onMessage;
-  final ValueChanged<User> onChanged;
-  final ValueChanged<User> onCompleted;
+  final VoidCallback? onDeleted;
+  final MessageCallback? onMessage;
+  final ValueChanged<User>? onChanged;
+  final ValueChanged<User>? onCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +232,7 @@ class UserActionGroup extends StatelessWidget {
   }
 
   Widget _buildDeleteButton(BuildContext context) {
-    final button = Theme.of(context).textTheme.button;
+    final button = Theme.of(context).textTheme.button!;
     return Tooltip(
       message: "Slett bruker",
       child: TextButton.icon(
@@ -277,8 +277,8 @@ class UserActionGroup extends StatelessWidget {
 }
 
 class LocationBufferWidget extends StatefulWidget {
-  const LocationBufferWidget({Key key, this.onMessage}) : super(key: key);
-  final ActionCallback onMessage;
+  const LocationBufferWidget({Key? key, this.onMessage}) : super(key: key);
+  final ActionCallback? onMessage;
 
   @override
   _LocationBufferWidgetState createState() => _LocationBufferWidgetState();
@@ -286,12 +286,12 @@ class LocationBufferWidget extends StatefulWidget {
 
 class _LocationBufferWidgetState extends State<LocationBufferWidget> {
   var state = 0;
-  LocationOptions get options => LocationService().options;
-  bool get locationAllowSharing => options.locationAllowSharing;
-  bool get isLocationStoreLocally => options.locationStoreLocally;
+  LocationOptions? get options => LocationService().options;
+  bool get locationAllowSharing => options!.locationAllowSharing;
+  bool get isLocationStoreLocally => options!.locationStoreLocally;
 
   Future<SharedPreferences> get future => _prefs ??= SharedPreferences.getInstance();
-  Future<SharedPreferences> _prefs;
+  Future<SharedPreferences>? _prefs;
 
   @override
   Widget build(BuildContext context) {
@@ -305,7 +305,7 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
           builder: (context, snapshot) {
             final manual = snapshot.hasData
                 // Read from shared preferences
-                ? (snapshot.data.getBool(LocationService.pref_location_manual) ?? false)
+                ? (snapshot.data!.getBool(LocationService.pref_location_manual) ?? false)
                 : false;
 
             return Column(
@@ -432,10 +432,10 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
   Widget _buildStatus(LocationService service) => StreamBuilder<LocationEvent>(
         stream: service.onEvent,
         builder: (context, snapshot) {
-          return FutureBuilder<Iterable<Position>>(
+          return FutureBuilder<Iterable<Position?>>(
               future: service.backlog(),
               builder: (context, history) {
-                final positions = history.hasData ? history.data as Iterable : [];
+                final positions = history.hasData ? (history.data as Iterable?)! : [];
                 final usage = positions.length / 1000;
                 return CircularPercentIndicator(
                   radius: SizeConfig.screenMin * 0.70,
@@ -455,7 +455,7 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                           Divider(
                             thickness: 2,
                           ),
-                          _buildValue(context, service.odometer?.toInt(), 'meter'),
+                          _buildValue(context, service.odometer.toInt(), 'meter'),
                           Spacer(),
                           Text(
                             service.isStoring ? '${positions.length} av 1000 bufret' : 'Bufrer ikke',
@@ -505,15 +505,15 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
 
 class UserNameView extends StatelessWidget {
   const UserNameView({
-    Key key,
-    this.user,
+    Key? key,
+    required this.user,
     this.onMessage,
     this.onComplete,
   }) : super(key: key);
 
   final User user;
-  final VoidCallback onComplete;
-  final MessageCallback onMessage;
+  final VoidCallback? onComplete;
+  final MessageCallback? onMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -524,7 +524,7 @@ class UserNameView extends StatelessWidget {
             context: context,
             label: "Fornavn",
             icon: Icon(Icons.person),
-            value: user.fname,
+            value: user!.fname,
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -534,7 +534,7 @@ class UserNameView extends StatelessWidget {
             context: context,
             label: "Etternavn",
             icon: Icon(Icons.person_outline),
-            value: user.lname,
+            value: user!.lname,
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -546,15 +546,15 @@ class UserNameView extends StatelessWidget {
 
 class UserContactView extends StatelessWidget {
   const UserContactView({
-    Key key,
-    this.user,
+    Key? key,
+    required this.user,
     this.onMessage,
     this.onComplete,
   }) : super(key: key);
 
   final User user;
-  final VoidCallback onComplete;
-  final MessageCallback onMessage;
+  final VoidCallback? onComplete;
+  final MessageCallback? onMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -565,11 +565,11 @@ class UserContactView extends StatelessWidget {
             context: context,
             label: "Mobil",
             icon: Icon(Icons.phone),
-            value: user.phone ?? "Ukjent",
+            value: user!.phone ?? "Ukjent",
             onMessage: onMessage,
             onComplete: onComplete,
             onTap: () {
-              final number = user.phone ?? '';
+              final number = user!.phone ?? '';
               if (number.isNotEmpty) launch("tel:$number");
             },
           ),

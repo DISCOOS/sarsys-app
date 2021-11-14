@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -22,36 +22,36 @@ mixin ReadyAwareBloc<S, T> {
 }
 
 /// Connection aware [Bloc] mixin
-mixin ConnectionAwareBloc<K, V extends JsonObject, S extends StatefulServiceDelegate<V, V>> on ReadyAwareBloc<K, V> {
+mixin ConnectionAwareBloc<K, V extends JsonObject?, S extends StatefulServiceDelegate<V, V>> on ReadyAwareBloc<K, V> {
   /// Default timeout on requests that
   /// should return within finite time
   static const Duration timeLimit = const Duration(seconds: 1);
 
   /// Check if bloc is online
-  bool get isOnline => repo.isOnline;
+  bool get isOnline => repo!.isOnline;
 
   /// Check if bloc is offline
-  bool get isOffline => repo.isOffline;
+  bool get isOffline => repo!.isOffline;
 
   /// Check if repository is loading
   bool get isLoading => repos.whereType<StatefulRepository>().any((repo) => repo.isLoading);
 
   /// Get [StatefulRepository] instance
-  StatefulRepository<K, V, S> get repo;
+  StatefulRepository<K, V, S>? get repo;
 
   /// Get <ll repositories managed by this [Bloc]
-  Iterable<StatefulRepository> get repos => [repo];
+  Iterable<StatefulRepository?> get repos => [repo];
 
   /// Get all [V]s
-  Iterable<V> get values => repo.values;
+  Iterable<V> get values => repo!.values;
 
   /// Get [V] from [uuid]
-  V operator [](K uuid) => repo[uuid];
+  V? operator [](K uuid) => repo![uuid];
 
   /// Get [StatefulServiceDelegate] instance
-  S get service => repo.service;
+  S get service => repo!.service;
 
-  Completer<Iterable<V>> _onLoaded;
+  Completer<Iterable<V>>? _onLoaded;
 
   /// Wait on future completed when
   /// loading is finished. If offline
@@ -82,7 +82,7 @@ mixin ConnectionAwareBloc<K, V extends JsonObject, S extends StatefulServiceDele
     await onReady;
 
     if (_onLoaded?.isCompleted == false) {
-      return _onLoaded.future;
+      return _onLoaded!.future;
     }
 
     _onLoaded = Completer<Iterable<V>>();
@@ -93,11 +93,11 @@ mixin ConnectionAwareBloc<K, V extends JsonObject, S extends StatefulServiceDele
       1,
     );
 
-    return _onLoaded == null ? Future.value(values) : _onLoaded.future;
+    return _onLoaded == null ? Future.value(values) : _onLoaded!.future;
   }
 
   void _awaitLoaded(
-    Completer<Iterable<V>> completer,
+    Completer<Iterable<V>>? completer,
     bool waitForOnline,
     bool fail,
     int retry,
@@ -112,7 +112,7 @@ mixin ConnectionAwareBloc<K, V extends JsonObject, S extends StatefulServiceDele
 
     if (_shouldWait(waitForOnline)) {
       if (fail) {
-        completer.completeError(
+        completer!.completeError(
           RepositoryTimeoutException(
             "Waiting on $runtimeType to complete async loads failed",
             repo,
@@ -129,7 +129,7 @@ mixin ConnectionAwareBloc<K, V extends JsonObject, S extends StatefulServiceDele
           ++retry,
         );
       }
-    } else if (!completer.isCompleted) {
+    } else if (!completer!.isCompleted) {
       assert(!_shouldWait(waitForOnline), "Should not be loading when online");
       completer.complete(values);
       _onLoaded = null;

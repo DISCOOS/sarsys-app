@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:collection';
 import 'dart:math' as math;
@@ -24,7 +24,7 @@ class Ellipsoid extends Equatable {
   /// Supported ellipsoids
   static final ellipsoids = [Ellipsoid.wgs84];
 
-  final String name;
+  final String? name;
   final String shortName;
   final double equatorRadius;
   final double poleRadius;
@@ -41,7 +41,7 @@ class Ellipsoid extends Equatable {
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         shortName,
         name,
         equatorRadius,
@@ -214,8 +214,8 @@ class Datum extends Equatable {
     var pOut = ProjCoordinate.empty;
     if (_transform.length == 3) {
       pOut = ProjCoordinate(
-        coord.x + _transform[0],
-        coord.y + _transform[1],
+        coord.x! + _transform[0],
+        coord.y! + _transform[1],
         coord.z + _transform[2],
       );
     } else if (_transform.length == 7) {
@@ -227,9 +227,9 @@ class Datum extends Equatable {
       var rzBF = _transform[5];
       var mBF = _transform[6];
 
-      var xOut = mBF * (coord.x - rzBF * coord.y + ryBF * coord.z) + dxBF;
-      var yOut = mBF * (rzBF * coord.x + coord.y - rxBF * coord.z) + dyBF;
-      var zOut = mBF * (-ryBF * coord.x + rxBF * coord.y + coord.z) + dzBF;
+      var xOut = mBF * (coord.x! - rzBF * coord.y! + ryBF * coord.z) + dxBF;
+      var yOut = mBF * (rzBF * coord.x! + coord.y! - rxBF * coord.z) + dyBF;
+      var zOut = mBF * (-ryBF * coord.x! + rxBF * coord.y! + coord.z) + dzBF;
       pOut = ProjCoordinate(
         xOut,
         yOut,
@@ -244,8 +244,8 @@ class Datum extends Equatable {
     var pOut = ProjCoordinate.empty;
     if (_transform.length == 3) {
       pOut = ProjCoordinate(
-        coord.x - _transform[0],
-        coord.y - _transform[1],
+        coord.x! - _transform[0],
+        coord.y! - _transform[1],
         coord.z - _transform[2],
       );
     } else if (_transform.length == 7) {
@@ -257,8 +257,8 @@ class Datum extends Equatable {
       var rzBF = _transform[5];
       var mBF = _transform[6];
 
-      var xTmp = (coord.x - dxBF) / mBF;
-      var yTmp = (coord.y - dyBF) / mBF;
+      var xTmp = (coord.x! - dxBF) / mBF;
+      var yTmp = (coord.y! - dyBF) / mBF;
       var zTmp = (coord.z - dzBF) / mBF;
 
       pOut = ProjCoordinate(
@@ -282,18 +282,18 @@ class ProjCoordinate extends Equatable {
   static final decimalFormat = NumberFormat(decimalFormatPattern);
 
   /// The x-ordinate for this point.
-  final double x;
+  final double? x;
 
   /// The y-ordinate for this point.
-  final double y;
+  final double? y;
 
   /// The z-ordinate for this point.
   final double z;
 
   static final empty = ProjCoordinate(double.nan, double.nan, double.nan);
 
-  bool get isValidLon => x != null && (x >= -180.0 && x <= 180.0);
-  bool get isValidLat => y != null && (y >= -85.05112878 && y <= 85.05112878);
+  bool get isValidLon => x != null && (x! >= -180.0 && x! <= 180.0);
+  bool get isValidLat => y != null && (y! >= -85.05112878 && y! <= 85.05112878);
 
   /// Validate coordinates as lat and lon
   ///
@@ -308,16 +308,16 @@ class ProjCoordinate extends Equatable {
   );
 
   @override
-  List<Object> get props => [x, y, z];
+  List<Object?> get props => [x, y, z];
 
-  factory ProjCoordinate.from2D(double x, double y) => ProjCoordinate(x, y, double.nan);
+  factory ProjCoordinate.from2D(double? x, double? y) => ProjCoordinate(x, y, double.nan);
 
   ProjCoordinate toRadians() {
-    return ProjCoordinate(ProjMath.degToRad(x), ProjMath.degToRad(y), z);
+    return ProjCoordinate(ProjMath.degToRad(x!), ProjMath.degToRad(y!), z);
   }
 
   ProjCoordinate toDegrees() {
-    return ProjCoordinate(ProjMath.radToDeg(x), ProjMath.radToDeg(y), z);
+    return ProjCoordinate(ProjMath.radToDeg(x!), ProjMath.radToDeg(y!), z);
   }
 }
 
@@ -452,14 +452,14 @@ class ProjMath {
     return en[0] * phi - cphi * (en[1] + sphi * (en[2] + sphi * (en[3] + sphi * en[4])));
   }
 
-  static double mlfnInv(double arg, double es, List<double> en) {
+  static double mlfnInv(double arg, double es, List<double>? en) {
     double s, t, phi, k = 1.0 / (1.0 - es);
 
     phi = arg;
     for (int i = MAX_ITER; i != 0; i--) {
       s = math.sin(phi);
       t = 1.0 - es * s * s;
-      phi -= t = (mlfn(phi, s, math.cos(phi), en) - arg) * (t * math.sqrt(t)) * k;
+      phi -= t = (mlfn(phi, s, math.cos(phi), en!) - arg) * (t * math.sqrt(t)) * k;
       if (t.abs() < 1e-11) return phi;
     }
     return phi;
@@ -487,7 +487,7 @@ class ProjMath {
   ///
   /// Note that the calculation assumes ellipsoid is WGS84.
   static ProjCoordinate calculateEndingGlobalCoordinates(
-      double startLat, double startLon, double startBearing, double distance) {
+      double startLat, double? startLon, double startBearing, double distance) {
     var mSemiMajorAxis = 6378137.0; //WGS84 major axis
     var mSemiMinorAxis = (1.0 - 1.0 / 298.257223563) * 6378137.0;
     var mFlattening = 1.0 / 298.257223563;
@@ -594,7 +594,7 @@ class ProjMath {
 
     // build result
     var latitude = radToDeg(phi2);
-    var longitude = startLon + radToDeg(L);
+    var longitude = startLon! + radToDeg(L);
 
     // if ((endBearing != null) && (endBearing.length > 0)) {
     // endBearing[0] = toDegrees(alpha2);
@@ -693,10 +693,10 @@ abstract class Projection {
   double _totalScale = 0.0;
 
   /// [falseEasting], adjusted to the appropriate units using [fromMetres]
-  double _totalFalseEasting;
+  late double _totalFalseEasting;
 
   /// [falseNorthing], adjusted to the appropriate units using [fromMetres]
-  double _totalFalseNorthing;
+  late double _totalFalseNorthing;
 
   /// Flag for geocentric projection.
   ///
@@ -709,16 +709,16 @@ abstract class Projection {
     this.ellipsoid,
     this.unit, {
     this.geocentric = false,
-    double minLatitude,
-    double maxLatitude,
-    double minLongitude,
-    double maxLongitude,
-    double projectionLatitude,
-    double projectionLongitude,
-    double scaleFactor,
-    double falseEasting,
-    double falseNorthing,
-    double fromMetres,
+    double? minLatitude,
+    double? maxLatitude,
+    double? minLongitude,
+    double? maxLongitude,
+    double? projectionLatitude,
+    double? projectionLongitude,
+    double? scaleFactor,
+    double? falseEasting,
+    double? falseNorthing,
+    double? fromMetres,
   }) {
     _init(
       minLatitude: minLatitude ?? _minLatitude,
@@ -747,16 +747,16 @@ abstract class Projection {
   @protected
   @mustCallSuper
   void _init({
-    double minLatitude,
-    double maxLatitude,
-    double minLongitude,
-    double maxLongitude,
-    double projectionLatitude,
-    double projectionLongitude,
-    double scaleFactor,
-    double falseEasting,
-    double falseNorthing,
-    double fromMetres,
+    double? minLatitude,
+    double? maxLatitude,
+    double? minLongitude,
+    double? maxLongitude,
+    double? projectionLatitude,
+    double? projectionLongitude,
+    double? scaleFactor,
+    double? falseEasting,
+    double? falseNorthing,
+    double? fromMetres,
   }) {
     _minLatitude = minLatitude ?? _minLatitude;
     _maxLatitude = maxLatitude ?? _maxLatitude;
@@ -784,20 +784,20 @@ abstract class Projection {
   /// Projects a geographic point (in degrees),
   /// producing a projected result in the units of the target coordinate system.
   ProjCoordinate project(ProjCoordinate src) {
-    var x = src.x * ProjMath.DTR;
+    var x = src.x! * ProjMath.DTR;
     if (_projectionLongitude != 0) {
       x = ProjMath.normalizeLongitudeInRadians(x - _projectionLongitude);
     }
-    var y = src.y * ProjMath.DTR;
+    var y = src.y! * ProjMath.DTR;
     ProjCoordinate dst = _project(x, y);
     if (ProjUnit.degree == unit) {
       // convert radians to decimal degrees (DD)
-      x = dst.x * ProjMath.RTD;
-      y = dst.y * ProjMath.RTD;
+      x = dst.x! * ProjMath.RTD;
+      y = dst.y! * ProjMath.RTD;
     } else {
       // assume result is in metres
-      x = _totalScale * dst.x + _totalFalseEasting;
-      y = _totalScale * dst.y + _totalFalseNorthing;
+      x = _totalScale * dst.x! + _totalFalseEasting;
+      y = _totalScale * dst.y! + _totalFalseNorthing;
     }
     return ProjCoordinate(x, y, src.z);
   }
@@ -811,18 +811,18 @@ abstract class Projection {
     var x, y;
     if (ProjUnit.degree == unit) {
       // convert DD to radians
-      x = src.x * ProjMath.DTR;
-      y = src.y * ProjMath.DTR;
+      x = src.x! * ProjMath.DTR;
+      y = src.y! * ProjMath.DTR;
     } else {
-      x = (src.x - _totalFalseEasting) / _totalScale;
-      y = (src.y - _totalFalseNorthing) / _totalScale;
+      x = (src.x! - _totalFalseEasting) / _totalScale;
+      y = (src.y! - _totalFalseNorthing) / _totalScale;
     }
 
     ProjCoordinate dst = _inverse(x, y);
 
-    if (dst.x < -math.pi) {
+    if (dst.x! < -math.pi) {
       x = -math.pi;
-    } else if (dst.x > math.pi) {
+    } else if (dst.x! > math.pi) {
       x = math.pi;
     } else {
       x = dst.x;
@@ -830,11 +830,11 @@ abstract class Projection {
     if (_projectionLongitude != 0) {
       x = ProjMath.normalizeLongitudeInRadians(x + _projectionLongitude);
     }
-    return ProjCoordinate(x * ProjMath.RTD, dst.y * ProjMath.RTD, src.z);
+    return ProjCoordinate(x * ProjMath.RTD, dst.y! * ProjMath.RTD, src.z);
   }
 
   /// Inverse-projection algorithm implemented by subclasses
-  ProjCoordinate _inverse(double x, double y);
+  ProjCoordinate _inverse(double? x, double y);
 }
 
 /// Transverse Mercator Projection algorithm
@@ -887,15 +887,15 @@ class TransverseMercatorProjection extends Projection {
     ProjUnit unit, {
     int zone = TRANSVERSE_MERCATOR,
     bool isSouth = false,
-    double minLatitude,
-    double maxLatitude,
-    double minLongitude,
-    double maxLongitude,
-    double projectionLatitude,
-    double projectionLongitude,
-    double scaleFactor,
-    double falseEasting,
-    double falseNorthing,
+    double? minLatitude,
+    double? maxLatitude,
+    double? minLongitude,
+    double? maxLongitude,
+    double? projectionLatitude,
+    double? projectionLongitude,
+    double? scaleFactor,
+    double? falseEasting,
+    double? falseNorthing,
   }) : super(
           ellipsoid,
           ProjUnit.metres,
@@ -912,9 +912,9 @@ class TransverseMercatorProjection extends Projection {
     _configure(zone, isSouth);
   }
 
-  double _esp;
-  double _ml0;
-  List<double> _en;
+  late double _esp;
+  late double _ml0;
+  List<double>? _en;
 
   bool isUTM() {
     return 0 <= _zone && 60 >= _zone;
@@ -935,7 +935,7 @@ class TransverseMercatorProjection extends Projection {
       _ml0 = 0.5 * _esp;
     } else {
       _en = ProjMath.enfn(ellipsoid.eccentricitySquared);
-      _ml0 = ProjMath.mlfn(_projectionLatitude, math.sin(_projectionLatitude), math.cos(_projectionLatitude), _en);
+      _ml0 = ProjMath.mlfn(_projectionLatitude, math.sin(_projectionLatitude), math.cos(_projectionLatitude), _en!);
       _esp = ellipsoid.eccentricitySquared / (1.0 - ellipsoid.eccentricitySquared);
     }
   }
@@ -944,10 +944,10 @@ class TransverseMercatorProjection extends Projection {
 
   static const UTM_BANDS = "CDEFGHJKLMNPQRSTUVWXX";
 
-  static String toBand(double lat, {bool isSouth = false}) {
+  static String toBand(double? lat, {bool isSouth = false}) {
     var bands = "CDEFGHJKLMNPQRSTUVWXX";
-    if (isSouth) lat = lat * -1;
-    if (-80 <= lat && lat <= 84) {
+    if (isSouth) lat = lat! * -1;
+    if (-80 <= lat! && lat <= 84) {
       return bands[((lat + 80) / 8).floor()];
     }
     throw "UTM is not valid for latitude $lat";
@@ -1032,7 +1032,7 @@ class TransverseMercatorProjection extends Projection {
                             n * (14.0 - 58.0 * t) +
                             FC7 * als * (61.0 + t * (t * (179.0 - t) - 479.0)))));
     py = _scaleFactor *
-        (ProjMath.mlfn(y, sinphi, cosphi, _en) -
+        (ProjMath.mlfn(y, sinphi, cosphi, _en!) -
             _ml0 +
             sinphi *
                 al *
@@ -1057,8 +1057,8 @@ class TransverseMercatorProjection extends Projection {
   }
 
   @override
-  ProjCoordinate _inverse(double x, double y) {
-    return spherical ? _sphericalInverse(x, y) : _ellipticalInverse(x, y);
+  ProjCoordinate _inverse(double? x, double y) {
+    return spherical ? _sphericalInverse(x!, y) : _ellipticalInverse(x, y);
   }
 
   /// Perform spherical (Gauss–Krüger) transverse mercator inverse projection,
@@ -1080,7 +1080,7 @@ class TransverseMercatorProjection extends Projection {
 
   /// Perform elliptical (Gauss–Krüger) transverse mercator inverse projection,
   /// see spherical form in https://proj4.org/operations/projections/tmerc.html
-  ProjCoordinate _ellipticalInverse(double x, double y) {
+  ProjCoordinate _ellipticalInverse(double? x, double y) {
     double px, py, n, con, cosphi, d, ds, sinphi, t;
 
     py = ProjMath.mlfnInv(_ml0 + y / _scaleFactor, ellipsoid.eccentricitySquared, _en);
@@ -1093,7 +1093,7 @@ class TransverseMercatorProjection extends Projection {
       t = cosphi.abs() > 1e-10 ? sinphi / cosphi : 0.0;
       n = _esp * cosphi * cosphi;
       con = 1.0 - ellipsoid.eccentricitySquared * sinphi * sinphi;
-      d = x * math.sqrt(con) / _scaleFactor;
+      d = x! * math.sqrt(con) / _scaleFactor;
       con *= t;
       t *= t;
       ds = d * d;
@@ -1156,7 +1156,7 @@ class CoordinateFormat {
   }
 
   /// Get axis from given labels. Returns 'lat' for northing and 'lon' for easting.
-  static String axis(List<String> labels) {
+  static String? axis(List<String?> labels) {
     var axis;
     if (isNorthing(labels)) {
       axis = NORTHTING;
@@ -1166,19 +1166,19 @@ class CoordinateFormat {
     return axis;
   }
 
-  static List<String> labels(Match match) {
+  static List<String?> labels(Match match) {
     var values = match.groups([1, 3]).toSet().toList();
-    values.retainWhere((test) => test.isNotEmpty);
+    values.retainWhere((test) => test!.isNotEmpty);
     return values;
   }
 
-  static bool isEasting(List<String> labels) {
-    var found = labels.where((test) => test.isNotEmpty && EASTING.contains(test));
+  static bool isEasting(List<String?> labels) {
+    var found = labels.where((test) => test!.isNotEmpty && EASTING.contains(test));
     return found.isNotEmpty;
   }
 
-  static bool isNorthing(List<String> labels) {
-    var found = labels.where((test) => test.isNotEmpty && NORTHTING.contains(test));
+  static bool isNorthing(List<String?> labels) {
+    var found = labels.where((test) => test!.isNotEmpty && NORTHTING.contains(test));
     return found.isNotEmpty;
   }
 
@@ -1190,8 +1190,8 @@ class CoordinateFormat {
   }
 
   static String toDDM(ProjCoordinate from, {bool withLabels = false}) {
-    final northing = _coordToDDM(from.y);
-    final easting = _coordToDDM(from.x);
+    final northing = _coordToDDM(from.y!);
+    final easting = _coordToDDM(from.x!);
     return withLabels ? "N$northing E$easting" : "$northing $easting";
   }
 
@@ -1211,9 +1211,9 @@ class CoordinateFormat {
     return withLabels ? "$zone$band E$easting N$northing" : "$zone$band $easting $northing";
   }
 
-  static ProjCoordinate toLatLng(String coordinate) {
+  static ProjCoordinate? toLatLng(String coordinate) {
     var row;
-    var zone = -1, lat, lon;
+    int? zone = -1, lat, lon;
     var isSouth = false;
     var isDefault = false;
     var matches = <Match>[];
@@ -1226,10 +1226,10 @@ class CoordinateFormat {
     // Is utm?
     var match = utm.firstMatch(coordinate);
     if (match != null) {
-      zone = int.parse(match.group(1));
-      row = match.group(2).toUpperCase();
+      zone = int.parse(match.group(1)!);
+      row = match.group(2)!.toUpperCase();
       isSouth = 'N'.compareTo(row) > 0;
-      coordinate = match.group(3);
+      coordinate = match.group(3)!;
       if (!kReleaseMode) print("Found UTM coordinate in grid '$zone$row'");
     }
 
@@ -1275,15 +1275,15 @@ class CoordinateFormat {
 
     // Search for address?
     if (ordinals.length == 2) {
-      lat = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING].group(2)));
-      lon = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING].group(2)));
-      if (zone > 0) {
+      lat = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING]!.group(2)!)) as int?;
+      lon = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING]!.group(2)!)) as int?;
+      if (zone! > 0) {
         var proj = TransverseMercatorProjection.utm(zone, isSouth);
-        var dst = proj.inverse(isDefault ? ProjCoordinate.from2D(lat, lon) : ProjCoordinate.from2D(lon, lat));
-        lon = dst.x;
-        lat = dst.y;
+        var dst = proj.inverse(isDefault ? ProjCoordinate.from2D(lat as double?, lon as double?) : ProjCoordinate.from2D(lon as double?, lat as double?));
+        lon = dst.x as int?;
+        lat = dst.y as int?;
       }
     }
-    return lat != null && lon != null ? ProjCoordinate.from2D(lat, lon) : null;
+    return lat != null && lon != null ? ProjCoordinate.from2D(lat as double?, lon as double?) : null;
   }
 }

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -12,13 +12,13 @@ import 'package:SarSys/core/domain/stateful_repository.dart';
 
 class StorageStatePage<T> extends StatelessWidget {
   const StorageStatePage({
-    Key key,
-    @required this.state,
-    @required this.repository,
+    Key? key,
+    required this.state,
+    required this.repository,
   }) : super(key: key);
 
   final StorageState<T> state;
-  final StatefulRepository repository;
+  final StatefulRepository? repository;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +38,7 @@ class StorageStatePage<T> extends StatelessWidget {
                 if (state.isError) Divider(),
                 if (state.isError) _buildValue(context, 'Error', '${toError()}'),
                 if (state.isConflict) Divider(),
-                if (state.isConflict) _buildValue(context, 'Conflict', '${prettyJson(state.conflict.toJson())}'),
+                if (state.isConflict) _buildValue(context, 'Conflict', '${prettyJson(state.conflict!.toJson())}'),
                 Divider(),
                 _buildValue(
                   context,
@@ -78,7 +78,7 @@ class StorageStatePage<T> extends StatelessWidget {
         text: '$label: ',
         children: [
           TextSpan(
-            style: Theme.of(context).textTheme.bodyText2.copyWith(fontSize: 12),
+            style: Theme.of(context).textTheme.bodyText2!.copyWith(fontSize: 12),
             text: value,
           )
         ],

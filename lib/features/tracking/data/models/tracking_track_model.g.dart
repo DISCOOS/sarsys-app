@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'tracking_track_model.dart';
@@ -10,20 +8,15 @@ part of 'tracking_track_model.dart';
 
 TrackingTrackModel _$TrackingTrackModelFromJson(Map json) {
   return TrackingTrackModel(
-    id: json['id'] as String,
+    id: json['id'] as String?,
     status: _$enumDecodeNullable(_$TrackStatusEnumMap, json['status']),
-    source: json['source'] == null
-        ? null
-        : TrackingSourceModel.fromJson((json['source'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    positions: (json['positions'] as List)
+    source: TrackingSourceModel.fromJson(
+        Map<String, dynamic>.from(json['source'] as Map)),
+    positions: (json['positions'] as List<dynamic>?)
         ?.map((e) => e == null
             ? null
-            : Position.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
+            : Position.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
   );
 }
 
@@ -39,41 +32,46 @@ Map<String, dynamic> _$TrackingTrackModelToJson(TrackingTrackModel instance) {
   writeNotNull('id', instance.id);
   writeNotNull('status', _$TrackStatusEnumMap[instance.status]);
   writeNotNull(
-      'positions', instance.positions?.map((e) => e?.toJson())?.toList());
-  writeNotNull('source', instance.source?.toJson());
+      'positions', instance.positions?.map((e) => e?.toJson()).toList());
+  val['source'] = instance.source.toJson();
   return val;
 }
 
-T _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
-T _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
+K? _$enumDecodeNullable<K, V>(
+  Map<K, V> enumValues,
   dynamic source, {
-  T unknownValue,
+  K? unknownValue,
 }) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
 }
 
 const _$TrackStatusEnumMap = {

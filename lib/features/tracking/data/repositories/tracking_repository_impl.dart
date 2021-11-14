@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -6,7 +6,6 @@ import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/tracking/domain/entities/PositionList.dart';
 import 'package:SarSys/features/tracking/domain/repositories/position_list_repository.dart';
@@ -27,8 +26,8 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
     implements TrackingRepository {
   TrackingRepositoryImpl(
     TrackingService service, {
-    @required PositionListRepository tracks,
-    @required ConnectivityService connectivity,
+    required PositionListRepository tracks,
+    required ConnectivityService connectivity,
   })  : _tracks = tracks,
         super(
           service: service,
@@ -42,14 +41,14 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
 
   /// Get [Operation.uuid]
   @override
-  String get ouuid => _ouuid;
-  String _ouuid;
+  String? get ouuid => _ouuid;
+  String? _ouuid;
 
   /// [TrackingTrack] repository
-  final PositionListRepository _tracks;
+  final PositionListRepository? _tracks;
 
   /// Map for efficient tracking lookup from [Source.uuid]
-  final _sources = <String, Set<String>>{};
+  final _sources = <String?, Set<String?>>{};
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with
@@ -60,15 +59,15 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
 
   /// Get [Tracking.uuid] from [value]
   @override
-  String toKey(Tracking value) {
-    return value?.uuid;
+  String toKey(Tracking? value) {
+    return value!.uuid;
   }
 
   /// Create [Tracking] from json
-  Tracking fromJson(Map<String, dynamic> json) => TrackingModel.fromJson(json);
+  Tracking fromJson(Map<String, dynamic>? json) => TrackingModel.fromJson(json!);
 
   /// Open repository for given [Incident.uuid]
-  Future<Iterable<Tracking>> open(String ouuid) async {
+  Future<Iterable<Tracking?>> open(String? ouuid) async {
     if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Operation uuid can not be empty or null');
     }
@@ -93,7 +92,7 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   ///
   @override
   bool has(
-    String suuid, {
+    String? suuid, {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
@@ -115,21 +114,21 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   /// for given set of excluded [TrackingStatus.values].
   ///
   @override
-  Iterable<Tracking> findTrackingFrom(
-    String suuid, {
+  Iterable<Tracking?> findTrackingFrom(
+    String? suuid, {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) {
     return _sources.containsKey(suuid)
-        ? _sources[suuid]
+        ? _sources[suuid]!
             .map(get)
             // Only if status is not excluded from search
             .where(
-              (tracking) => !exclude.contains(tracking.status),
+              (tracking) => !exclude.contains(tracking!.status),
             )
             // Only check if source is attached if tracks are not included in search
             .where(
-              (tracking) => tracks || tracking.sources.any((source) => suuid == source.uuid),
+              (tracking) => tracks || tracking!.sources.any((source) => suuid == source.uuid),
             )
             .toList()
         : [];
@@ -138,30 +137,30 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   /// Load [Tracking] instances for given [ouuid]
   @override
   Future<List<Tracking>> load(
-    String ouuid, {
-    Completer<Iterable<Tracking>> onRemote,
+    String? ouuid, {
+    Completer<Iterable<Tracking>>? onRemote,
   }) async {
     await open(ouuid);
-    return requestQueue.load(
+    return requestQueue!.load(
       () => service.getListFromId(ouuid),
       shouldEvict: true,
       onResult: onRemote,
-    );
+    ) as FutureOr<List<Tracking>>;
   }
 
   @override
-  Future<PositionList> fetchPositionLists(
+  Future<PositionList?> fetchPositionLists(
     String tuuid, {
     List<String> suuids = const [],
-    Completer<Iterable<Tracking>> onRemote,
+    Completer<Iterable<Tracking>>? onRemote,
     List<String> options = const ['truncate:-20:m'],
   }) async {
     if (containsKey(tuuid)) {
       final tracking = get(tuuid);
-      final lists = await _tracks.fetch(
+      final lists = await _tracks!.fetch(
         tuuid,
         options: options,
-        suuids: suuids.isEmpty ? tracking.sources.map((s) => s.uuid) : suuids,
+        suuids: suuids.isEmpty ? tracking!.sources.map((s) => s.uuid) : suuids,
       );
       return lists.firstOrNull;
     }
@@ -178,22 +177,22 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   /// Commit [state] to repository
   @override
   bool put(StorageState<Tracking> state) {
-    final tuuid = state.value.uuid;
+    final tuuid = state.value!.uuid;
     final exists = super.put(state);
     if (exists) {
-      _addToIndex(state.value, tuuid);
+      _addToIndex(state.value!, tuuid);
     } else {
-      _removeFromIndex(state.value, tuuid);
+      _removeFromIndex(state.value!, tuuid);
     }
     return exists;
   }
 
-  void _addToIndex(Tracking tracking, String tuuid) {
+  void _addToIndex(Tracking tracking, String? tuuid) {
     // Add to
     tracking.tracks.forEach(
       (track) {
         _sources.update(
-          track.source.uuid,
+          track.source!.uuid,
           (tuuids) {
             if (track.status == TrackStatus.attached) {
               tuuids.add(tuuid);
@@ -209,17 +208,17 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
     );
   }
 
-  void _removeFromIndex(Tracking tracking, String tuuid) {
+  void _removeFromIndex(Tracking tracking, String? tuuid) {
     final empty = [];
     tracking.tracks.forEach(
       (track) {
         final tuuids = _sources.update(
-          track.source.uuid,
+          track.source!.uuid,
           (tuuids) => tuuids..remove(tuuid),
           ifAbsent: () => {},
         );
         if (tuuids.isEmpty) {
-          empty.add(track.source.uuid);
+          empty.add(track.source!.uuid);
         }
       },
     );
@@ -236,30 +235,30 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   @override
   StorageState<Tracking> validate(StorageState<Tracking> state) {
     // Verify "one active track per source" policy
-    if (!(state.isRemote || state.isDeleted)) {
+    if (!(state.isRemote! || state.isDeleted)) {
       final duplicates = _duplicates(state);
       if (duplicates.isNotEmpty) {
         throw TrackingSourceAlreadyTrackedException(
           this,
           state,
-          duplicates,
+          duplicates as List<String?>,
         );
       }
     }
     return super.validate(state);
   }
 
-  Iterable<String> _duplicates(StorageState<Tracking> state) => state.value.sources
+  Iterable<String?> _duplicates(StorageState<Tracking?> state) => state.value!.sources
       .where(
         // Search for active trackings not equal to tracking in given state
-        (source) => findTrackingFrom(source.uuid).any((tracking) => tracking.uuid != state.value.uuid),
+        (source) => findTrackingFrom(source.uuid).any((tracking) => tracking!.uuid != state.value!.uuid),
       )
       .map((source) => source.uuid)
       .toList();
 
   @override
-  Future<Iterable<Tracking>> onReset({Iterable<Tracking> previous}) =>
-      _ouuid != null ? load(_ouuid) : Future.value(previous);
+  Future<Iterable<Tracking>> onReset({Iterable<Tracking>? previous}) =>
+      _ouuid != null ? load(_ouuid) : Future.value(previous ?? <Tracking>[]);
 
   /// Tracking are created in the backend,
   /// just return current value
@@ -267,7 +266,7 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   Future<StorageState<Tracking>> onCreate(StorageState<Tracking> state) => Future.value(state);
 
   @override
-  Future<StorageState<Tracking>> onUpdate(StorageState<Tracking> state) async {
+  Future<StorageState<Tracking>?> onUpdate(StorageState<Tracking> state) async {
     var response = await service.update(state);
     if (response.isOK) {
       return response.body;
@@ -283,33 +282,33 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   Future<StorageState<Tracking>> onDelete(StorageState<Tracking> state) => Future.value(state);
 
   @override
-  Future<StorageState<Tracking>> onResolve(StorageState<Tracking> state, ServiceResponse response) {
+  Future<StorageState<Tracking>>? onResolve(StorageState<Tracking?> state, ServiceResponse response) {
     return MergeTrackingStrategy(this)(
       state,
-      response.conflict,
-    );
+      response.conflict!,
+    ).then((value) => value as StorageState<Tracking>);
   }
 }
 
-class MergeTrackingStrategy extends StatefulMergeStrategy<String, Tracking, TrackingService> {
+class MergeTrackingStrategy extends StatefulMergeStrategy<String?, Tracking?, TrackingService> {
   MergeTrackingStrategy(TrackingRepository repository) : super(repository);
 
   @override
-  TrackingRepository get repository => super.repository;
+  TrackingRepository get repository => super.repository as TrackingRepository;
 
   @override
-  Future<StorageState<Tracking>> onExists(ConflictModel conflict, StorageState<Tracking> state) async {
+  Future<StorageState<Tracking?>?> onExists(ConflictModel conflict, StorageState<Tracking?> state) async {
     // Always use remote
     return repository.replace(
-      TrackingModel.fromJson(conflict.base),
+      TrackingModel.fromJson(conflict.base!),
     );
   }
 
   @override
-  Future<StorageState<Tracking>> onMerge(ConflictModel conflict, StorageState<Tracking> state) async {
+  Future<StorageState<Tracking?>?> onMerge(ConflictModel conflict, StorageState<Tracking?> state) async {
     // Always use remote
     return repository.replace(
-      TrackingModel.fromJson(conflict.base),
+      TrackingModel.fromJson(conflict.base!),
     );
   }
 }

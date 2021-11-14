@@ -4,9 +4,9 @@ import 'package:latlong2/latlong.dart';
 
 import 'map_tools.dart';
 
-class MeasureTool extends MapTool with MapEditable<Set<LatLng>> {
+class MeasureTool extends MapTool with MapEditable<Set<LatLng?>> {
   @override
-  Set<LatLng> target = {};
+  Set<LatLng?> target = {};
 
   bool state = false;
 
@@ -15,7 +15,7 @@ class MeasureTool extends MapTool with MapEditable<Set<LatLng>> {
   MeasureTool() : super();
 
   void init() => changed(() => target..clear());
-  void add(LatLng point) => changed(() => target.add(point));
+  void add(LatLng? point) => changed(() => target.add(point));
   void remove() => changed(() => {if (target.isNotEmpty) target.remove(target.last)});
 
   @override

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/core/utils/ui.dart';
@@ -10,6 +10,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/core/utils/data.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -23,18 +24,18 @@ class TetraConfigScreen extends StatefulWidget {
 class _TetraConfigScreenState extends State<TetraConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  AppConfigBloc _bloc;
-  Organisation get organisation => context.read<AffiliationBloc>().findUserOrganisation();
+  late AppConfigBloc _bloc;
+  Organisation? get organisation => context.read<AffiliationBloc>().findUserOrganisation();
 
   List<TalkGroupCatalog> get catalogs => sortList(
-        organisation.fleetMap?.catalogs ?? [],
-        (TalkGroupCatalog a, TalkGroupCatalog b) => a.name.compareTo(
-          b.name,
+        organisation!.fleetMap?.catalogs ?? [],
+        (TalkGroupCatalog a, TalkGroupCatalog b) => a.name!.compareTo(
+          b.name!,
         ),
       );
 
   List<TalkGroup> getTgGroups(String catalog) {
-    return organisation.fleetMap.catalogs.firstWhere((c) => c.name == catalog, orElse: () => null)?.groups ?? [];
+    return organisation!.fleetMap!.catalogs!.firstWhereOrNull((c) => c.name == catalog)?.groups ?? [];
   }
 
   @override
@@ -110,30 +111,30 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
       hintText: 'Velg talegrupper',
       selectorLabel: 'Lytt til',
       selectorTitle: 'Velg talegrupper',
-      builder: (context, tg) => Chip(label: Text(tg.name)),
+      builder: (context, tg) => Chip(label: Text(tg.name!)),
       categories: catalogs.map(
         (c) => DropdownMenuItem<String>(
           value: c.name,
-          child: Text(c.name),
+          child: Text(c.name!),
         ),
       ),
-      category: _bloc.config.talkGroupCatalog,
+      category: _bloc.config!.talkGroupCatalog,
       items: () => FleetMapTalkGroupConverter.toList(
-        _bloc.config.talkGroups,
+        _bloc.config!.talkGroups,
       ),
-      options: (String category, String query) {
+      options: (String? category, String? query) {
         if (query?.isNotEmpty == true) {
           return AffiliationUtils.findTalkGroups(
-            AffiliationUtils.findCatalog(organisation.fleetMap, category),
-            query,
+            AffiliationUtils.findCatalog(organisation!.fleetMap!, category),
+            query!,
           );
         }
         return getTgGroups(
-          category ?? _bloc.config.talkGroupCatalog,
+          category ?? _bloc.config!.talkGroupCatalog,
         );
       },
       onChanged: (value) => setState(() {
-        final items = value.map((tg) => tg.name).toList();
+        final items = value!.map((tg) => tg.name).toList();
         _bloc.updateWith(talkGroups: List<String>.from(items));
       }),
     );
@@ -158,7 +159,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
                 ),
               )),
           Switch(
-            value: _bloc.config.callsignReuse,
+            value: _bloc.config!.callsignReuse,
             onChanged: (value) => setState(() {
               _bloc.updateWith(callsignReuse: value);
             }),

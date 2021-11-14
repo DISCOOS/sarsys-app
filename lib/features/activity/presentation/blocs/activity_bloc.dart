@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
@@ -18,7 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBlocError> {
   ActivityBloc({
-    @required BlocEventBus bus,
+    required BlocEventBus bus,
   }) : super(
           ActivityInitialized(ActivityProfile.PRIVATE),
           bus: bus,
@@ -42,11 +42,11 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   /// Get trackable [Device]
   Device get trackable => _device;
-  Device _device;
+  late Device _device;
 
   /// Get applied [AppConfig]
   AppConfig get applied => _config;
-  AppConfig _config;
+  late AppConfig _config;
 
   /// Check if bloc is ready
   bool get isReady => _isReady;
@@ -64,9 +64,9 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
       LocationService.exists ? LocationService() : LocationService(options: _profile.options);
 
   /// Get current [LocationOptions]
-  LocationOptions get options => service.options;
+  LocationOptions? get options => service.options;
 
-  UserRepository _users;
+  UserRepository? _users;
 
   void _processAuth(BaseBloc bloc, UserState state) {
     _isReady = state.shouldLoad();
@@ -78,7 +78,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
       final found = (bloc as DeviceBloc).app;
       if (found != _device) {
         dispatch(
-          ConfigureLocationService(options, await isManual, _device = found),
+          ConfigureLocationService(options, await isManual, _device = found!),
         );
       }
     }
@@ -88,7 +88,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     if (event.data is AppConfig) {
       _config = event.data;
       final next = _toOptions(
-        _config,
+        _config!,
         defaultAccuracy: null,
       );
       final manual = await isManual;
@@ -102,7 +102,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   void _processPersonnel<T extends PersonnelState>(BaseBloc bloc, PersonnelState event) {
     final personnelBloc = (bloc as PersonnelBloc);
-    final config = personnelBloc.operationBloc.userBloc.config;
+    final config = personnelBloc.operationBloc!.userBloc!.config;
     if (event.data is Personnel) {
       final personnel = event.data as Personnel;
       if (personnelBloc.isUser(personnel.uuid)) {
@@ -112,7 +112,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
       switch (event.runtimeType) {
         case PersonnelsLoaded:
           if (personnelBloc.isUserMobilized) {
-            final user = personnelBloc.findUser().first;
+            final user = personnelBloc.findUser().first!;
             _onUserChanged(user.status, config);
           }
           break;
@@ -123,7 +123,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     }
   }
 
-  void _onUserChanged(PersonnelStatus status, AppConfig config) async {
+  void _onUserChanged(PersonnelStatus? status, AppConfig config) async {
     var next;
     switch (status) {
       case PersonnelStatus.alerted:
@@ -156,10 +156,10 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     return manual ?? false;
   }
 
-  Future<LocationOptions> apply({
-    bool manual,
-    AppConfig config,
-    ActivityProfile profile,
+  Future<LocationOptions?> apply({
+    bool? manual,
+    AppConfig? config,
+    ActivityProfile? profile,
   }) async {
     if (profile != null) {
       _profile = profile;
@@ -175,23 +175,23 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     // Get next options to apply
     final next = manual
         ? _toOptions(
-            _config = config,
-            defaultAccuracy: profile?.options?.accuracy ?? options.accuracy,
+            (_config = config!),
+            defaultAccuracy: profile?.options?.accuracy ?? options!.accuracy,
           )
         // Override current if
         : profile?.options ?? options;
 
     dispatch(
-      profile == null
+      (profile == null
           ? ConfigureLocationService(next, manual, _device)
-          : ChangeActivityProfile(profile, manual, _device, next),
+          : ChangeActivityProfile(profile, manual, _device, next)) as ActivityCommand<dynamic, dynamic>,
     );
 
     return next;
   }
 
   @override
-  ActivityBlocError createError(Object error, {StackTrace stackTrace}) => ActivityBlocError(
+  ActivityBlocError createError(Object error, {StackTrace? stackTrace}) => ActivityBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
@@ -241,7 +241,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     );
   }
 
-  Future<LocationOptions> _apply(LocationOptions options, Device device) async {
+  Future<LocationOptions?> _apply(LocationOptions? options, Device device) async {
     final isChanged = service.options != options ||
         service.token != _users?.token && _users?.isTokenValid == true ||
         service.duuid != device?.uuid;
@@ -251,7 +251,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         options: options,
         share: isTrackable,
         duuid: device?.uuid,
-        token: _users.token,
+        token: _users!.token,
       );
     }
     return service.options;
@@ -259,7 +259,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   LocationOptions _toOptions(
     AppConfig config, {
-    @required LocationAccuracy defaultAccuracy,
+    required LocationAccuracy? defaultAccuracy,
   }) =>
       LocationOptions(
         debug: config.locationDebug ?? Defaults.locationDebug,
@@ -273,7 +273,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         distanceFilter: config.locationSmallestDisplacement ?? Defaults.locationSmallestDisplacement,
       );
 
-  LocationAccuracy _toAccuracy(AppConfig config, LocationAccuracy defaultAccuracy) {
+  LocationAccuracy? _toAccuracy(AppConfig config, LocationAccuracy? defaultAccuracy) {
     final accuracy = config.toLocationAccuracy();
     if (accuracy == LocationAccuracy.automatic) {
       return defaultAccuracy;
@@ -300,7 +300,7 @@ class ChangeActivityProfile extends ActivityCommand<ActivityProfile, ActivityPro
 
   final bool manual;
   final Device device;
-  final LocationOptions options;
+  final LocationOptions? options;
 
   @override
   String toString() => '$runtimeType {'
@@ -311,9 +311,9 @@ class ChangeActivityProfile extends ActivityCommand<ActivityProfile, ActivityPro
       '}';
 }
 
-class ConfigureLocationService extends ActivityCommand<LocationOptions, LocationOptions> {
+class ConfigureLocationService extends ActivityCommand<LocationOptions?, LocationOptions> {
   ConfigureLocationService(
-    LocationOptions options,
+    LocationOptions? options,
     this.manual,
     this.device,
   ) : super(options);
@@ -336,7 +336,7 @@ class ConfigureLocationService extends ActivityCommand<LocationOptions, Location
 abstract class ActivityState<T> extends BlocState<T> {
   ActivityState(
     T data, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
     props = const [],
   }) : super(data, props: props, stackTrace: stackTrace);
 
@@ -363,7 +363,7 @@ class LocationServiceConfigured extends ActivityState<ActivityProfile> {
 
   final bool manual;
   final Device device;
-  final LocationOptions options;
+  final LocationOptions? options;
 
   @override
   String toString() => '$runtimeType, {'
@@ -386,7 +386,7 @@ class ActivityProfileChanged extends ActivityState<ActivityProfile> {
 
   final bool manual;
   final Device device;
-  final LocationOptions options;
+  final LocationOptions? options;
 
   @override
   String toString() => '$runtimeType, {'
@@ -403,7 +403,7 @@ class ActivityProfileChanged extends ActivityState<ActivityProfile> {
 class ActivityBlocError extends ActivityState<Object> {
   ActivityBlocError(
     Object error, {
-    StackTrace stackTrace,
+    StackTrace? stackTrace,
   }) : super(error, stackTrace: stackTrace);
 
   @override

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:math';
 import 'dart:ui' as ui;
@@ -35,11 +35,11 @@ class ScalebarOption extends LayerOptions {
     5.0
   ];
 
-  TextStyle textStyle;
+  TextStyle? textStyle;
   Color lineColor;
   double lineWidth;
   List<double> scales;
-  final EdgeInsets padding;
+  final EdgeInsets? padding;
   Alignment alignment;
 
   ScalebarOption(
@@ -67,7 +67,7 @@ class ScaleBar implements MapPlugin {
                 var end = map.project(targetPoint);
                 var displayDistance =
                     distance > 999 ? '${(distance / 1000).toStringAsFixed(0)} km' : '${distance.toStringAsFixed(0)} m';
-                double width = (end.x - start.x);
+                double width = (end.x - (start.x as double));
 
                 return Align(
                   alignment: options.alignment,
@@ -101,22 +101,22 @@ class ScaleBar implements MapPlugin {
 class ScalePainter extends CustomPainter {
   ScalePainter(this.width, this.text, {this.padding, this.textStyle, this.lineWidth, this.lineColor});
   final double width;
-  final EdgeInsets padding;
+  final EdgeInsets? padding;
   final String text;
-  TextStyle textStyle;
-  double lineWidth;
-  Color lineColor;
+  TextStyle? textStyle;
+  double? lineWidth;
+  Color? lineColor;
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
     final paint = Paint()
-      ..color = lineColor
+      ..color = lineColor!
       ..strokeCap = StrokeCap.square
-      ..strokeWidth = lineWidth;
+      ..strokeWidth = lineWidth!;
 
     var sizeForStartEnd = 4;
-    var paddingLeft = padding == null ? 0.0 : padding.left + sizeForStartEnd / 2;
-    var paddingTop = padding == null ? 0.0 : padding.top;
+    var paddingLeft = padding == null ? 0.0 : padding!.left + sizeForStartEnd / 2;
+    var paddingTop = padding == null ? 0.0 : padding!.top;
 
     var textSpan = TextSpan(style: textStyle, text: text);
     var textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
@@ -146,5 +146,5 @@ LatLng _calculateEndingGlobalCoordinates(LatLng start, double startBearing, doub
     startBearing,
     distance,
   );
-  return LatLng(ending.y, ending.x);
+  return LatLng(ending.y!, ending.x!);
 }

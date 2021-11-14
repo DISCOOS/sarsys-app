@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 class CoordinatePanel extends StatelessWidget {
   final Point point;
   const CoordinatePanel({
-    Key key,
-    @required this.point,
+    Key? key,
+    required this.point,
   }) : super(key: key);
 
   @override
@@ -24,7 +24,7 @@ class CoordinatePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          if (point != null) Text(toUTM(point), textAlign: TextAlign.start),
+          if (point != null) Text(toUTM(point)!, textAlign: TextAlign.start),
           if (point != null) Text(toDD(point), textAlign: TextAlign.start),
         ],
       ),

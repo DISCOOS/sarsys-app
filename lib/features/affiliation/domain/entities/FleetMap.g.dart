@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'FleetMap.dart';
@@ -10,31 +8,22 @@ part of 'FleetMap.dart';
 
 FleetMap _$FleetMapFromJson(Map json) {
   return FleetMap(
-    name: json['name'] as String,
-    alias: json['alias'] as String,
-    prefix: json['prefix'] as String,
-    pattern: json['pattern'] as String,
-    numbers: (json['numbers'] as List)
-        ?.map((e) => e == null
-            ? null
-            : FleetMapNumber.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
-    catalogs: (json['catalogs'] as List)
-        ?.map((e) => e == null
-            ? null
-            : TalkGroupCatalog.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
-    functions: (json['functions'] as List)
-        ?.map((e) => e == null
-            ? null
-            : OperationalFunction.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
+    name: json['name'] as String?,
+    alias: json['alias'] as String?,
+    prefix: json['prefix'] as String?,
+    pattern: json['pattern'] as String?,
+    numbers: (json['numbers'] as List<dynamic>?)
+        ?.map(
+            (e) => FleetMapNumber.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
+    catalogs: (json['catalogs'] as List<dynamic>?)
+        ?.map((e) =>
+            TalkGroupCatalog.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
+    functions: (json['functions'] as List<dynamic>?)
+        ?.map((e) =>
+            OperationalFunction.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
   );
 }
 
@@ -51,10 +40,9 @@ Map<String, dynamic> _$FleetMapToJson(FleetMap instance) {
   writeNotNull('prefix', instance.prefix);
   writeNotNull('alias', instance.alias);
   writeNotNull('pattern', instance.pattern);
-  writeNotNull('numbers', instance.numbers?.map((e) => e?.toJson())?.toList());
+  writeNotNull('numbers', instance.numbers?.map((e) => e.toJson()).toList());
+  writeNotNull('catalogs', instance.catalogs?.map((e) => e.toJson()).toList());
   writeNotNull(
-      'catalogs', instance.catalogs?.map((e) => e?.toJson())?.toList());
-  writeNotNull(
-      'functions', instance.functions?.map((e) => e?.toJson())?.toList());
+      'functions', instance.functions?.map((e) => e.toJson()).toList());
   return val;
 }

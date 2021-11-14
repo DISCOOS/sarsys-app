@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
@@ -18,7 +18,7 @@ class DebugLocationScreen extends StatefulWidget {
 class _DebugLocationScreenState extends State<DebugLocationScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  LocationService _service;
+  late LocationService _service;
   AppConfigBloc get bloc => context.read<AppConfigBloc>();
 
   @override
@@ -48,7 +48,7 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
             ListTile(
               title: Text(
                 "Posisjonstjeneste",
-                style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.subtitle2!.copyWith(fontWeight: FontWeight.bold),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,

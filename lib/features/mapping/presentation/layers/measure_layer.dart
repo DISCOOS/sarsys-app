@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -18,7 +18,7 @@ class MeasureLayerOptions extends LayerOptions {
   double size;
   double opacity;
   MeasureTool tool;
-  final ActionCallback onMessage;
+  final ActionCallback? onMessage;
 
   MeasureLayerOptions(
     this.tool, {
@@ -60,7 +60,7 @@ class MeasureLayer extends MapPlugin {
       children: [
         _buildCross(origin),
         _buildTrack(context, size, options, map, measures),
-        ...measures.take(measures.length - 1).map((point) => _buildPoint(context, options, map, point)),
+        ...measures.take(measures.length - 1).map((point) => _buildPoint(context, options, map, point!)),
         if (measures.isNotEmpty) _buildLabel(context, options, map, measures)
       ],
     );
@@ -85,10 +85,10 @@ class MeasureLayer extends MapPlugin {
     Size size,
     MeasureLayerOptions options,
     MapState map,
-    List<LatLng> points,
+    List<LatLng?> points,
   ) {
     var offsets = points.map((point) {
-      var pos = map.project(point);
+      var pos = map.project(point!);
       pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
       return Offset(pos.x.toDouble(), pos.y.toDouble());
     }).toList(growable: false);
@@ -120,8 +120,8 @@ class MeasureLayer extends MapPlugin {
     return Positioned(
       width: size,
       height: size,
-      left: pos.x,
-      top: pos.y,
+      left: pos.x as double?,
+      top: pos.y as double?,
       child: Opacity(
         opacity: options.opacity,
         child: CustomPaint(
@@ -138,19 +138,19 @@ class MeasureLayer extends MapPlugin {
     BuildContext context,
     MeasureLayerOptions options,
     MapState map,
-    List<LatLng> points,
+    List<LatLng?> points,
   ) {
-    var pos = map.project(points.last);
+    var pos = map.project(points.last!);
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
     var previous = points.first;
     final double distance = points.skip(1).fold(0, (value, point) {
-      value += _distance(previous, point);
+      value += _distance(previous!, point!);
       previous = point;
       return value;
     });
 
     return Positioned(
-      left: pos.x,
+      left: pos.x as double?,
       top: pos.y + options.size,
       child: CustomPaint(
         painter: LabelPainter(

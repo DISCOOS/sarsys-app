@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:uuid/uuid.dart';
 
@@ -14,24 +14,24 @@ import 'domain/entities/TalkGroup.dart';
 
 class AffiliationUtils {
   /// Create [Affiliation] reference
-  static AggregateRef<Affiliation> newRef({String auuid}) => AggregateRef.fromType<Affiliation>(
+  static AggregateRef<Affiliation> newRef({String? auuid}) => AggregateRef.fromType<Affiliation>(
         auuid ?? Uuid().v4(),
       );
 
   /// Ensure tracking reference
-  static AggregateRef<Affiliation> ensureRef<T extends Affiliate>(T affiliate, {String auuid}) =>
+  static AggregateRef<Affiliation>? ensureRef<T extends Affiliate>(T affiliate, {String? auuid}) =>
       affiliate?.affiliation?.uuid == null
           // Create new ref
           ? newRef(auuid: auuid)
           // Use old ref
-          : affiliate.affiliation;
+          : affiliate.affiliation as AggregateRef<Affiliation>?;
 
   /// Asserts if [Affiliation] reference is valid.
   ///
   /// [Affiliate]s should contain a [Affiliation]
   /// reference when  they are created.
-  static String assertRef<T extends Affiliate>(T affiliate) {
-    final auuid = affiliate.affiliation?.uuid;
+  static String assertRef<T extends Affiliate?>(T affiliate) {
+    final auuid = affiliate!.affiliation?.uuid;
     if (auuid == null) {
       throw ArgumentError(
         "${typeOf<T>()} is not configured correctly: AggregateRef is null",
@@ -41,25 +41,25 @@ class AffiliationUtils {
   }
 
   /// Get [FleetMap.prefix] from [FleetMap] number
-  static String toPrefix(String number) => emptyAsNull(
-        number?.isEmpty == false && number.length >= 3 ? number?.substring(0, 2) : null,
+  static String? toPrefix(String? number) => emptyAsNull(
+        number?.isEmpty == false && number!.length >= 3 ? number?.substring(0, 2) : null,
       );
 
   /// Get [FleetMapNumber.suffix] from [FleetMap] number
-  static String toSuffix(String number) => emptyAsNull(
-        number?.isEmpty == false && number.length >= 5 ? number?.substring(2, 5) : null,
+  static String? toSuffix(String? number) => emptyAsNull(
+        number?.isEmpty == false && number!.length >= 5 ? number?.substring(2, 5) : null,
       );
 
-  static OperationalFunction findFunction(FleetMap map, String number) =>
-      map.functions.where((test) => number != null && RegExp(test.pattern).hasMatch(number)).firstOrNull;
+  static OperationalFunction? findFunction(FleetMap map, String? number) =>
+      map.functions!.where((test) => number != null && RegExp(test.pattern!).hasMatch(number)).firstOrNull;
 
-  static TalkGroupCatalog findCatalog(FleetMap map, String name) =>
-      map.catalogs.where((test) => test.name == name).firstOrNull;
+  static TalkGroupCatalog? findCatalog(FleetMap map, String? name) =>
+      map.catalogs!.where((test) => test.name == name).firstOrNull;
 
-  static List<TalkGroup> findTalkGroups(TalkGroupCatalog catalog, String query) {
+  static List<TalkGroup> findTalkGroups(TalkGroupCatalog? catalog, String query) {
     final match = query.toLowerCase();
     return catalog?.groups
-            ?.where((tg) => tg.name.toLowerCase().contains(match) || tg.type.toString().toLowerCase().contains(match))
+            ?.where((tg) => tg.name!.toLowerCase().contains(match) || tg.type.toString().toLowerCase().contains(match))
             ?.take(5)
             ?.toList(growable: false) ??
         [];

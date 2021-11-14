@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'affiliation_service.dart';
@@ -10,7 +8,7 @@ part of 'affiliation_service.dart';
 
 // ignore_for_file: always_put_control_body_on_new_line, always_specify_types, prefer_const_declarations
 class _$AffiliationServiceImpl extends AffiliationServiceImpl {
-  _$AffiliationServiceImpl([ChopperClient client]) {
+  _$AffiliationServiceImpl([ChopperClient? client]) {
     if (client == null) return;
     this.client = client;
   }
@@ -28,7 +26,7 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
 
   @override
   Future<Response<StorageState<Affiliation>>> update(
-      String uuid, Affiliation body) {
+      String? uuid, Affiliation body) {
     final $url = '/affiliations/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
@@ -36,7 +34,7 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
   }
 
   @override
-  Future<Response<void>> delete(String uuid) {
+  Future<Response<void>> delete(String? uuid) {
     final $url = '/affiliations/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
@@ -44,7 +42,7 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
 
   @override
   Future<Response<PagedList<StorageState<Affiliation>>>> search(
-      String filter, int limit, int offset, String expand) {
+      String filter, int? limit, int? offset, String expand) {
     final $url = '/affiliations';
     final $params = <String, dynamic>{
       'filter': filter,
@@ -59,7 +57,7 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
 
   @override
   Future<Response<PagedList<StorageState<Affiliation>>>> getAll(String uuids,
-      {String expand, int limit = 20, int offset = 0}) {
+      {String? expand, int? limit = 20, int offset = 0}) {
     final $url = '/affiliations';
     final $params = <String, dynamic>{
       'uuids': uuids,

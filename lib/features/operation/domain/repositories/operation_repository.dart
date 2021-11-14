@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -18,22 +18,22 @@ abstract class OperationRepository implements StatefulRepository<String, Operati
 
   /// Get [Operation.uuid] from [value]
   @override
-  String toKey(Operation value) {
-    return value?.uuid;
+  String toKey(Operation? value) {
+    return value!.uuid;
   }
 
   /// Load incidents
-  Future<List<Operation>> load({
+  Future<List<Operation?>> load({
     bool force = true,
-    Completer<Iterable<Operation>> onRemote,
+    Completer<Iterable<Operation>>? onRemote,
   });
 }
 
 class OperationServiceException extends ServiceException {
   OperationServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(
           error,
           response: response,

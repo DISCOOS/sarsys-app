@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
@@ -41,7 +41,7 @@ class CommandScreen extends StatefulWidget {
 
   final int tabIndex;
 
-  CommandScreen({Key key, @required this.tabIndex}) : super(key: key);
+  CommandScreen({Key? key, required this.tabIndex}) : super(key: key);
 
   @override
   _CommandScreenState createState() => _CommandScreenState();
@@ -58,7 +58,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   void initState() {
     super.initState();
     routeData = widget.tabIndex;
-    routeName = CommandScreen.ROUTES[routeData];
+    routeName = CommandScreen.ROUTES[routeData!];
   }
 
   @override
@@ -92,7 +92,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             actions: _buildActions(operation),
             title: _toTitle(operation),
           ),
-          body: tabs[routeData],
+          body: tabs[routeData!],
           floatingActionButton: operation == null ? null : _buildFAB(),
           floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
           floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
@@ -111,7 +111,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         widthFactor: isCommander ? 0.80 : 1.0,
         alignment: Alignment.bottomLeft,
         child: BottomNavigationBar(
-          currentIndex: routeData,
+          currentIndex: routeData!,
           elevation: 0.0,
           backgroundColor: Colors.transparent,
           selectedItemColor: Theme.of(context).colorScheme.primary,
@@ -136,7 +136,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
 
   bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
-  _toTitle(Operation operation, {ifEmpty: "Aksjon"}) {
+  _toTitle(Operation? operation, {ifEmpty: "Aksjon"}) {
     switch (routeData) {
       case CommandScreen.TAB_MISSIONS:
         return "Oppdrag";
@@ -167,31 +167,31 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   List<Widget> _buildActions(operation) {
     switch (routeData) {
       case CommandScreen.TAB_MISSIONS:
-        return _buildListActions<Unit>(
+        return _buildListActions<Unit?>(
           delegate: MissionSearch(),
           onPressed: () async {
-            _missionsKey.currentState.showFilterSheet();
+            _missionsKey.currentState!.showFilterSheet();
           },
         );
       case CommandScreen.TAB_UNITS:
-        return _buildListActions<Unit>(
+        return _buildListActions<Unit?>(
           delegate: UnitSearch(),
           onPressed: () async {
-            _unitsKey.currentState.showFilterSheet();
+            _unitsKey.currentState!.showFilterSheet();
           },
         );
       case CommandScreen.TAB_PERSONNEL:
-        return _buildListActions<Personnel>(
+        return _buildListActions<Personnel?>(
           delegate: PersonnelSearch(),
           onPressed: () async {
-            _personnelKey.currentState.showFilterSheet();
+            _personnelKey.currentState!.showFilterSheet();
           },
         );
       case CommandScreen.TAB_DEVICES:
-        return _buildListActions<Device>(
+        return _buildListActions<Device?>(
           delegate: DeviceSearch(),
           onPressed: () async {
-            _devicesKey.currentState.showFilterSheet();
+            _devicesKey.currentState!.showFilterSheet();
           },
         );
       default:
@@ -199,12 +199,12 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
     }
   }
 
-  List<Widget> _buildListActions<T>({SearchDelegate<T> delegate, VoidCallback onPressed}) {
+  List<Widget> _buildListActions<T>({required SearchDelegate<T> delegate, VoidCallback? onPressed,}) {
     return [
       IconButton(
         icon: Icon(Icons.search),
         onPressed: () async {
-          showSearch<T>(context: context, delegate: delegate);
+          showSearch<T>(context: context, delegate: delegate!);
         },
       ),
       IconButton(
@@ -214,7 +214,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
     ];
   }
 
-  StatelessWidget _buildFAB() {
+  StatelessWidget? _buildFAB() {
     if (isCommander) {
       switch (routeData) {
         case CommandScreen.TAB_MISSIONS:

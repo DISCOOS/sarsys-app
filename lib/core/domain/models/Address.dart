@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:flutter/foundation.dart';
@@ -8,14 +8,14 @@ part 'Address.g.dart';
 
 @JsonSerializable()
 class Address extends ValueObject<Map<String, dynamic>> {
-  final List<String> lines;
-  final String postalCode;
-  final String countryCode;
+  final List<String>? lines;
+  final String? postalCode;
+  final String? countryCode;
 
   Address({
-    @required this.lines,
-    @required this.postalCode,
-    @required this.countryCode,
+    required this.lines,
+    required this.postalCode,
+    required this.countryCode,
   }) : super([
           lines,
           postalCode,

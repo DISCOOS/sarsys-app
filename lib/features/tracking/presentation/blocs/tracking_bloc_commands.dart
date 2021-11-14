@@ -11,8 +11,8 @@ abstract class TrackingCommand<D, R> extends BlocCommand<D, R> {
   }) : super(data, props);
 }
 
-class LoadTrackings extends TrackingCommand<String, List<Tracking>> {
-  LoadTrackings(String ouuid) : super(ouuid);
+class LoadTrackings extends TrackingCommand<String?, List<Tracking>> {
+  LoadTrackings(String? ouuid) : super(ouuid);
 
   @override
   String toString() => '$runtimeType {ouuid: $data}';
@@ -37,8 +37,8 @@ class DeleteTracking extends TrackingCommand<Tracking, void> {
   String toString() => '$runtimeType {data: $data}';
 }
 
-class UnloadTrackings extends TrackingCommand<String, List<Tracking>> {
-  UnloadTrackings(String ouuid) : super(ouuid);
+class UnloadTrackings extends TrackingCommand<String?, List<Tracking>> {
+  UnloadTrackings(String? ouuid) : super(ouuid);
 
   @override
   String toString() => '$runtimeType {ouuid: $data}';

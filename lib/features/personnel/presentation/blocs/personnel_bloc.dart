@@ -1,6 +1,7 @@
-// @dart=2.11
+
 
 import 'dart:async';
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';
 
@@ -31,13 +32,13 @@ export 'personnel_bloc_states.dart';
 typedef void PersonnelCallback(VoidCallback fn);
 
 class PersonnelBloc
-    extends StatefulBloc<PersonnelCommand, PersonnelState, PersonnelBlocError, String, Personnel, PersonnelService>
+    extends StatefulBloc<PersonnelCommand, PersonnelState, PersonnelBlocError, String?, Personnel, PersonnelService>
     with
-        LoadableBloc<List<Personnel>>,
-        CreatableBloc<Personnel>,
-        UpdatableBloc<Personnel>,
-        DeletableBloc<Personnel>,
-        UnloadableBloc<List<Personnel>> {
+        LoadableBloc<List<Personnel>?>,
+        CreatableBloc<Personnel?>,
+        UpdatableBloc<Personnel?>,
+        DeletableBloc<Personnel?>,
+        UnloadableBloc<List<Personnel>?> {
   ///
   /// Default constructor
   ///
@@ -60,7 +61,7 @@ class PersonnelBloc
 
     // Notify when personnel state has changed
     forward(
-      (t) => _NotifyRepositoryStateChanged(t),
+      (t) => _NotifyRepositoryStateChanged(t as StorageTransition<Personnel>),
     );
   }
 
@@ -84,10 +85,10 @@ class PersonnelBloc
   }
 
   /// Get [AffiliationBloc]
-  final AffiliationBloc affiliationBloc;
+  final AffiliationBloc? affiliationBloc;
 
   /// Get [OperationBloc]
-  final OperationBloc operationBloc;
+  final OperationBloc? operationBloc;
 
   /// Get [PersonnelRepository]
   final PersonnelRepository repo;
@@ -96,10 +97,10 @@ class PersonnelBloc
   Iterable<Personnel> get values => repo.values;
 
   /// All repositories
-  Iterable<StatefulRepository> get repos => [repo];
+  Iterable<StatefulRepository?> get repos => [repo];
 
   /// Get [Personnel] from [uuid]
-  Personnel operator [](String uuid) => repo[uuid];
+  Personnel? operator [](String? uuid) => repo[uuid!];
 
   /// Get [PersonnelService]
   PersonnelService get service => repo.service;
@@ -113,17 +114,17 @@ class PersonnelBloc
   Stream<bool> get onReadyChanged => repo.onReadyChanged;
 
   /// Get uuid of [Operation] that manages personnels in [repo]
-  String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
+  String? get ouuid => isReady ? repo.ouuid ?? operationBloc!.selected?.uuid : null;
 
   /// Get [Personnel] from [puuids]
-  Iterable<Aggregate> from(List<String> puuids) =>
-      puuids.where((puuid) => repo.containsKey(puuid)).map((puuid) => repo[puuid]).toList();
+  Iterable<Aggregate?> from(List<String?> puuids) =>
+      puuids.where((puuid) => repo.containsKey(puuid)).map((puuid) => repo[puuid!]).toList();
 
   /// Check if given [Personnel.uuid] is current user
-  bool isUser(String uuid) => repo[uuid]?.userId == operationBloc.userBloc.userId;
+  bool isUser(String? uuid) => repo[uuid!]?.userId == operationBloc!.userBloc!.userId;
 
   /// Find [Personnel]s matching given query
-  Iterable<Personnel> find({bool where(Personnel personnel)}) => repo.find(where: where);
+  Iterable<Personnel?> find({required bool where(Personnel personnel)}) => repo.find(where: where);
 
   /// Get mobilized user if found.
   ///
@@ -134,9 +135,9 @@ class PersonnelBloc
   /// user was found, select an
   /// affiliation matching active
   /// affiliation for current user
-  Personnel findMobilizedUserOrReuse({
-    String userId,
-    bool Function(Personnel personnel) where,
+  Personnel? findMobilizedUserOrReuse({
+    String? userId,
+    bool Function(Personnel? personnel)? where,
   }) {
     final personnels = findUser(
       where: where,
@@ -144,29 +145,29 @@ class PersonnelBloc
       exclude: const [],
     );
     final mobilized = personnels.where(
-      (p) => p.status != PersonnelStatus.retired,
+      (p) => p!.status != PersonnelStatus.retired,
     );
-    final match = affiliationBloc.findUserAffiliation(
+    final match = affiliationBloc!.findUserAffiliation(
       userId: userId,
     );
 
     // Try to match active affiliation
     // with previous affiliations
     final candidates = mobilized.isNotEmpty
-        ? [Pair<Personnel, int>.of(mobilized.first, 0)]
+        ? [Pair<Personnel?, int>.of(mobilized.first, 0)]
         : personnels.fold(
             <Pair<Personnel, int>>[],
-            (candidates, p) {
+            (dynamic candidates, p) {
               var rank = 0;
-              final next = affiliationBloc.repo[p.affiliation?.uuid];
+              final next = affiliationBloc!.repo[p!.affiliation!.uuid];
               if (next != null) {
-                if (next.org?.uuid != match.org?.uuid) rank++;
+                if (next.org?.uuid != match!.org?.uuid) rank++;
                 if (next.div?.uuid != match.div?.uuid) rank++;
                 if (next.dep?.uuid != match.dep?.uuid) rank++;
               }
               return candidates
                 ..add(
-                  Pair<Personnel, int>.of(p, rank),
+                  Pair<Personnel?, int>.of(p, rank),
                 );
             },
           );
@@ -181,25 +182,25 @@ class PersonnelBloc
   }
 
   /// Find [Personnel] from [user]
-  Iterable<Personnel> findUser({
-    String userId,
-    bool Function(Personnel personnel) where,
+  Iterable<Personnel?> findUser({
+    String? userId,
+    bool Function(Personnel? personnel)? where,
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       repo.findUser(
-        userId ?? operationBloc.userBloc.userId,
+        userId ?? operationBloc!.userBloc!.userId,
         where: where,
         exclude: exclude,
       );
 
   /// Stream of changes on given [personnel]
-  Stream<Personnel> onChanged(Personnel personnel) => stream
+  Stream<Personnel?> onChanged(Personnel? personnel) => stream
       .where(
         (state) =>
-            (state is PersonnelUpdated && state.data.uuid == personnel.uuid) ||
-            (state is PersonnelsLoaded && state.data.contains(personnel.uuid)),
+            (state is PersonnelUpdated && state.data!.uuid == personnel!.uuid) ||
+            (state is PersonnelsLoaded && state.data.contains(personnel!.uuid)),
       )
-      .map((state) => state is PersonnelsLoaded ? repo[personnel.uuid] : state.data);
+      .map((state) => state is PersonnelsLoaded ? repo[personnel!.uuid] : state.data);
 
   /// Get count
   int count({
@@ -207,18 +208,18 @@ class PersonnelBloc
   }) =>
       repo.count(exclude: exclude);
 
-  String _assertData(Personnel personnel) {
+  String _assertData(Personnel? personnel) {
     if (personnel?.uuid == null) {
       throw ArgumentError("Personnel have no uuid");
     }
     if (personnel?.operation?.uuid == null) {
       throw ArgumentError(
-        "Personnel ${personnel.uuid} have no operation uuid",
+        "Personnel ${personnel!.uuid} have no operation uuid",
       );
     }
     if (personnel?.operation?.uuid != ouuid) {
       throw ArgumentError(
-        "Personnel ${personnel.uuid} is not mobilized for operation $ouuid",
+        "Personnel ${personnel!.uuid} is not mobilized for operation $ouuid",
       );
     }
     TrackingUtils.assertRef(personnel);
@@ -226,7 +227,7 @@ class PersonnelBloc
   }
 
   /// Fetch personnel from [service]
-  Future<List<Personnel>> load() async {
+  Future<List<Personnel>?> load() async {
     return dispatch<List<Personnel>>(
       LoadPersonnels(ouuid),
     );
@@ -234,27 +235,27 @@ class PersonnelBloc
 
   /// Check if mobilization in progress
   bool get isUserMobilizing => _mobilizing != null;
-  Future<Personnel> _mobilizing;
+  Future<Personnel?>? _mobilizing;
 
   /// Check if user is mobilized
-  bool get isUserMobilized => findUser().any((p) => p.isMobilized);
+  bool get isUserMobilized => findUser().any((p) => p!.isMobilized);
 
   /// Mobilize authenticated user for
-  Future<Personnel> mobilizeUser() async {
+  Future<Personnel?> mobilizeUser() async {
     await onLoadedAsync();
     final found = findMobilizedUserOrReuse(
-      userId: affiliationBloc.users.userId,
+      userId: affiliationBloc!.users!.userId,
     );
     if (found?.isMobilized == true) {
       return found;
     } else if (isUserMobilizing) {
-      return _mobilizing.timeout(
+      return _mobilizing!.timeout(
         const Duration(seconds: 5),
       );
     }
     try {
       _mobilizing = dispatch<Personnel>(
-        MobilizeUser(ouuid, affiliationBloc.users.user),
+        MobilizeUser(ouuid, affiliationBloc!.users!.user),
       );
       return await _mobilizing;
     } finally {
@@ -263,7 +264,7 @@ class PersonnelBloc
   }
 
   /// Create given personnel
-  Future<Personnel> create(Personnel personnel) async {
+  Future<Personnel?> create(Personnel? personnel) async {
     _assertData(personnel);
     return dispatch<Personnel>(
       CreatePersonnel(
@@ -274,7 +275,7 @@ class PersonnelBloc
   }
 
   /// Update given personnel
-  Future<Personnel> update(Personnel personnel) async {
+  Future<Personnel?> update(Personnel? personnel) async {
     await onLoadedAsync();
     return dispatch<Personnel>(
       UpdatePersonnel(personnel),
@@ -282,15 +283,15 @@ class PersonnelBloc
   }
 
   /// Delete given personnel
-  Future<Personnel> delete(String uuid) async {
+  Future<Personnel?> delete(String? uuid) async {
     await onLoadedAsync();
     return dispatch<Personnel>(
-      DeletePersonnel(repo[uuid]),
+      DeletePersonnel(repo[uuid!]),
     );
   }
 
   /// Unload [personnels] from local storage
-  Future<List<Personnel>> unload() {
+  Future<List<Personnel>?> unload() {
     return dispatch<List<Personnel>>(
       UnloadPersonnels(ouuid),
     );
@@ -329,13 +330,13 @@ class PersonnelBloc
     );
 
     if (personnels.isNotEmpty) {
-      await affiliationBloc.fetch(
-        personnels.map((p) => p.affiliation.uuid),
+      await affiliationBloc!.fetch(
+        personnels.map((p) => p!.affiliation!.uuid),
       );
     }
     yield toOK(
       command,
-      PersonnelsLoaded(repo.keys),
+      PersonnelsLoaded(repo.keys as List<String?>),
       result: personnels.map(_withPerson).toList(),
     );
 
@@ -347,7 +348,7 @@ class PersonnelBloc
       ],
       toState: (results) {
         return PersonnelsLoaded(
-          repo.keys,
+          repo.keys as List<String?>,
           isRemote: true,
         );
       },
@@ -361,22 +362,22 @@ class PersonnelBloc
   }
 
   Future<AffiliationState> _onAffiliationState<T extends AffiliationState>({bool isRemote = true}) =>
-      affiliationBloc.stream.where((s) => s.isRemote == isRemote && s is T).first;
+      affiliationBloc!.stream.where((s) => s!.isRemote == isRemote && s is T).first;
 
   Stream<PersonnelState> _mobilize(MobilizeUser command) async* {
-    final user = command.user;
+    final user = command.user!;
     assert(user != null, 'Command $command have noe user given');
     if (user != null) {
       var found = findMobilizedUserOrReuse(
         userId: user.userId,
       );
       if (found == null) {
-        final affiliation = affiliationBloc.findUserAffiliation();
+        final affiliation = affiliationBloc!.findUserAffiliation()!;
         found = PersonnelModel(
           uuid: Uuid().v4(),
           affiliation: affiliation.copyWith(
             person: PersonModel(
-              uuid: affiliation.person?.uuid,
+              uuid: affiliation.person!.uuid,
               userId: user.userId,
               fname: user.fname,
               lname: user.lname,
@@ -384,10 +385,10 @@ class PersonnelBloc
               email: user.email,
               temporary: affiliation.isUnorganized,
             ),
-          ),
+          ) as AffiliationModel,
           status: PersonnelStatus.alerted,
           tracking: TrackingUtils.newRef(),
-          operation: AggregateRef.fromType(ouuid),
+          operation: AggregateRef.fromType(ouuid!),
         );
         yield* _create(
           CreatePersonnel(
@@ -395,7 +396,7 @@ class PersonnelBloc
             found,
             callback: command.callback,
           ),
-          toState: (Personnel personnel, bool isRemote) => UserMobilized(
+          toState: (Personnel personnel, bool? isRemote) => UserMobilized(
             user,
             personnel,
             isRemote: isRemote,
@@ -414,7 +415,7 @@ class PersonnelBloc
           UserMobilized(
             user,
             found,
-            isRemote: repo.getState(found.uuid).isRemote,
+            isRemote: repo.getState(found.uuid)!.isRemote,
           ),
           result: found,
         );
@@ -424,19 +425,19 @@ class PersonnelBloc
 
   Stream<PersonnelState> _create(
     CreatePersonnel command, {
-    PersonnelState Function(Personnel personnel, bool isRemote) toState,
+    PersonnelState Function(Personnel personnel, bool? isRemote)? toState,
   }) async* {
     // Prepare
     _assertData(command.data);
-    toState ??= (Personnel personnel, bool isRemote) => PersonnelCreated(
+    toState ??= (Personnel personnel, bool? isRemote) => PersonnelCreated(
           personnel,
           isRemote: isRemote,
         );
 
     // Apply
     final personnel = repo.apply(
-      _ensureAffiliation(command.data),
-    );
+      _ensureAffiliation(command.data!),
+    )!;
 
     // Notify local change
     yield toOK(
@@ -450,7 +451,7 @@ class PersonnelBloc
       [repo.onRemote(personnel.uuid)],
       toState: (results) {
         final state = results.whereType<StorageState<Personnel>>().first;
-        return toState(
+        return toState!(
           state.value,
           state.isRemote,
         );
@@ -465,14 +466,14 @@ class PersonnelBloc
   }
 
   Personnel _ensureAffiliation(Personnel personnel) {
-    if (personnel.affiliation.isAffiliate != true) {
-      final auuid = personnel.affiliation.uuid;
-      final affiliation = affiliationBloc.repo[auuid] ??
-          affiliationBloc.findPersonnelAffiliation(
+    if (personnel.affiliation!.isAffiliate != true) {
+      final auuid = personnel.affiliation!.uuid;
+      final affiliation = affiliationBloc!.repo[auuid] ??
+          affiliationBloc!.findPersonnelAffiliation(
             personnel,
           );
       return personnel.copyWith(
-        affiliation: affiliation,
+        affiliation: affiliation!,
       );
     }
     return personnel;
@@ -480,14 +481,14 @@ class PersonnelBloc
 
   Stream<PersonnelState> _update(UpdatePersonnel command) async* {
     _assertData(command.data);
-    final previous = repo[command.data.uuid];
+    final previous = repo[command.data!.uuid];
     final personnel = repo.apply(
       // Update with current person
-      _ensureAffiliation(command.data),
-    );
+      _ensureAffiliation(command.data!),
+    )!;
     yield toOK(
       command,
-      PersonnelUpdated(personnel, previous),
+      PersonnelUpdated(personnel, previous!),
       result: personnel,
     );
 
@@ -512,7 +513,7 @@ class PersonnelBloc
     _assertData(command.data);
     final onRemote = Completer<Personnel>();
     final personnel = repo.delete(
-      command.data.uuid,
+      command.data!.uuid,
       onResult: onRemote,
     );
     yield toOK(
@@ -547,7 +548,7 @@ class PersonnelBloc
   }
 
   PersonnelState _notify(_NotifyRepositoryStateChanged command) {
-    final state = command.state;
+    final Personnel state = command.state;
 
     switch (command.status) {
       case StorageStatus.created:
@@ -564,7 +565,7 @@ class PersonnelBloc
           command,
           PersonnelUpdated(
             state,
-            command.previous,
+            command.previous!,
             isRemote: command.isRemote,
           ),
           result: state,
@@ -587,14 +588,14 @@ class PersonnelBloc
   }
 
   @override
-  PersonnelBlocError createError(Object error, {StackTrace stackTrace}) => PersonnelBlocError(
+  PersonnelBlocError createError(Object error, {StackTrace? stackTrace}) => PersonnelBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
 
-  Personnel _withPerson(Personnel personnel) {
-    final puuid = personnel.person?.uuid;
-    return puuid == null ? personnel : personnel.withPerson(affiliationBloc.persons[puuid]);
+  Personnel? _withPerson(Personnel? personnel) {
+    final puuid = personnel!.person?.uuid;
+    return puuid == null ? personnel : personnel.withPerson(affiliationBloc!.persons[puuid]!);
   }
 }
 
@@ -609,5 +610,5 @@ class _NotifyRepositoryStateChanged extends PersonnelCommand<StorageTransition<P
 
 class _NotifyBlocStateChanged<T> extends PersonnelCommand<PersonnelState<T>, T>
     with NotifyBlocStateChangedMixin<PersonnelState<T>, T> {
-  _NotifyBlocStateChanged(PersonnelState state) : super(state);
+  _NotifyBlocStateChanged(PersonnelState state) : super(state as PersonnelState<T>);
 }

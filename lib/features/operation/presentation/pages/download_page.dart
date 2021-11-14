@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 import 'dart:math';
@@ -10,8 +10,8 @@ import 'package:flutter/material.dart';
 
 class DownloadPage extends StatefulWidget {
   const DownloadPage({
-    Key key,
-    @required this.onProgress,
+    Key? key,
+    required this.onProgress,
   }) : super(key: key);
 
   final Stream<DownloadProgress> onProgress;
@@ -36,7 +36,7 @@ class DownloadProgress {
     int steps = 10,
     Duration duration = const Duration(seconds: 2),
   }) async {
-    var next = this;
+    DownloadProgress next = this;
     final delta = max(0, percent - progress) ~/ steps;
     if (delta > 0) {
       final waitFor = duration ~/ steps;
@@ -52,7 +52,7 @@ class DownloadProgress {
 }
 
 class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMixin {
-  AnimationController _animController;
+  late AnimationController _animController;
 
   @override
   void initState() {
@@ -76,13 +76,13 @@ class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMix
     SizeConfig.init(context);
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final rationaleStyle = textTheme.headline6.copyWith(
+    final rationaleStyle = textTheme.headline6!.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
       fontSize: SizeConfig.labelFontSize * 1.8,
     );
-    final statementStyle = Theme.of(context).textTheme.subtitle2.copyWith(
+    final statementStyle = Theme.of(context).textTheme.subtitle2!.copyWith(
           fontSize: SizeConfig.labelFontSize * 1.2,
         );
     _animController.repeat();
@@ -134,7 +134,7 @@ class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMix
                       stream: widget.onProgress,
                       initialData: DownloadProgress.zero,
                       builder: (context, snapshot) {
-                        final state = snapshot.hasData ? snapshot.data : DownloadProgress.zero;
+                        final state = snapshot.hasData ? snapshot.data! : DownloadProgress.zero;
                         return Text(
                           'Laster ned aksjonen (${(state.fraction * 100).toStringAsFixed(0)} %)',
                           style: statementStyle,
@@ -153,7 +153,7 @@ class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMix
   Widget _buildTitle(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final titleStyle = textTheme.headline6.copyWith(
+    final titleStyle = textTheme.headline6!.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,

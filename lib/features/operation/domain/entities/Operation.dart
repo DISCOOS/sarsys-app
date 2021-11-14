@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -16,21 +16,21 @@ import 'Passcodes.dart';
 
 abstract class Operation extends Aggregate<Map<String, dynamic>> {
   Operation({
-    @required String uuid,
-    @required this.name,
-    @required this.type,
-    @required this.author,
-    @required this.status,
-    @required this.resolution,
-    @required this.talkgroups,
-    @required this.justification,
-    @required this.ipp,
-    @required this.meetup,
-    @required this.passcodes,
-    @required this.incident,
+    required String? uuid,
+    required this.name,
+    required this.type,
+    required this.author,
+    required this.status,
+    required this.resolution,
+    required this.talkgroups,
+    required this.justification,
+    required this.ipp,
+    required this.meetup,
+    required this.passcodes,
+    required this.incident,
     this.reference,
     this.commander,
-  }) : super(uuid, fields: [
+  }) : super(uuid!, fields: [
           name,
           type,
           author,
@@ -46,26 +46,26 @@ abstract class Operation extends Aggregate<Map<String, dynamic>> {
           commander,
         ]);
 
-  final String name;
-  final Location ipp;
-  final Author author;
-  final Location meetup;
-  final String reference;
-  final OperationType type;
-  final Passcodes passcodes;
-  final String justification;
-  final OperationStatus status;
+  final String? name;
+  final Location? ipp;
+  final Author? author;
+  final Location? meetup;
+  final String? reference;
+  final OperationType? type;
+  final Passcodes? passcodes;
+  final String? justification;
+  final OperationStatus? status;
 
   @JsonKey(
     // Workaround for missing readOnly: true
     // Depends on include_if_null: false
     toJson: JsonUtils.toNull,
   )
-  final List<TalkGroup> talkgroups;
+  final List<TalkGroup>? talkgroups;
 
-  final OperationResolution resolution;
-  final AggregateRef<Incident> incident;
-  final AggregateRef<Personnel> commander;
+  final OperationResolution? resolution;
+  final AggregateRef<Incident>? incident;
+  final AggregateRef<Personnel>? commander;
 
   /// Get searchable string
   get searchable => [
@@ -85,7 +85,7 @@ abstract class Operation extends Aggregate<Map<String, dynamic>> {
       ].join(' ');
 
   /// Get [Operation] reference
-  AggregateRef<Operation> toRef();
+  AggregateRef<Operation>? toRef();
 
   /// Clone with author
   Operation withAuthor(String userId);
@@ -95,27 +95,27 @@ abstract class Operation extends Aggregate<Map<String, dynamic>> {
 
   /// Clone with author
   Operation copyWith({
-    String name,
-    Location ipp,
-    bool exercise,
-    Author author,
-    Location meetup,
-    String reference,
-    DateTime occurred,
-    OperationType type,
-    Passcodes passcodes,
-    String justification,
-    OperationStatus status,
-    List<TalkGroup> talkGroups,
-    OperationResolution resolution,
-    AggregateRef<Incident> incident,
-    AggregateRef<Personnel> commander,
+    String? name,
+    Location? ipp,
+    bool? exercise,
+    Author? author,
+    Location? meetup,
+    String? reference,
+    DateTime? occurred,
+    OperationType? type,
+    Passcodes? passcodes,
+    String? justification,
+    OperationStatus? status,
+    List<TalkGroup>? talkGroups,
+    OperationResolution? resolution,
+    AggregateRef<Incident>? incident,
+    AggregateRef<Personnel>? commander,
   });
 }
 
 enum OperationType { search, rescue, other }
 
-String translateOperationType(OperationType type) {
+String translateOperationType(OperationType? type) {
   switch (type) {
     case OperationType.search:
       return "Søk";
@@ -129,7 +129,7 @@ String translateOperationType(OperationType type) {
 
 enum OperationStatus { planned, enroute, onscene, completed }
 
-String translateOperationStatus(OperationStatus status) {
+String translateOperationStatus(OperationStatus? status) {
   switch (status) {
     case OperationStatus.planned:
       return "Planlagt";
@@ -145,7 +145,7 @@ String translateOperationStatus(OperationStatus status) {
 
 enum OperationResolution { unresolved, cancelled, duplicate, resolved }
 
-String translateOperationResolution(OperationResolution resolution) {
+String translateOperationResolution(OperationResolution? resolution) {
   switch (resolution) {
     case OperationResolution.unresolved:
       return "Ikke løst";

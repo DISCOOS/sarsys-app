@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -11,8 +11,8 @@ class ActionMenuItem {
     this.onPressed,
   });
 
-  final Widget child;
-  final VoidCallback onPressed;
+  final Widget? child;
+  final VoidCallback? onPressed;
 }
 
 /// Signature used by [ActionGroupBuilder] to lazily
@@ -22,8 +22,8 @@ typedef ActionItemBuilder = List<ActionMenuItem> Function(BuildContext context);
 
 class ActionGroupBuilder extends StatelessWidget {
   ActionGroupBuilder({
-    @required this.type,
-    @required this.builder,
+    required this.type,
+    required this.builder,
   });
   final ActionGroupType type;
   final ActionItemBuilder builder;
@@ -51,7 +51,7 @@ class ActionGroupBuilder extends StatelessWidget {
     return ButtonBarTheme(
       // make buttons use the appropriate styles for cards
       child: ButtonBar(
-        children: actions.map((item) => item.child).toList(),
+        children: actions.map((item) => item.child).toList() as List<Widget>,
       ),
       data: ButtonBarThemeData(
         alignment: MainAxisAlignment.end,
@@ -64,7 +64,7 @@ class ActionGroupBuilder extends StatelessWidget {
   Widget _buildButtonMenu(BuildContext context) {
     final actions = builder(context);
     return PopupMenuButton<ActionMenuItem>(
-      onSelected: (action) => action.onPressed(),
+      onSelected: (action) => action.onPressed!(),
       itemBuilder: (BuildContext context) {
         return actions.map((ActionMenuItem item) {
           return PopupMenuItem<ActionMenuItem>(

@@ -1,7 +1,8 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
@@ -14,8 +15,13 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
 
 abstract class TrackingRepository extends StatefulRepository<String, Tracking, TrackingService> {
+  TrackingRepository(
+      TrackingService service,
+      ConnectivityService connectivity,
+  ) : super(service: service, connectivity: connectivity);
+
   /// Get [Operation.uuid]
-  String get ouuid;
+  String? get ouuid;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with
@@ -26,7 +32,7 @@ abstract class TrackingRepository extends StatefulRepository<String, Tracking, T
 
   /// Get [Tracking.uuid] from [value]
   @override
-  String toKey(Tracking value);
+  String toKey(Tracking? value);
 
   /// Test if source [suuid] is being tracked
   ///
@@ -38,7 +44,7 @@ abstract class TrackingRepository extends StatefulRepository<String, Tracking, T
   /// for given set of excluded [TrackingStatus.values].
   ///
   bool has(
-    String suuid, {
+    String? suuid, {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   });
@@ -58,16 +64,16 @@ abstract class TrackingRepository extends StatefulRepository<String, Tracking, T
   /// Returns empty list if [source.uuid] is not found
   /// for given set of excluded [TrackingStatus.values].
   ///
-  Iterable<Tracking> findTrackingFrom(
-    String suuid, {
+  Iterable<Tracking?> findTrackingFrom(
+    String? suuid, {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   });
 
   /// Load all [Tracking] objects in given [Organisation.uuid]
-  Future<List<Tracking>> load(
-    String ouuid, {
-    Completer<Iterable<Tracking>> onRemote,
+  Future<List<Tracking?>> load(
+    String? ouuid, {
+    Completer<Iterable<Tracking>>? onRemote,
   });
 
   /// Fetch positions for given
@@ -81,10 +87,10 @@ abstract class TrackingRepository extends StatefulRepository<String, Tracking, T
   /// [Tracking] exists locally and
   /// tracks given [TrackingSource],
   /// [null] otherwise.
-  Future<PositionList> fetchPositionLists(
+  Future<PositionList?> fetchPositionLists(
     String tuuid, {
     List<String> suuids = const [],
-    Completer<Iterable<Tracking>> onRemote,
+    Completer<Iterable<Tracking>>? onRemote,
     List<String> options = const ['truncate:-20:m'],
   });
 }
@@ -92,8 +98,8 @@ abstract class TrackingRepository extends StatefulRepository<String, Tracking, T
 class TrackingServiceException extends ServiceException {
   TrackingServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(
           error,
           response: response,
@@ -102,7 +108,7 @@ class TrackingServiceException extends ServiceException {
 }
 
 class TrackingSourceAlreadyTrackedException extends RepositoryIllegalStateValueException {
-  final List<String> duplicates;
+  final List<String?> duplicates;
   TrackingSourceAlreadyTrackedException(
     TrackingRepository repo,
     StorageState state,

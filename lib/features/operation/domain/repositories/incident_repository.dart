@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -10,22 +10,22 @@ import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 abstract class IncidentRepository implements StatefulRepository<String, Incident, IncidentService> {
   /// Get [Operation.uuid] from [value]
   @override
-  String toKey(Incident value) {
-    return value?.uuid;
+  String toKey(Incident? value) {
+    return value!.uuid;
   }
 
   /// Load incidents
-  Future<List<Incident>> load({
+  Future<List<Incident?>> load({
     bool force = true,
-    Completer<Iterable<Incident>> onRemote,
+    Completer<Iterable<Incident>>? onRemote,
   });
 }
 
 class IncidentServiceException extends ServiceException {
   IncidentServiceException(
     Object error, {
-    ServiceResponse response,
-    StackTrace stackTrace,
+    ServiceResponse? response,
+    StackTrace? stackTrace,
   }) : super(
           error,
           response: response,

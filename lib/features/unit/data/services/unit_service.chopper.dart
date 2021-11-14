@@ -1,5 +1,3 @@
-// @dart=2.11
-
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'unit_service.dart';
@@ -10,7 +8,7 @@ part of 'unit_service.dart';
 
 // ignore_for_file: always_put_control_body_on_new_line, always_specify_types, prefer_const_declarations
 class _$UnitServiceImpl extends UnitServiceImpl {
-  _$UnitServiceImpl([ChopperClient client]) {
+  _$UnitServiceImpl([ChopperClient? client]) {
     if (client == null) return;
     this.client = client;
   }
@@ -27,7 +25,7 @@ class _$UnitServiceImpl extends UnitServiceImpl {
   }
 
   @override
-  Future<Response<StorageState<Unit>>> update(String uuid, Unit personnel) {
+  Future<Response<StorageState<Unit>>> update(String? uuid, Unit personnel) {
     final $url = 'units/$uuid';
     final $body = personnel;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
@@ -35,7 +33,7 @@ class _$UnitServiceImpl extends UnitServiceImpl {
   }
 
   @override
-  Future<Response<void>> delete(String uuid) {
+  Future<Response<void>> delete(String? uuid) {
     final $url = 'units/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
@@ -43,7 +41,7 @@ class _$UnitServiceImpl extends UnitServiceImpl {
 
   @override
   Future<Response<PagedList<StorageState<Unit>>>> onGetPageFromId(
-      String id, int offset, int limit, List<String> options) {
+      String? id, int? offset, int? limit, List<String> options) {
     final $url = '/operations/$id/units';
     final $params = <String, dynamic>{'offset': offset, 'limit': limit};
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -10,27 +10,27 @@ import 'package:meta/meta.dart';
 
 abstract class TrackingSource extends EntityObject<Map<String, dynamic>> {
   TrackingSource({
-    @required this.uuid,
-    @required this.type,
+    required this.uuid,
+    required this.type,
   }) : super(uuid, fields: [type]);
 
   /// EntityObject id is renamed to uuid in backend
   @JsonKey(ignore: true)
   @protected
   @override
-  String get id => super.id;
+  String? get id => super.id;
 
   /// Source uuid
   final String uuid;
 
   /// Source type
-  final SourceType type;
+  final SourceType? type;
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson();
 
   /// Get SourceType from Aggregate Type [T]
-  static SourceType toSourceType<T extends Aggregate>() {
+  static SourceType toSourceType<T extends Aggregate?>() {
     final type = typeOf<T>();
     switch (type) {
       case Device:

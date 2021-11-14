@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:async';
 
@@ -14,6 +14,7 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 
+import 'package:collection/collection.dart' show IterableExtension;
 part 'person_service.chopper.dart';
 
 /// Service for consuming the persons endpoint
@@ -50,7 +51,7 @@ class PersonService extends StatefulServiceDelegate<Person, PersonModel>
   void dispose() {
     _controller.close();
     PersonMessageType.values.forEach(
-      (type) => channel.unsubscribe(enumName(type), _onMessage),
+      (type) => channel.unsubscribe(enumName(type), _onMessage as void Function(dynamic)),
     );
   }
 }
@@ -64,9 +65,9 @@ enum PersonMessageType {
 class PersonMessage extends MessageModel {
   PersonMessage(Map<String, dynamic> data) : super(data);
 
-  PersonMessageType get type {
+  PersonMessageType? get type {
     final type = data.elementAt('type');
-    return PersonMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+    return PersonMessageType.values.singleWhereOrNull((e) => enumName(e) == type);
   }
 }
 
@@ -75,10 +76,10 @@ abstract class PersonServiceImpl extends StatefulService<Person, PersonModel> {
   PersonServiceImpl()
       : super(
           decoder: (json) => PersonModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<PersonModel>(value),
+          reducer: (value) => JsonUtils.toJson<PersonModel?>(value),
         );
 
-  static PersonServiceImpl newInstance([ChopperClient client]) => _$PersonServiceImpl(client);
+  static PersonServiceImpl newInstance([ChopperClient? client]) => _$PersonServiceImpl(client);
 
   @override
   Future<Response<String>> onCreate(StorageState<Person> state) => create(
@@ -88,7 +89,7 @@ abstract class PersonServiceImpl extends StatefulService<Person, PersonModel> {
 
   @Post()
   Future<Response<String>> create(
-    @Path() String uuid,
+    @Path() String? uuid,
     @Body() Person body,
   );
 
@@ -100,24 +101,24 @@ abstract class PersonServiceImpl extends StatefulService<Person, PersonModel> {
 
   @Patch(path: '{uuid}')
   Future<Response<StorageState<Person>>> update(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
     @Body() Person body,
   );
 
   @override
   Future<Response<StorageState<Person>>> onDelete(StorageState<Person> state) => delete(
         state.value.uuid,
-      );
+      ).then((value) => value as Response<StorageState<Person>>);
 
   @Delete(path: '{uuid}')
   Future<Response<void>> delete(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 
-  Future<Response<StorageState<Person>>> onGetFromId(String id, {List<String> options = const []}) => get(id);
+  Future<Response<StorageState<Person>>> onGetFromId(String? id, {List<String> options = const []}) => get(id);
 
   @Get(path: '{uuid}')
   Future<Response<StorageState<Person>>> get(
-    @Path('uuid') String uuid,
+    @Path('uuid') String? uuid,
   );
 }

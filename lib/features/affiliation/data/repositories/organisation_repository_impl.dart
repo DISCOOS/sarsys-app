@@ -1,5 +1,3 @@
-// @dart=2.11
-
 import 'dart:async';
 
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
@@ -12,50 +10,51 @@ import 'package:flutter/foundation.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
-class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation, OrganisationService>
+class OrganisationRepositoryImpl extends StatefulRepository<String?, Organisation, OrganisationService>
     implements OrganisationRepository {
   OrganisationRepositoryImpl(
     OrganisationService service, {
-    @required ConnectivityService connectivity,
+    required ConnectivityService connectivity,
   }) : super(
             service: service,
             connectivity: connectivity,
-            onGet: (StorageState<Organisation> state) {
-              return state.replace(
-                state.value.copyWith(
-                  fleetMap: FleetMapService().fetchFleetMap(state.value.prefix),
+            onGet: (StorageState<Organisation>? state) {
+              return state!.replace(
+                state.value!.copyWith(
+                  fleetMap: FleetMapService().fetchFleetMap(state.value!.prefix),
                 ),
               );
             });
 
   /// Get [Operation.uuid] from [value]
   @override
-  String toKey(Organisation value) {
+  String? toKey(Organisation? value) {
     return value?.uuid;
   }
 
   /// Create [Organisation] from json
-  Organisation fromJson(Map<String, dynamic> json) => OrganisationModel.fromJson(json);
+  Organisation fromJson(Map<String, dynamic>? json) => OrganisationModel.fromJson(json!);
 
   /// Load organisations
-  Future<List<Organisation>> load({
+  Future<List<Organisation?>> load({
     bool force = true,
-    Completer<Iterable<Organisation>> onRemote,
+    Completer<Iterable<Organisation>>? onRemote,
   }) async {
     await prepare(
       force: force ?? false,
     );
     return _load(
       onRemote: onRemote,
-    );
+    ) as FutureOr<List<Organisation?>>;
   }
 
   /// GET ../organisations
   Iterable<Organisation> _load({
-    Completer<Iterable<Organisation>> onRemote,
+    Completer<Iterable<Organisation>>? onRemote,
   }) {
-    return requestQueue.load(
+    return requestQueue!.load(
       service.getList,
       shouldEvict: true,
       onResult: onRemote,
@@ -63,13 +62,13 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
   }
 
   @override
-  Future<Iterable<Organisation>> onReset({Iterable<Organisation> previous = const []}) => Future.value(_load());
+  Future<Iterable<Organisation>> onReset({Iterable<Organisation?>? previous = const []}) => Future.value(_load());
 
   @override
   Future<StorageState<Organisation>> onCreate(StorageState<Organisation> state) async {
     var response = await service.create(state);
     if (response.isOK) {
-      return await _withFleetMap(response.body);
+      return await _withFleetMap(response.body!);
     }
     throw OrganisationServiceException(
       'Failed to create Organisation ${state.value}',
@@ -81,7 +80,7 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
   Future<StorageState<Organisation>> onUpdate(StorageState<Organisation> state) async {
     var response = await service.update(state);
     if (response.isOK) {
-      return await _withFleetMap(response.body);
+      return await _withFleetMap(response.body!);
     }
     throw OrganisationServiceException(
       'Failed to update Organisation ${state.value}',
@@ -91,9 +90,9 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
   }
 
   Future<StorageState<Organisation>> onDelete(StorageState<Organisation> state) async {
-    var response = await service.delete(state);
+    ServiceResponse<StorageState<Organisation>> response = await service.delete(state);
     if (response.isOK) {
-      return await _withFleetMap(response.body);
+      return await _withFleetMap(response.body!);
     }
     throw OrganisationServiceException(
       'Failed to delete Organisation ${state.value}',
@@ -104,7 +103,7 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
 
   StorageState<Organisation> _withFleetMap(StorageState<Organisation> state) {
     final fleetMap = FleetMapService().fetchFleetMap(
-      state.value.prefix,
+      state.value!.prefix,
     );
     return fleetMap == null
         ? state

@@ -1,4 +1,4 @@
-// @dart=2.11
+
 
 import 'dart:ui';
 
@@ -21,16 +21,16 @@ typedef IconBuilder = Icon Function(BuildContext context, int index);
 class POI extends Equatable {
   final String name;
   final Point point;
-  final POIType type;
+  final POIType? type;
 
   POI({
     this.type,
-    @required this.name,
-    @required this.point,
+    required this.name,
+    required this.point,
   });
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         name,
         point,
         type,
@@ -41,15 +41,15 @@ enum POIType { IPP, Meetup, Any }
 
 class POILayerOptions extends LayerOptions {
   OperationBloc bloc;
-  String ouuid;
-  double bearing;
+  String? ouuid;
+  double? bearing;
   double opacity;
-  Icon icon;
-  Text text;
+  Icon? icon;
+  Text? text;
   bool showBadge;
   bool showLabels;
   AnchorAlign align;
-  IconBuilder builder;
+  IconBuilder? builder;
 
   POILayerOptions(
     this.bloc, {
@@ -61,7 +61,7 @@ class POILayerOptions extends LayerOptions {
     this.showLabels = true,
     this.opacity = 0.6,
     this.align = AnchorAlign.center,
-    Stream<Null> rebuild,
+    Stream<Null>? rebuild,
   }) : super(rebuild: rebuild);
 }
 
@@ -76,11 +76,11 @@ class POILayer implements MapPlugin {
     return IgnorePointer(
       child: stream == null
           ? Builder(
-              builder: (context) => _buildLayer(context, options, map),
+              builder: (context) => _buildLayer(context, options as POILayerOptions, map),
             )
           : StreamBuilder<void>(
               stream: stream, // a Stream<int> or null
-              builder: (context, snapshot) => _buildLayer(context, options, map),
+              builder: (context, snapshot) => _buildLayer(context, options as POILayerOptions, map),
             ),
     );
   }
@@ -98,25 +98,25 @@ class POILayer implements MapPlugin {
           );
   }
 
-  static POI toItem(Operation operation, POIType type) {
+  static POI toItem(Operation? operation, POIType type) {
     switch (type) {
       case POIType.Meetup:
         return POI(
           name: "Oppmøte",
-          point: operation?.meetup?.point,
+          point: operation!.meetup!.point!,
           type: POIType.Meetup,
         );
       case POIType.IPP:
       default:
         return POI(
           name: "IPP",
-          point: operation?.ipp?.point,
+          point: operation!.ipp!.point!,
           type: POIType.IPP,
         );
     }
   }
 
-  static List<POI> toItems(Operation operation) {
+  static List<POI> toItems(Operation? operation) {
     return [
       toItem(operation, POIType.IPP),
       toItem(operation, POIType.Meetup),
@@ -131,9 +131,9 @@ class POILayer implements MapPlugin {
     String label,
     int index,
   ) {
-    var icon = params.icon ?? params.builder(context, index);
-    var size = icon.size;
-    var anchor = Anchor.forPos(AnchorPos.align(params.align), icon.size, icon.size);
+    var icon = params.icon ?? params.builder!(context, index);
+    var size = icon.size!;
+    var anchor = Anchor.forPos(AnchorPos.align(params.align), icon.size!, icon.size!);
     var pos = map.project(point);
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
