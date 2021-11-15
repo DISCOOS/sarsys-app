@@ -188,7 +188,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
           return ServiceResponse.asConflict(
             conflict: ConflictModel(
               type: ConflictType.exists,
-              base: existing.first.value!.toJson(),
+              base: existing.first.value.toJson(),
               mine: duplicates,
               yours: [affiliation.toJson()],
               code: enumName(PersonConflictCode.duplicate_user_id),
@@ -266,7 +266,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
 
   static List<StorageState<Person>> _findDuplicateUsers(PersonServiceMock persons, Person person) {
     return persons.personRepo.values
-        .where((s) => person!.uuid != s.value!.uuid && person.userId != null && person.userId == s.value!.userId)
+        .where((s) => person.uuid != s.value.uuid && person.userId != null && person.userId == s.value.userId)
         .toList();
   }
 
@@ -281,7 +281,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
 
     // Ensure person
     final person = persons.personRepo[puuid];
-    final userId = person?.value?.userId ?? affiliation.person!.userId;
+    final userId = person?.value.userId ?? affiliation.person!.userId;
     final orguuid = affiliation.org?.uuid;
     final divuuid = affiliation.div?.uuid;
     final depuuid = affiliation.dep?.uuid;
@@ -319,7 +319,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
   }
 
   static bool isSamePerson(Person person, String? puuid, String? userId) =>
-      puuid != null && person!.uuid == puuid || userId != null && person!.userId == userId;
+      puuid != null && person.uuid == puuid || userId != null && person.userId == userId;
 
   static StorageState<Affiliation> _withPerson(
       Map<String?, StorageState<Affiliation>> affiliationRepo, uuid, PersonServiceMock? persons) {

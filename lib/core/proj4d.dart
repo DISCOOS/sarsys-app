@@ -741,7 +741,7 @@ abstract class Projection {
   bool get rectilinear => false;
 
   /// Test this projection is using a sphere
-  bool get spherical => ellipsoid?.eccentricity == 0;
+  bool get spherical => ellipsoid.eccentricity == 0;
 
   /// Initialize the projection. Should be called after setting parameters and before using the projection.
   @protected
@@ -1277,7 +1277,7 @@ class CoordinateFormat {
     if (ordinals.length == 2) {
       lat = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING]!.group(2)!)) as int?;
       lon = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING]!.group(2)!)) as int?;
-      if (zone! > 0) {
+      if (zone > 0) {
         var proj = TransverseMercatorProjection.utm(zone, isSouth);
         var dst = proj.inverse(isDefault ? ProjCoordinate.from2D(lat as double?, lon as double?) : ProjCoordinate.from2D(lon as double?, lat as double?));
         lon = dst.x as int?;

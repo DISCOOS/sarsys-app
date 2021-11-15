@@ -131,7 +131,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     );
   }
 
-  bool _inProgress() => _bloc?.state?.isPending() == true;
+  bool _inProgress() => _bloc?.state.isPending() == true;
 
   Container _buildProgress(BuildContext context) {
     _animController ??= AnimationController(
@@ -297,7 +297,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(bottom: 24.0),
-                      child: _buildFullName(_bloc!.user!),
+                      child: _buildFullName(_bloc!.user),
                     ),
                     Text(
                       _wrongPin ? 'Feil pinkode' : 'Oppgi din pinkode',
@@ -400,7 +400,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
 
   void _onCompleted(String value, StateSetter? setState) async {
     _pin = value;
-    _wrongPin = _bloc!.user!.security!.pin != value;
+    _wrongPin = _bloc!.user.security!.pin != value;
 
     _pinComplete = true;
     if (_wrongPin) {

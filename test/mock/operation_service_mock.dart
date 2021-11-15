@@ -165,7 +165,7 @@ class OperationServiceMock extends Mock implements OperationService {
     iuuids.forEach((iuuid) {
       if (iuuid.startsWith('a:')) {
         _operationRepo.addEntries([
-          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user!, passcode),
+          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
           for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
         ]);
       }
@@ -179,7 +179,7 @@ class OperationServiceMock extends Mock implements OperationService {
       if (_operationRepo.isEmpty) {
         var user = await users.load();
         _operationRepo.addEntries([
-          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user!, passcode),
+          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
           for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
         ]);
       }

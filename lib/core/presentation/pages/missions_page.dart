@@ -143,7 +143,7 @@ class MissionsPageState extends State<MissionsPage> {
       );
     }
     var unit = units[index]!;
-    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking!.uuid];
+    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && isCommander
@@ -374,7 +374,7 @@ class MissionSearch extends SearchDelegate<Unit?> {
       builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
         return _buildSuggestionList(
           context,
-          suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))?.toList() ?? [],
+          suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase())).toList() ?? [],
         );
       },
     );

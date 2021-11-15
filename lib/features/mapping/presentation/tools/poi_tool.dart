@@ -34,7 +34,7 @@ class POITool extends MapTool with MapSelectable<POI> {
   }) : _active = active;
 
   @override
-  Iterable<POI> get targets => bloc.isUnselected ? [] : POILayer.toItems(bloc?.selected);
+  Iterable<POI> get targets => bloc.isUnselected ? [] : POILayer.toItems(bloc.selected);
 
   @override
   void doProcessTap(BuildContext context, List<POI> items) {

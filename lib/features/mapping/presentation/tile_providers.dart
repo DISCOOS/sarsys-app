@@ -28,7 +28,7 @@ class ManagedCacheTileProvider extends TileProvider {
 
   @override
   void dispose() {
-    _controller?.close();
+    _controller.close();
     _subscription?.cancel();
   }
 

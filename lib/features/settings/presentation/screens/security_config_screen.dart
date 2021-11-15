@@ -72,7 +72,7 @@ class _SecurityConfigScreenState extends State<SecurityConfigScreen> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Chip(
-            label: Text(translateSecurityType(context.read<AppConfigBloc>().config!.securityType)),
+            label: Text(translateSecurityType(context.read<AppConfigBloc>().config.securityType)),
           ),
         )
       ],
@@ -97,7 +97,7 @@ class _SecurityConfigScreenState extends State<SecurityConfigScreen> {
           padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Chip(
             label: Text(
-              translateSecurityMode(context.read<AppConfigBloc>().config!.securityMode),
+              translateSecurityMode(context.read<AppConfigBloc>().config.securityMode),
             ),
           ),
         )

@@ -129,8 +129,8 @@ class _OperationPageState extends State<OperationPage> {
     );
   }
 
-  User get user => context.read<OperationBloc>().userBloc!.user;
-  bool isAuthor(Operation operation) => context.read<OperationBloc>().userBloc!.isAuthor(operation);
+  User get user => context.read<OperationBloc>().userBloc.user;
+  bool isAuthor(Operation operation) => context.read<OperationBloc>().userBloc.isAuthor(operation);
 
   Widget _buildMapTile(BuildContext context, Operation operation) {
     final ipp = operation.ipp != null ? toLatLng(operation.ipp!.point) : null;
@@ -181,7 +181,7 @@ class _OperationPageState extends State<OperationPage> {
         Expanded(
           flex: 6,
           child: _buildValueTile(
-            incident == null ? '-' : translateIncidentType(incident?.type),
+            incident == null ? '-' : translateIncidentType(incident.type),
             label: "Type",
           ),
         ),
@@ -248,24 +248,24 @@ class _OperationPageState extends State<OperationPage> {
           child: _buildValueTile(
             toUTM(operation.ipp?.point, empty: "Ikke oppgitt"),
             label: "IPP",
-            subtitle: operation?.ipp?.description,
+            subtitle: operation.ipp?.description,
             icon: Icons.navigation,
             onIconTap: isEmpty
                 ? null
                 : () => navigateToLatLng(
                     context,
                     toLatLng(
-                      operation?.ipp?.point,
+                      operation.ipp?.point,
                     )),
             onValueTap: isEmpty
                 ? null
                 : () => jumpToPoint(
                       context,
-                      center: operation?.ipp?.point,
+                      center: operation.ipp?.point,
                       operation: operation,
                     ),
             onValueLongPress: () => copy(
-              toUTM(operation?.ipp?.point, prefix: "", empty: "Ingen"),
+              toUTM(operation.ipp?.point, prefix: "", empty: "Ingen"),
               widget.onMessage,
               message: 'IPP kopiert til utklippstavlen',
             ),
@@ -282,26 +282,26 @@ class _OperationPageState extends State<OperationPage> {
         Expanded(
           flex: 5,
           child: _buildValueTile(
-            toUTM(operation?.meetup?.point, empty: "Ikke oppgitt"),
+            toUTM(operation.meetup?.point, empty: "Ikke oppgitt"),
             label: "Oppmøte",
-            subtitle: operation?.meetup?.description,
+            subtitle: operation.meetup?.description,
             icon: Icons.navigation,
             onIconTap: isEmpty
                 ? null
                 : () => navigateToLatLng(
                     context,
                     toLatLng(
-                      operation?.meetup?.point,
+                      operation.meetup?.point,
                     )),
             onValueTap: isEmpty
                 ? null
                 : () => jumpToPoint(
                       context,
-                      center: operation?.meetup?.point,
+                      center: operation.meetup?.point,
                       operation: operation,
                     ),
             onValueLongPress: () => copy(
-              toUTM(operation?.meetup?.point, prefix: "", empty: "Ingen"),
+              toUTM(operation.meetup?.point, prefix: "", empty: "Ingen"),
               widget.onMessage,
               message: 'Oppmøte kopiert til utklippstavlen',
             ),
@@ -317,7 +317,7 @@ class _OperationPageState extends State<OperationPage> {
       label: "Kode mannskap",
       useCodeStyle: true,
     );
-    bool isCommander = user!.isCommander || isAuthor(operation);
+    bool isCommander = user.isCommander || isAuthor(operation);
     return Row(
       children: <Widget>[
         Expanded(
@@ -328,7 +328,7 @@ class _OperationPageState extends State<OperationPage> {
                   useCodeStyle: true,
                   label: "Kode aksjonsledelse",
                 )
-              : user!.isLeader
+              : user.isLeader
                   ? _buildEscalateButton()
                   : _buildNotLeaderNotice(),
         ),
@@ -336,7 +336,7 @@ class _OperationPageState extends State<OperationPage> {
         Expanded(
           flex: 2,
           child: Container(
-            height: OperationPage.HEIGHT * (isCommander || !user!.isLeader ? 1.0 : 1.2),
+            height: OperationPage.HEIGHT * (isCommander || !user.isLeader ? 1.0 : 1.2),
             child: personnel,
           ),
         ),

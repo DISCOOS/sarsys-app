@@ -67,8 +67,8 @@ class TrackingUpdated extends TrackingState<Tracking> {
   final Tracking? previous;
 
   bool isChanged() => data != previous;
-  bool isStatusChanged() => data!.status != previous?.status;
-  bool isLocationChanged() => data!.position != previous?.position;
+  bool isStatusChanged() => data.status != previous?.status;
+  bool isLocationChanged() => data.position != previous?.position;
 
   @override
   String toString() => '$runtimeType {tracking: $data, isRemote: $isRemote}';
@@ -127,8 +127,8 @@ class TrackingBlocException implements Exception {
   @override
   String toString() => '$runtimeType {'
       'error: $error, '
-      'state: ${state?.toString()?.substring(0, 50)}, '
-      'command: ${command?.toString()?.substring(0, 50)}, '
+      'state: ${state.toString().substring(0, 50)}, '
+      'command: ${command?.toString().substring(0, 50)}, '
       'stackTrace: $stackTrace'
       '}';
 }

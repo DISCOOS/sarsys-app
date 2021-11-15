@@ -26,7 +26,7 @@ class _OperationConfigScreenState extends State<OperationConfigScreen> {
   @override
   void initState() {
     super.initState();
-    _templates ??= context.read<AppConfigBloc>().config!.units;
+    _templates ??= context.read<AppConfigBloc>().config.units;
   }
 
   @override

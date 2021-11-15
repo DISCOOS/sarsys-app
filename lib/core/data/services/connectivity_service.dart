@@ -240,7 +240,7 @@ class ConnectivityService extends Service {
     _disposed = true;
     _speedTimer?.cancel();
     _statusTimer?.cancel();
-    _controller?.close();
+    _controller.close();
     _subscriptions.forEach((sub) => sub.cancel());
   }
 }

@@ -602,7 +602,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T?>> {
       'version': state.version!.value,
       'status': enumName(state.status),
       'error': toError(state),
-      'remote': state?._isRemote != null ? state._isRemote : null,
+      'remote': state._isRemote != null ? state._isRemote : null,
     });
   }
 

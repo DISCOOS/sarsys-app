@@ -63,7 +63,7 @@ class AffiliationQuery {
 
   /// Get all [person]s with an affiliation
   Iterable<Person> get persons => affiliates.where((a) => _aggregates.containsKey(a.person?.uuid)).map(
-        (a) => _aggregates[a.person!.uuid!] as Person,
+        (a) => _aggregates[a.person!.uuid] as Person,
       );
 
   /// Test if given [uuid] is contained in any [Affiliation] in this [AffiliationQuery]

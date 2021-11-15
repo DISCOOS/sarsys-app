@@ -97,7 +97,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
             onChanged: (value) => setState(() {
               _bloc.updateWith(talkGroupCatalog: value);
             }),
-            value: _bloc.config?.talkGroupCatalog ?? Defaults.talkGroupCatalog,
+            value: _bloc.config.talkGroupCatalog ?? Defaults.talkGroupCatalog,
           ),
         ),
       ],
@@ -118,9 +118,9 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
           child: Text(c.name!),
         ),
       ),
-      category: _bloc.config!.talkGroupCatalog,
+      category: _bloc.config.talkGroupCatalog,
       items: () => FleetMapTalkGroupConverter.toList(
-        _bloc.config!.talkGroups,
+        _bloc.config.talkGroups,
       ),
       options: (String? category, String? query) {
         if (query?.isNotEmpty == true) {
@@ -130,7 +130,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
           );
         }
         return getTgGroups(
-          category ?? _bloc.config!.talkGroupCatalog,
+          category ?? _bloc.config.talkGroupCatalog,
         );
       },
       onChanged: (value) => setState(() {
@@ -159,7 +159,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
                 ),
               )),
           Switch(
-            value: _bloc.config!.callsignReuse,
+            value: _bloc.config.callsignReuse,
             onChanged: (value) => setState(() {
               _bloc.updateWith(callsignReuse: value);
             }),

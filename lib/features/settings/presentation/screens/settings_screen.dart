@@ -152,7 +152,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       trailing: Icon(Icons.keyboard_arrow_right),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-          return AffiliationConfigScreen(organisation: context.read<UserBloc>().user?.org);
+          return AffiliationConfigScreen(organisation: context.read<UserBloc>().user.org);
         }));
       },
     );

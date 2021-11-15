@@ -85,7 +85,7 @@ class _AppDrawerState extends State<AppDrawer> {
                 final answer = await prompt(
                   context,
                   'Bekreftelse',
-                  user!.isTrusted
+                  user.isTrusted
                       ? 'Du logges nå ut. Vil du fortsette?'
                       : 'Du er innlogget med en bruker som krever at pinkoden slettes ved utlogging. Vil du logge ut?',
                 );
@@ -260,7 +260,7 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   Stack _buildHeader(BuildContext context, UserBloc bloc) {
-    final user = bloc.user!;
+    final user = bloc.user;
     final gravatar = Gravatar(user.email!);
     final url = gravatar.imageUrl(
       size: 100,
@@ -274,7 +274,7 @@ class _AppDrawerState extends State<AppDrawer> {
       children: <Widget>[
         UserAccountsDrawerHeader(
           accountName: Text(
-            "${user?.fullName}",
+            "${user.fullName}",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           accountEmail: Text(
@@ -353,7 +353,7 @@ class _AppDrawerState extends State<AppDrawer> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              '${bloc.user!.isTrusted ? translateSecurityMode(bloc.securityMode) : 'Begrenset'}',
+              '${bloc.user.isTrusted ? translateSecurityMode(bloc.securityMode) : 'Begrenset'}',
               style: TextStyle(color: Colors.white38),
             ),
             Padding(
@@ -373,7 +373,7 @@ class _AppDrawerState extends State<AppDrawer> {
           title: "Bruksmodus og sikkerhet",
           content: bloc.isShared
               ? SecurityModeSharedDescription()
-              : SecurityModePersonalDescription(untrusted: bloc.user!.isUntrusted),
+              : SecurityModePersonalDescription(untrusted: bloc.user.isUntrusted),
         );
       },
     );

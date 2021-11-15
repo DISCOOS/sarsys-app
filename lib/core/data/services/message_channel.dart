@@ -319,7 +319,7 @@ class MessageChannel extends Service {
     if (_channel != null) {
       _isClosed = true;
       _lastCode = code;
-      _channel?.sink?.close(status.goingAway);
+      _channel?.sink.close(status.goingAway);
       _subscriptions.forEach(
         (subscription) => subscription.cancel(),
       );

@@ -68,7 +68,7 @@ class TrackingBloc
     registerStreamSubscription(
       // Updates tracking for unit
       // apriori to changes made in backend.
-      unitBloc!.stream.where((e) => e.isLocal).listen(_processUnitState),
+      unitBloc.stream.where((e) => e.isLocal).listen(_processUnitState),
     );
 
     registerStreamSubscription(
@@ -80,7 +80,7 @@ class TrackingBloc
     registerStreamSubscription(
       // Updates tracking for device
       // apriori to changes made in backend.
-      deviceBloc!.stream.where((e) => e.isLocal).listen(_processDeviceState),
+      deviceBloc.stream.where((e) => e.isLocal).listen(_processDeviceState),
     );
   }
 
@@ -171,7 +171,7 @@ class TrackingBloc
   void _onDeviceUpdated(DeviceUpdated state) {
     if (state.isLocationChanged() || state.isStatusChanged()) {
       final Device device = state.data;
-      final trackings = find(device!, tracks: true);
+      final trackings = find(device, tracks: true);
       if (trackings.isNotEmpty) {
         final next = state.isAvailable()
             ? TrackingUtils.attachAll(
@@ -394,7 +394,7 @@ class TrackingBloc
   /// Get units being tracked
   TrackableQuery<Unit?> get units => TrackableQuery<Unit?>(
         bloc: this,
-        data: this.unitBloc!.units,
+        data: this.unitBloc.units,
       );
 
   /// Get [personnels] being tracked
@@ -422,15 +422,15 @@ class TrackingBloc
   /// Find [Personnel]s available for tracking.
   Iterable<Personnel?> findAvailablePersonnel() {
     final query = units.personnels();
-    return personnelBloc!.repo.values.where((personnel) => !query.containsKey(personnel!.uuid));
+    return personnelBloc!.repo.values.where((personnel) => !query.containsKey(personnel.uuid));
   }
 
   /// Find [Device]s available for tracking.
   Iterable<Device> findAvailableDevices() {
     final queryUnits = units.devices();
     final queryPersonnels = personnels.devices();
-    return deviceBloc!.repo!.values.where(
-      (device) => !(queryUnits.containsKey(device!.uuid) || queryPersonnels.containsKey(device.uuid)),
+    return deviceBloc.repo!.values.where(
+      (device) => !(queryUnits.containsKey(device.uuid) || queryPersonnels.containsKey(device.uuid)),
     );
   }
 
@@ -478,9 +478,9 @@ class TrackingBloc
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) {
     final Map<String?, Set<Tracking?>> map = {};
-    repo.values.where((tracking) => !exclude.contains(tracking!.status)).forEach((tracking) {
-      devices(tracking?.uuid).forEach((device) {
-        map.update(device!.uuid, (set) => set..add(tracking), ifAbsent: () => {tracking});
+    repo.values.where((tracking) => !exclude.contains(tracking.status)).forEach((tracking) {
+      devices(tracking.uuid).forEach((device) {
+        map.update(device.uuid, (set) => set..add(tracking), ifAbsent: () => {tracking});
       });
     });
     return UnmodifiableMapView(map);
@@ -729,9 +729,9 @@ class TrackingBloc
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(tracking.uuid!)],
+      [repo.onRemote(tracking.uuid)],
       toState: (_) => TrackingUpdated(
-        repo[tracking.uuid!],
+        repo[tracking.uuid],
         tracking,
         isRemote: true,
       ),

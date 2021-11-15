@@ -27,8 +27,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _bloc = context.read<AppConfigBloc>();
-    _ttl.text = '${_bloc.config!.mapCacheTTL}';
-    _capacity.text = '${_bloc.config!.mapCacheCapacity}';
+    _ttl.text = '${_bloc.config.mapCacheTTL}';
+    _capacity.text = '${_bloc.config.mapCacheCapacity}';
   }
 
   @override
@@ -191,7 +191,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           ),
           Flexible(
             child: Switch(
-              value: _bloc.config!.keepScreenOn,
+              value: _bloc.config.keepScreenOn,
               onChanged: (value) => setState(() {
                 _bloc.updateWith(keepScreenOn: value);
               }),
@@ -204,7 +204,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
 
   Widget _buildUseRetinaModeField() {
     return SwitchListTile(
-      value: context.read<AppConfigBloc>().config!.mapRetinaMode,
+      value: context.read<AppConfigBloc>().config.mapRetinaMode,
       title: Text('Vis høy oppløsning'),
       subtitle: Text('Krever skjerm med stor oppløsning (retina)'),
       onChanged: (value) {

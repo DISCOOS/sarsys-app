@@ -141,8 +141,8 @@ class AppController {
   bool get isLoading => isAuthenticated && !isReady || _state == AppState.Loading;
   bool get isReady => state == AppState.Ready;
 
-  bool get isOnboarded => bloc<AppConfigBloc>()?.config?.onboarded ?? false;
-  bool get isFirstSetup => bloc<AppConfigBloc>()?.config?.firstSetup ?? false;
+  bool get isOnboarded => bloc<AppConfigBloc>()?.config.onboarded ?? false;
+  bool get isFirstSetup => bloc<AppConfigBloc>()?.config.firstSetup ?? false;
 
   bool shouldConfigure(AppState state) => state == AppState.Built;
   bool shouldRoute(AppState state) => !isHeadless && state == AppState.Ready && !isLocked;
@@ -428,7 +428,7 @@ class AppController {
       [positionListService.delegate],
       (services, repos) => List.from(services)
         ..addAll(
-          repos.map((repo) => repo.service!.delegate),
+          repos.map((repo) => repo.service.delegate),
         ),
     ).toList();
     final apiServices = repoServices.whereType<JsonService>().toList();
@@ -678,7 +678,7 @@ class AppController {
   }
 
   void _onModalState(AffiliationState state) async {
-    debugPrint('AppController._onModalState(state: ${state.runtimeType}{isRemote: ${state!.isRemote}})');
+    debugPrint('AppController._onModalState(state: ${state.runtimeType}{isRemote: ${state.isRemote}})');
     if (isAuthenticated) {
       switch (state.runtimeType) {
         case AffiliationsLoaded:
@@ -697,7 +697,7 @@ class AppController {
 
   void _configureServices(UserState state) {
     _channel!.open(
-      appId: bloc<AppConfigBloc>()!.config!.udid,
+      appId: bloc<AppConfigBloc>()!.config.udid,
       url: '${Defaults.baseWsUrl}/api/messages/connect',
       config: SubscriptionModel(
         types: [
@@ -763,12 +763,12 @@ class AppController {
       ).configure(
         token: bloc<UserBloc>()!.repo.token,
         duuid: bloc<DeviceBloc>()!.app?.uuid,
-        debug: bloc<AppConfigBloc>()!.config?.locationDebug,
+        debug: bloc<AppConfigBloc>()!.config.locationDebug,
       );
     }
   }
 
-  bool get isShared => SecurityMode.shared == bloc<AppConfigBloc>()!.config?.securityMode;
+  bool get isShared => SecurityMode.shared == bloc<AppConfigBloc>()!.config.securityMode;
 
   void _disposeServices(UserState state) async {
     if (LocationService.exists && state.isUnset()) {
@@ -811,7 +811,7 @@ class AppController {
     _services.clear();
   }
 
-  int get securityLockAfter => bloc<AppConfigBloc>()?.config?.securityLockAfter ?? Defaults.securityLockAfter;
+  int get securityLockAfter => bloc<AppConfigBloc>()?.config.securityLockAfter ?? Defaults.securityLockAfter;
 
   Future<void> setLockTimeout() async {
     if (bloc<UserBloc>()!.isReady) {

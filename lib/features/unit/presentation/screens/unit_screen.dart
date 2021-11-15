@@ -63,9 +63,9 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     _group?.close();
     _group = StreamGroup.broadcast()
       ..add(context.read<UnitBloc>().onChanged(widget.unit.uuid))
-      ..add(context.read<TrackingBloc>().onChanged(widget.unit.tracking?.uuid, skipPosition: true));
+      ..add(context.read<TrackingBloc>().onChanged(widget.unit.tracking.uuid, skipPosition: true));
     if (_onMoved != null) _onMoved!.cancel();
-    _onMoved = context.read<TrackingBloc>().onMoved(widget.unit.tracking?.uuid).listen(_onMove);
+    _onMoved = context.read<TrackingBloc>().onMoved(widget.unit.tracking.uuid).listen(_onMove);
   }
 
   @override
@@ -113,7 +113,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
               if (snapshot.data is Unit) {
                 _unit = snapshot.data as Unit?;
               }
-              final tracking = context.read<TrackingBloc>().trackings[_unit!.tracking!.uuid];
+              final tracking = context.read<TrackingBloc>().trackings[_unit!.tracking.uuid];
               return _build(context, tracking);
             },
           ),
@@ -141,7 +141,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
       );
 
   LatLng? toCenter(Tracking event) {
-    final point = event?.position?.geometry;
+    final point = event.position?.geometry;
     return point != null ? toLatLng(point) : null;
   }
 

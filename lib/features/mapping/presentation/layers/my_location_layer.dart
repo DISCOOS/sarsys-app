@@ -288,7 +288,7 @@ class MyLocationLayerController {
   bool get isReady => service?.isReady == true && _options != null && _disposed == false;
   LocationService? get service => LocationService.exists ? LocationService() : null;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options!.isAnimating);
-  bool get isLocated => isLocked || service?.current?.toLatLng() == mapController?.center;
+  bool get isLocated => isLocked || service?.current?.toLatLng() == mapController.center;
 
   Future<LatLng> configure() async {
     assert(_disposed == false, "Is disposed");
@@ -300,8 +300,8 @@ class MyLocationLayerController {
   void dispose() {
     _disposed = true;
     options?.cancel();
-    mapController?.cancel();
-    permissionController?.dispose();
+    mapController.cancel();
+    permissionController.dispose();
     _positionSubscription?.cancel();
     _updateController?.close();
     _options = null;
@@ -365,8 +365,8 @@ class MyLocationLayerController {
       bool moveMap = goto || _locked;
       if (position != null) {
         final point = position.toLatLng();
-        final wasChangeInAccuracy = (_options?.accuracy != position?.acc);
-        _options?.accuracy = position?.acc;
+        final wasChangeInAccuracy = (_options?.accuracy != position.acc);
+        _options?.accuracy = position.acc;
         // Should move position?
         if (moveMap || _isMoved(point)) {
           hasMoved = true;
@@ -417,7 +417,7 @@ class MyLocationLayerController {
   void _progress(Position position, {required bool moved}) {
     _options?.point = position.toLatLng();
     if (moved) {
-      _options?.track?.add(position);
+      _options?.track.add(position);
     }
     _updateController!.add(null);
   }

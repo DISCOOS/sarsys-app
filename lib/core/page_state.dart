@@ -64,7 +64,7 @@ void _writeTypedState<T>(
   T fromJson(dynamic state), {
   T defaultValue()?,
 }) {
-  final typed = state?.containsKey(identifier) == true && state[identifier] != null
+  final typed = state.containsKey(identifier) == true && state[identifier] != null
       ? fromJson(state[identifier])
       : defaultValue!();
   bucket.writeState(context, typed, identifier: identifier);

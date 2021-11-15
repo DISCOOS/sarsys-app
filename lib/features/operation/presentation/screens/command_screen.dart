@@ -204,7 +204,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
       IconButton(
         icon: Icon(Icons.search),
         onPressed: () async {
-          showSearch<T>(context: context, delegate: delegate!);
+          showSearch<T>(context: context, delegate: delegate);
         },
       ),
       IconButton(

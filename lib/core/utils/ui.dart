@@ -196,7 +196,7 @@ Widget buildDropdown<T>({
                   onChanged: (T? value) {
                     // Unfocus input-fields with current focus
                     FocusScope.of(context).requestFocus(FocusNode());
-                    onChanged?.call(value);
+                    onChanged.call(value);
                   },
                   items: items,
                 );
@@ -480,7 +480,7 @@ Color toAffiliationStandbyStatusColor(AffiliationStandbyStatus status) {
 
 IconData? toAffiliationIconData(BuildContext context, Affiliation affiliation) {
   return SarSysIcons.of(
-    context.read<AffiliationBloc>().orgs[affiliation?.org?.uuid]?.prefix,
+    context.read<AffiliationBloc>().orgs[affiliation.org?.uuid]?.prefix,
   ).icon;
 }
 
@@ -653,7 +653,7 @@ void setText(TextEditingController? controller, String? value) {
     controller.value = TextEditingValue(
       text: value,
       selection:
-      (selection.extentOffset > (value.length ?? 0)) ? TextSelection.collapsed(offset: value?.length ?? 0) : selection,
+      (selection.extentOffset > (value.length ?? 0)) ? TextSelection.collapsed(offset: value.length ?? 0) : selection,
     );
   }
 }

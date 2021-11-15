@@ -61,7 +61,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
     _subscription?.cancel();
     _subscription = context.read<OperationBloc>().stream.listen((state) {
       setState(() {
-        _unloaded = state!.shouldUnload(widget.operation?.uuid);
+        _unloaded = state.shouldUnload(widget.operation?.uuid);
       });
     });
   }

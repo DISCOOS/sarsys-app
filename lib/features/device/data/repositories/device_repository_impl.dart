@@ -32,7 +32,7 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   /// Get [Device.uuid] from [value]
   @override
   String toKey(Device value) {
-    return value!.uuid;
+    return value.uuid;
   }
 
   /// Create [Device] from json
@@ -52,11 +52,11 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   int count({
     List<DeviceStatus> exclude: const [DeviceStatus.unavailable],
   }) =>
-      exclude?.isNotEmpty == false
+      exclude.isNotEmpty == false
           ? length
           : values
               .where(
-                (device) => !exclude.contains(device!.status),
+                (device) => !exclude.contains(device.status),
               )
               .length;
 

@@ -79,7 +79,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       function: clone.function,
       tracking: clone.tracking,
       operation: clone.operation,
-      affiliation: clone.affiliation!,
+      affiliation: clone.affiliation,
     );
   }
 
@@ -98,7 +98,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
     OperationalFunctionType? function,
     AggregateRef<Operation>? operation,
   }) {
-    final _affiliation = (affiliation ?? this.affiliation!);
+    final _affiliation = (affiliation ?? this.affiliation);
     final _person = _affiliation.person;
     return PersonnelModel(
       uuid: uuid ?? this.uuid,
@@ -133,13 +133,13 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
   }) {
     final _person = person ?? this.person;
     return person.copyWith(
-      uuid: uuid ?? _person?.uuid,
-      fname: fname ?? _person?.fname,
-      lname: lname ?? _person?.lname,
-      phone: phone ?? _person?.phone,
-      email: email ?? _person?.email,
-      userId: userId ?? _person?.userId,
-      temporary: temporary ?? _person?.temporary,
+      uuid: uuid ?? _person.uuid,
+      fname: fname ?? _person.fname,
+      lname: lname ?? _person.lname,
+      phone: phone ?? _person.phone,
+      email: email ?? _person.email,
+      userId: userId ?? _person.userId,
+      temporary: temporary ?? _person.temporary,
     );
   }
 
@@ -152,7 +152,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       function: function,
       tracking: tracking,
       operation: operation,
-      affiliation: affiliation!.copyWith(
+      affiliation: affiliation.copyWith(
         person: person != null
             ? _copyPerson(
                 person: person,

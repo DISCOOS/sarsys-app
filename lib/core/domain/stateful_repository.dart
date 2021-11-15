@@ -96,10 +96,10 @@ abstract class StatefulRepository<K, V extends JsonObject?, S extends StatefulSe
   int get length => isReady ? _box!.length : 0;
 
   /// Check if repository is online
-  bool get isOnline => connectivity!.isOnline;
+  bool get isOnline => connectivity.isOnline;
 
   /// Check if repository is offline
-  bool get isOffline => connectivity!.isOffline;
+  bool get isOffline => connectivity.isOffline;
 
   /// Find [V]s matching given query
   Iterable<V> find({required bool where(V value)}) => isReady ? values.where(where) : [];
@@ -169,7 +169,7 @@ abstract class StatefulRepository<K, V extends JsonObject?, S extends StatefulSe
   /// returned by service because dependency
   /// was not found in backend.
   @visibleForOverriding
-  Iterable<AggregateRef> toRefs(V value) => value?.props?.whereType<AggregateRef>() ?? [];
+  Iterable<AggregateRef> toRefs(V value) => value?.props.whereType<AggregateRef>() ?? [];
 
   /// Asserts that repository is operational.
   /// Should be called before methods is called.

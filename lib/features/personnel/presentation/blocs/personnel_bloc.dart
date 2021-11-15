@@ -121,7 +121,7 @@ class PersonnelBloc
       puuids.where((puuid) => repo.containsKey(puuid)).map((puuid) => repo[puuid!]).toList();
 
   /// Check if given [Personnel.uuid] is current user
-  bool isUser(String? uuid) => repo[uuid!]?.userId == operationBloc!.userBloc!.userId;
+  bool isUser(String? uuid) => repo[uuid!]?.userId == operationBloc!.userBloc.userId;
 
   /// Find [Personnel]s matching given query
   Iterable<Personnel?> find({required bool where(Personnel personnel)}) => repo.find(where: where);
@@ -159,7 +159,7 @@ class PersonnelBloc
             <Pair<Personnel, int>>[],
             (dynamic candidates, p) {
               var rank = 0;
-              final next = affiliationBloc!.repo[p!.affiliation!.uuid];
+              final next = affiliationBloc!.repo[p!.affiliation.uuid];
               if (next != null) {
                 if (next.org?.uuid != match!.org?.uuid) rank++;
                 if (next.div?.uuid != match.div?.uuid) rank++;
@@ -188,7 +188,7 @@ class PersonnelBloc
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       repo.findUser(
-        userId ?? operationBloc!.userBloc!.userId,
+        userId ?? operationBloc!.userBloc.userId,
         where: where,
         exclude: exclude,
       );
@@ -197,7 +197,7 @@ class PersonnelBloc
   Stream<Personnel?> onChanged(Personnel? personnel) => stream
       .where(
         (state) =>
-            (state is PersonnelUpdated && state.data!.uuid == personnel!.uuid) ||
+            (state is PersonnelUpdated && state.data.uuid == personnel!.uuid) ||
             (state is PersonnelsLoaded && state.data.contains(personnel!.uuid)),
       )
       .map((state) => state is PersonnelsLoaded ? repo[personnel!.uuid] : state.data);
@@ -331,7 +331,7 @@ class PersonnelBloc
 
     if (personnels.isNotEmpty) {
       await affiliationBloc!.fetch(
-        personnels.map((p) => p!.affiliation!.uuid),
+        personnels.map((p) => p!.affiliation.uuid),
       );
     }
     yield toOK(
@@ -362,10 +362,10 @@ class PersonnelBloc
   }
 
   Future<AffiliationState> _onAffiliationState<T extends AffiliationState>({bool isRemote = true}) =>
-      affiliationBloc!.stream.where((s) => s!.isRemote == isRemote && s is T).first;
+      affiliationBloc!.stream.where((s) => s.isRemote == isRemote && s is T).first;
 
   Stream<PersonnelState> _mobilize(MobilizeUser command) async* {
-    final user = command.user!;
+    final user = command.user;
     assert(user != null, 'Command $command have noe user given');
     if (user != null) {
       var found = findMobilizedUserOrReuse(
@@ -437,7 +437,7 @@ class PersonnelBloc
     // Apply
     final personnel = repo.apply(
       _ensureAffiliation(command.data!),
-    )!;
+    );
 
     // Notify local change
     yield toOK(
@@ -466,8 +466,8 @@ class PersonnelBloc
   }
 
   Personnel _ensureAffiliation(Personnel personnel) {
-    if (personnel.affiliation!.isAffiliate != true) {
-      final auuid = personnel.affiliation!.uuid;
+    if (personnel.affiliation.isAffiliate != true) {
+      final auuid = personnel.affiliation.uuid;
       final affiliation = affiliationBloc!.repo[auuid] ??
           affiliationBloc!.findPersonnelAffiliation(
             personnel,
@@ -485,7 +485,7 @@ class PersonnelBloc
     final personnel = repo.apply(
       // Update with current person
       _ensureAffiliation(command.data!),
-    )!;
+    );
     yield toOK(
       command,
       PersonnelUpdated(personnel, previous!),
@@ -594,7 +594,7 @@ class PersonnelBloc
       );
 
   Personnel? _withPerson(Personnel? personnel) {
-    final puuid = personnel!.person?.uuid;
+    final puuid = personnel!.person.uuid;
     return puuid == null ? personnel : personnel.withPerson(affiliationBloc!.persons[puuid]!);
   }
 }

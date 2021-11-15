@@ -124,11 +124,11 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
             .map(get)
             // Only if status is not excluded from search
             .where(
-              (tracking) => !exclude.contains(tracking!.status),
+              (tracking) => !exclude.contains(tracking.status),
             )
             // Only check if source is attached if tracks are not included in search
             .where(
-              (tracking) => tracks || tracking!.sources.any((source) => suuid == source.uuid),
+              (tracking) => tracks || tracking.sources.any((source) => suuid == source.uuid),
             )
             .toList()
         : [];
@@ -160,7 +160,7 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
       final lists = await _tracks!.fetch(
         tuuid,
         options: options,
-        suuids: suuids.isEmpty ? tracking!.sources.map((s) => s.uuid) : suuids,
+        suuids: suuids.isEmpty ? tracking.sources.map((s) => s.uuid) : suuids,
       );
       return lists.firstOrNull;
     }
@@ -177,12 +177,12 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   /// Commit [state] to repository
   @override
   bool put(StorageState<Tracking> state) {
-    final tuuid = state.value!.uuid;
+    final tuuid = state.value.uuid;
     final exists = super.put(state);
     if (exists) {
-      _addToIndex(state.value!, tuuid);
+      _addToIndex(state.value, tuuid);
     } else {
-      _removeFromIndex(state.value!, tuuid);
+      _removeFromIndex(state.value, tuuid);
     }
     return exists;
   }
@@ -192,7 +192,7 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
     tracking.tracks.forEach(
       (track) {
         _sources.update(
-          track.source!.uuid,
+          track.source.uuid,
           (tuuids) {
             if (track.status == TrackStatus.attached) {
               tuuids.add(tuuid);
@@ -213,12 +213,12 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
     tracking.tracks.forEach(
       (track) {
         final tuuids = _sources.update(
-          track.source!.uuid,
+          track.source.uuid,
           (tuuids) => tuuids..remove(tuuid),
           ifAbsent: () => {},
         );
         if (tuuids.isEmpty) {
-          empty.add(track.source!.uuid);
+          empty.add(track.source.uuid);
         }
       },
     );

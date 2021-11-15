@@ -65,7 +65,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   OverlayEntry? _overlayEntry;
   Future<GeocodeResult?>? request;
 
-  bool get hasFocus => _focusNode?.hasFocus ?? false;
+  bool get hasFocus => _focusNode.hasFocus ?? false;
 
   @override
   void initState() {
@@ -291,7 +291,7 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult?> {
                 context,
                 suggestions
                         ?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))
-                        ?.toList() ??
+                        .toList() ??
                     [],
               );
             },

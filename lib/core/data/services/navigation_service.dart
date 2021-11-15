@@ -13,7 +13,7 @@ class NavigationService extends Service {
   static final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   static GlobalKey<NavigatorState> get navigatorKey => _navigatorKey;
 
-  static bool get isReady => _navigatorKey?.currentState != null;
+  static bool get isReady => _navigatorKey.currentState != null;
 
   OverlayState? get overlay => navigatorKey.currentState!.overlay;
   BuildContext? get context => navigatorKey.currentContext;

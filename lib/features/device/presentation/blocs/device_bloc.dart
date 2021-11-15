@@ -122,12 +122,12 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   Iterable<StatefulRepository?> get repos => [repo];
 
   /// Check if device is this application
-  bool isThisApp(Device device) => userBloc!.configBloc!.config!.udid == device.uuid;
+  bool isThisApp(Device device) => userBloc!.configBloc!.config.udid == device.uuid;
 
   /// Check if device name should be updated
   bool _shouldSetUser(Device device, StorageStatus status) =>
       userBloc!.isAuthenticated &&
-      isThisApp(device!) &&
+      isThisApp(device) &&
       status != StorageStatus.deleted &&
       (device.name == null || device.alias == null || device.networkId != userBloc!.userId);
 
@@ -151,7 +151,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   /// Find device for this app
   Device? get app {
-    final uuid = userBloc!.config?.udid;
+    final uuid = userBloc!.config.udid;
     return uuid != null ? repo![uuid] : null;
   }
 
@@ -162,15 +162,15 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
             (state is DeviceUpdated &&
                 state.isChanged() &&
                 (!skipPosition || !state.isLocationChanged()) &&
-                state.data!.uuid == device!.uuid) ||
-            (state is DevicesLoaded && state.data.contains(device!.uuid)),
+                state.data.uuid == device.uuid) ||
+            (state is DevicesLoaded && state.data.contains(device.uuid)),
       )
-      .map((state) => state is DevicesLoaded ? repo![device!.uuid] : state.data);
+      .map((state) => state is DevicesLoaded ? repo![device.uuid] : state.data);
 
   /// Stream of changes on given device
   Stream<Device> onMoved(Device device) => stream
       .where(
-        (state) => (state.isLocationChanged() && state.data.uuid == device!.uuid),
+        (state) => (state.isLocationChanged() && state.data.uuid == device.uuid),
       )
       .map((state) => state.data);
 
@@ -184,7 +184,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   }
 
   void _assertData(Device data) {
-    if (data?.uuid == null) {
+    if (data.uuid == null) {
       throw ArgumentError(
         "Device $data have no uuid",
       );
@@ -291,8 +291,8 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       if (_shouldSetUser(app!, repo!.getState(app!.uuid)!.status)) {
         final device = app!.copyWith(
           network: 'sarsys',
-          number: userBloc!.user!.phone,
-          networkId: userBloc!.user!.userId,
+          number: userBloc!.user.phone,
+          networkId: userBloc!.user.userId,
           alias: await getDeviceModelName(),
         );
         dispatch(
@@ -331,7 +331,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   Stream<DeviceState> _create(CreateDevice command) async* {
     _assertData(command.data);
-    var device = repo!.apply(command.data!)!;
+    var device = repo!.apply(command.data);
     yield toOK(
       command,
       DeviceCreated(device),
@@ -356,8 +356,8 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   Stream<DeviceState> _update(UpdateDevice command) async* {
     _assertData(command.data);
-    final previous = repo![command.data!.uuid];
-    final device = repo!.apply(command.data!)!;
+    final previous = repo![command.data.uuid];
+    final device = repo!.apply(command.data);
     yield toOK(
       command,
       DeviceUpdated(device, previous!),
@@ -383,7 +383,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   Stream<DeviceState> _delete(DeleteDevice command) async* {
     _assertData(command.data);
-    final device = repo!.delete(command.data!.uuid)!;
+    final device = repo!.delete(command.data.uuid)!;
     yield toOK(
       command,
       DeviceDeleted(device),

@@ -108,11 +108,11 @@ void main() async {
       final operations = harness.operationsBloc!.repo.values;
 
       // Act
-      await harness.operationsBloc!.select(operations.first!.uuid);
+      await harness.operationsBloc!.select(operations.first.uuid);
 
       // Assert
       expect(harness.operationsBloc!.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
-      expect(harness.operationsBloc!.selected!.uuid, equals(operations.first!.uuid), reason: "SHOULD select first");
+      expect(harness.operationsBloc!.selected!.uuid, equals(operations.first.uuid), reason: "SHOULD select first");
       expectThroughInOrder(harness.operationsBloc, [isA<OperationSelected>()]);
     });
 
@@ -127,11 +127,11 @@ void main() async {
       final operations = harness.operationsBloc!.repo.values;
 
       // Act
-      await harness.operationsBloc!.select(operations.last!.uuid);
+      await harness.operationsBloc!.select(operations.last.uuid);
 
       // Assert
       expect(harness.operationsBloc!.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
-      expect(harness.operationsBloc!.selected!.uuid, equals(operations.last!.uuid), reason: "SHOULD select last");
+      expect(harness.operationsBloc!.selected!.uuid, equals(operations.last.uuid), reason: "SHOULD select last");
       expectThroughInOrder(harness.operationsBloc, [isA<OperationSelected>()]);
     });
 

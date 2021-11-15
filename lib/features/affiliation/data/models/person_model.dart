@@ -38,21 +38,21 @@ class PersonModel extends Person {
 
   static PersonModel fromUser(User user, {bool temporary = false}) => PersonModel(
         uuid: Uuid().v4(),
-        fname: user?.fname,
-        lname: user?.lname,
-        phone: user?.phone,
-        email: user?.email,
-        userId: user?.userId,
+        fname: user.fname,
+        lname: user.lname,
+        phone: user.phone,
+        email: user.email,
+        userId: user.userId,
         temporary: temporary,
       );
 
   static PersonModel fromPersonnel(Personnel personnel, {bool temporary = false}) => PersonModel(
-        uuid: personnel.person?.uuid ?? Uuid().v4(),
-        fname: personnel?.fname,
-        lname: personnel?.lname,
-        phone: personnel?.phone,
-        email: personnel?.email,
-        userId: personnel?.userId,
+        uuid: personnel.person.uuid ?? Uuid().v4(),
+        fname: personnel.fname,
+        lname: personnel.lname,
+        phone: personnel.phone,
+        email: personnel.email,
+        userId: personnel.userId,
         temporary: temporary,
       );
 

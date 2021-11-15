@@ -151,7 +151,7 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
     if (routeWriter) {
       this.routeData = data;
       this.routeName = name ?? this.routeName;
-      final route = this.routeName ?? ModalRoute.of(context)?.settings?.name;
+      final route = this.routeName ?? ModalRoute.of(context)?.settings.name;
       if (route != '/') {
         putPageState(context, STATE, {
           'name': route,

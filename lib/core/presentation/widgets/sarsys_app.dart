@@ -80,10 +80,10 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
 
   bool get isReady => widget.controller.isReady;
 
-  bool get isOnboarded => configBloc?.config?.onboarded ?? false;
-  bool get isFirstSetup => configBloc?.config?.firstSetup ?? false;
+  bool get isOnboarded => configBloc?.config.onboarded ?? false;
+  bool get isFirstSetup => configBloc?.config.firstSetup ?? false;
 
-  int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
+  int get securityLockAfter => configBloc?.config.securityLockAfter ?? Defaults.securityLockAfter;
 
   @override
   void initState() {
@@ -129,7 +129,7 @@ class _SarSysAppWidgetState extends State<SarSysAppWidget> with WidgetsBindingOb
     final StreamSubscription<OperationState<dynamic>?> subscription = widget.controller
         .bloc<OperationBloc>()!
         .stream
-        .firstWhere((state) => state!.isLoaded())
+        .firstWhere((state) => state.isLoaded())
         .asStream()
         // User is authenticated (not null)
         // by convention when OperationsLoaded

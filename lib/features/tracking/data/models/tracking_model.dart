@@ -85,8 +85,8 @@ class TrackingModel extends Tracking {
       history: history ?? this.history,
       position: position ?? this.position,
       distance: distance ?? this.distance,
-      tracks: (tracks ?? this.tracks)?.cast<TrackingTrackModel>(),
-      sources: (sources ?? this.sources)?.cast<TrackingSourceModel>(),
+      tracks: (tracks ?? this.tracks).cast<TrackingTrackModel>(),
+      sources: (sources ?? this.sources).cast<TrackingSourceModel>(),
     );
   }
 

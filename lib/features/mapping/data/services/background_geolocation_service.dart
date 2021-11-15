@@ -587,7 +587,7 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   void _notify(LocationEvent event) {
-    if ((_events?.length ?? 0) > maxEvents) {
+    if ((_events.length ?? 0) > maxEvents) {
       _events.removeLast();
     }
     _events.insert(0, event);

@@ -84,7 +84,7 @@ class _OperationEditorState extends State<OperationEditor> {
     super.initState();
     _ippController = TextEditingController(text: _ipp?.description ?? '');
     _meetupController = TextEditingController(text: _meetup?.description ?? '');
-    _templates ??= context.read<AppConfigBloc>().config!.units;
+    _templates ??= context.read<AppConfigBloc>().config.units;
   }
 
   @override
@@ -104,8 +104,8 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   void _initLocation() {
-    _ipp = widget?.operation?.ipp ?? _toLocation(_ipp, widget.ipp);
-    _meetup = widget?.operation?.meetup ?? _toLocation(_meetup, widget.ipp);
+    _ipp = widget.operation?.ipp ?? _toLocation(_ipp, widget.ipp);
+    _meetup = widget.operation?.meetup ?? _toLocation(_meetup, widget.ipp);
   }
 
   void _setMeetupToMe() async {
@@ -369,7 +369,7 @@ class _OperationEditorState extends State<OperationEditor> {
       name: "occurred",
 //      initialTime: null,
       lastDate: DateTime(now.year, now.month, now.day, 23, 59, 59),
-      initialValue: widget?.incident?.occurred ?? now,
+      initialValue: widget.incident?.occurred ?? now,
       format: DateFormat("yyyy-MM-dd HH:mm"),
 //      resetIcon: null,
       autocorrect: true,
@@ -425,7 +425,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return FormBuilderTextField(
       maxLines: 1,
       name: 'name',
-      initialValue: widget?.incident?.name,
+      initialValue: widget.incident?.name,
       decoration: new InputDecoration(
         labelText: 'Stedsnavn',
         hintText: 'Oppgi stedsnavn',
@@ -448,7 +448,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return FormBuilderTextField(
       maxLines: 3,
       name: 'justification',
-      initialValue: widget?.operation?.justification,
+      initialValue: widget.operation?.justification,
       decoration: new InputDecoration(
         labelText: 'Begrunnelse',
         hintText: 'Oppgi begrunnelse',
@@ -465,7 +465,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return FormBuilderTextField(
       maxLines: 1,
       name: 'reference',
-      initialValue: widget?.operation?.reference,
+      initialValue: widget.operation?.reference,
       decoration: new InputDecoration(
         hintText: 'SAR- eller AMIS-nummer',
         filled: true,
@@ -477,7 +477,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return buildDropDownField<String>(
       name: 'incident_type',
       label: 'Type hendelse',
-      initialValue: enumName(widget?.incident?.type ?? IncidentType.lost),
+      initialValue: enumName(widget.incident?.type ?? IncidentType.lost),
       items: IncidentType.values
           .map((type) => [enumName(type), translateIncidentType(type)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
@@ -490,7 +490,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return buildDropDownField(
       name: 'operation_type',
       label: 'Disiplin',
-      initialValue: enumName(widget?.operation?.type ?? OperationType.search),
+      initialValue: enumName(widget.operation?.type ?? OperationType.search),
       items: OperationType.values
           .map((type) => [enumName(type), translateOperationType(type)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
@@ -503,7 +503,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return buildDropDownField(
       name: 'incident_status',
       label: 'Status',
-      initialValue: enumName(widget?.incident?.status ?? IncidentStatus.registered),
+      initialValue: enumName(widget.incident?.status ?? IncidentStatus.registered),
       items: IncidentStatus.values
           .map((status) => [enumName(status), translateIncidentStatus(status)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
@@ -516,7 +516,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return buildDropDownField(
       name: 'operation_status',
       label: 'Fase',
-      initialValue: enumName(widget?.operation?.status ?? OperationStatus.planned),
+      initialValue: enumName(widget.operation?.status ?? OperationStatus.planned),
       items: OperationStatus.values
           .map((status) => [enumName(status), translateOperationStatus(status)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
@@ -670,8 +670,8 @@ class _OperationEditorState extends State<OperationEditor> {
       );
 
   Widget _buildTGField() {
-    final config = context.read<AppConfigBloc>().config!;
-    final catalogs = widget?.operation?.talkgroups ??
+    final config = context.read<AppConfigBloc>().config;
+    final catalogs = widget.operation?.talkgroups ??
         FleetMapTalkGroupConverter.toList(
           config.talkGroups,
         );
@@ -691,7 +691,7 @@ class _OperationEditorState extends State<OperationEditor> {
       ),
       category: config.talkGroupCatalog,
       items: () =>
-          widget?.operation?.talkgroups ??
+          widget.operation?.talkgroups ??
           FleetMapTalkGroupConverter.toList(
             config.talkGroups,
           ),
@@ -1090,10 +1090,10 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   bool _shouldResolve(IncidentResolution? next) =>
-      IncidentStatus.closed != widget?.incident?.status && IncidentResolution.resolved == next;
+      IncidentStatus.closed != widget.incident?.status && IncidentResolution.resolved == next;
 
   bool _shouldCancel(IncidentResolution? next) =>
-      IncidentStatus.closed != widget?.incident?.status && IncidentResolution.cancelled == next;
+      IncidentStatus.closed != widget.incident?.status && IncidentResolution.cancelled == next;
 
   Incident _createIncident() => IncidentModel.fromJson(_toIncidentJson(_toJson(
         uuid: Uuid().v4(),

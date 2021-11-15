@@ -18,8 +18,8 @@ class FileCacheService extends CacheManager implements Service {
   static int? _mapCacheCapacity;
 
   factory FileCacheService(AppConfig config) {
-    if (_instance == null || _mapCacheTTL != config!.mapCacheTTL || _mapCacheCapacity != config.mapCacheCapacity) {
-      _instance = new FileCacheService._(config!.mapCacheTTL, config.mapCacheCapacity);
+    if (_instance == null || _mapCacheTTL != config.mapCacheTTL || _mapCacheCapacity != config.mapCacheCapacity) {
+      _instance = new FileCacheService._(config.mapCacheTTL, config.mapCacheCapacity);
       _mapCacheTTL = config.mapCacheTTL;
       _mapCacheCapacity = config.mapCacheCapacity;
     }

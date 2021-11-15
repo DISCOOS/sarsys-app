@@ -102,7 +102,7 @@ class EditOperation extends UseCase<bool, Operation?, OperationParams> {
 }
 
 User _assertUser(OperationParams params) {
-  final user = params.bloc.userBloc!.user!;
+  final user = params.bloc.userBloc.user;
   assert(user != null, "User must bed authenticated");
   return user;
 }
@@ -147,7 +147,7 @@ class JoinOperation extends UseCase<bool, Personnel, OperationParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data != null, "Operation is required");
-    final user = params.bloc.userBloc!.user!;
+    final user = params.bloc.userBloc.user;
     assert(user != null, "User must be authenticated");
 
     if (_shouldJoin(params)) {
@@ -182,12 +182,12 @@ class EscalateToCommand extends UseCase<bool, bool, OperationParams> {
             operation: operation,
             onComplete: (result) => Navigator.pop(context, result),
             onAuthorize: (operation, passcode) async {
-              final authorized = await (params.bloc.userBloc!.authorize(
+              final authorized = await (params.bloc.userBloc.authorize(
                 operation!,
                 passcode!,
               ) as FutureOr<bool>);
               if (authorized) {
-                return params.bloc.userBloc!.getAuthorization(operation)!.withCommanderCode;
+                return params.bloc.userBloc.getAuthorization(operation)!.withCommanderCode;
               }
               return authorized;
             },
@@ -240,12 +240,12 @@ Future<dartz.Either<bool, Personnel>> _join(
     'Du legges nå til aksjonen som mannskap. Vil du fortsette?',
   );
 
-  if (join == true && !params.bloc.userBloc!.isAuthorized(params.data)) {
+  if (join == true && !params.bloc.userBloc.isAuthorized(params.data)) {
     final personnel = await showDialog<Personnel>(
       context: params.overlay!.context,
       builder: (context) => OpenOperationScreen(
         operation: params.data,
-        onAuthorize: (operation, passcode) => params.bloc.userBloc!.authorize(
+        onAuthorize: (operation, passcode) => params.bloc.userBloc.authorize(
           operation!,
           passcode!,
         ),
@@ -275,12 +275,12 @@ Future<dartz.Either<bool, Personnel>> _join(
       return dartz.right(personnel);
     }
   }
-  if (join == true && params.bloc.userBloc!.isAuthorized(params.data)) {
+  if (join == true && params.bloc.userBloc.isAuthorized(params.data)) {
     final personnel = await showDialog<Personnel>(
       context: params.overlay!.context,
       builder: (context) => OpenOperationScreen(
         operation: params.data,
-        onAuthorize: (operation, passcode) => params.bloc.userBloc!.authorize(
+        onAuthorize: (operation, passcode) => params.bloc.userBloc.authorize(
           operation!,
           passcode!,
         ),
@@ -327,7 +327,7 @@ Future<Personnel> _mobilize(OperationParams params) async {
   personnel ??= await personnels.mobilizeUser();
   assert(
     personnel != null,
-    'User ${params.bloc.userBloc!.user} not mobilized',
+    'User ${params.bloc.userBloc.user} not mobilized',
   );
   return personnel!;
 }

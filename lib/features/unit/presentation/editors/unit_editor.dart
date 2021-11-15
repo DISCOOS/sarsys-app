@@ -54,25 +54,25 @@ class UnitEditor extends StatefulWidget {
   static String? findUnitPhone(BuildContext context, Unit? unit) {
     var phone = unit?.phone;
     if (unit != null && phone == null) {
-      if (unit?.tracking != null) {
+      if (unit.tracking != null) {
         final devices = context.read<TrackingBloc>().devices(
-          unit?.tracking?.uuid,
+          unit.tracking.uuid,
           // Include closed tracks
           exclude: [],
         ).toList();
         final apps = <Device>[];
-        apps.addAll(devices.where((a) => a!.number != null));
+        apps.addAll(devices.where((a) => a.number != null));
         if (apps.isEmpty) {
           // Search for personnel number
           final bloc = context.read<PersonnelBloc>();
           for (var puuid in unit.personnels) {
-            phone = PersonnelEditor.findPersonnelPhone(context, bloc.repo.get(puuid!));
+            phone = PersonnelEditor.findPersonnelPhone(context, bloc.repo.get(puuid));
             if (phone != null) {
               return phone;
             }
           }
         } else {
-          phone = apps.first!.number;
+          phone = apps.first.number;
         }
       }
     }
@@ -234,7 +234,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  String _defaultName() => widget?.unit?.name ?? "${translateUnitType(widget.type)} ${_defaultNumber()}";
+  String _defaultName() => widget.unit?.name ?? "${translateUnitType(widget.type)} ${_defaultNumber()}";
 
   FormBuilderTextField _buildNumberField() {
     return FormBuilderTextField(
@@ -343,9 +343,9 @@ class _UnitEditorState extends State<UnitEditor> {
 
   bool _isSameCallsign(Unit? unit, String? callsign) {
     return callsign?.isNotEmpty == true &&
-        unit?.uuid != widget?.unit?.uuid &&
-        unit?.callsign?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
-            callsign?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
+        unit?.uuid != widget.unit?.uuid &&
+        unit?.callsign?.toLowerCase().replaceAll(RegExp(r'\s|-'), '') ==
+            callsign?.toLowerCase().replaceAll(RegExp(r'\s|-'), '');
   }
 
   FormBuilderTextField _buildPhoneField() {
@@ -404,18 +404,18 @@ class _UnitEditorState extends State<UnitEditor> {
 
   bool _isSamePhone(Unit? unit, String? phone) {
     return phone?.isNotEmpty == true &&
-        unit?.uuid != widget?.unit?.uuid &&
-        unit?.phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
-            phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
+        unit?.uuid != widget.unit?.uuid &&
+        unit?.phone?.toLowerCase().replaceAll(RegExp(r'\s|-'), '') ==
+            phone?.toLowerCase().replaceAll(RegExp(r'\s|-'), '');
   }
 
   void _setText(TextEditingController controller, String? value) {
     setText(controller, value);
-    _formKey?.currentState?.save();
+    _formKey.currentState?.save();
   }
 
   void _onTypeOrNumberEdit(UnitType type, String number, bool update) {
-    _formKey?.currentState?.save();
+    _formKey.currentState?.save();
     final name = translateUnitType(type ?? widget.type);
     if (number.isEmpty) number = "${_nextNumber(type ?? widget.type)}";
     _editedName = "$name $number";
@@ -448,7 +448,7 @@ class _UnitEditorState extends State<UnitEditor> {
     return buildDropDownField(
       name: 'status',
       label: 'Status',
-      initialValue: enumName(widget?.unit?.status ?? UnitStatus.mobilized),
+      initialValue: enumName(widget.unit?.status ?? UnitStatus.mobilized),
       items: UnitStatus.values
           .map((status) => [enumName(status), translateUnitStatus(status)])
           .map((status) => DropdownMenuItem(value: status[0], child: Text("${status[1]}")))
@@ -495,12 +495,12 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   List<Device> _findDevices(String? type, String? query) {
-    var actual = _getActualDevices().map((device) => device!.uuid);
+    var actual = _getActualDevices().map((device) => device.uuid);
     return context
         .read<DeviceBloc>()
         .values
-        .where((device) => _canAddDevice(actual, device!))
-        .where((device) => _deviceMatch(device!, type, query))
+        .where((device) => _canAddDevice(actual, device))
+        .where((device) => _deviceMatch(device, type, query))
         .take(5)
         .toList(growable: false);
   }
@@ -516,10 +516,10 @@ class _UnitEditorState extends State<UnitEditor> {
       return true;
     }
     final bloc = context.read<TrackingBloc>();
-    if (widget.unit?.tracking?.uuid != null) {
+    if (widget.unit?.tracking.uuid != null) {
       // Was device tracked by this unit earlier?
       final trackings = bloc.find(match).map((t) => t!.uuid);
-      if (trackings.contains(widget.unit!.tracking!.uuid)) {
+      if (trackings.contains(widget.unit!.tracking.uuid)) {
         return true;
       }
     }
@@ -569,8 +569,8 @@ class _UnitEditorState extends State<UnitEditor> {
     return context
         .read<PersonnelBloc>()
         .values
-        .where((personnel) => _canAddPersonnel(actual, personnel!))
-        .where((personnel) => _personnelMatch(personnel!, status, query))
+        .where((personnel) => _canAddPersonnel(actual, personnel))
+        .where((personnel) => _personnelMatch(personnel, status, query))
         .take(5)
         .toList(growable: false);
   }
@@ -588,10 +588,10 @@ class _UnitEditorState extends State<UnitEditor> {
       return true;
     }
     final bloc = context.read<TrackingBloc>();
-    if (widget.unit?.tracking?.uuid != null) {
+    if (widget.unit?.tracking.uuid != null) {
       // Was personnel tracked by this unit earlier?
       final trackings = bloc.find(match).map((t) => t!.uuid);
-      if (trackings.contains(widget.unit!.tracking!.uuid)) {
+      if (trackings.contains(widget.unit!.tracking.uuid)) {
         return true;
       }
     }
@@ -634,7 +634,7 @@ class _UnitEditorState extends State<UnitEditor> {
             );
 
   List<Device> _getActualDevices() {
-    return (widget?.unit?.tracking != null ? context.read<TrackingBloc>().devices(tuuid,
+    return (widget.unit?.tracking != null ? context.read<TrackingBloc>().devices(tuuid,
         // Include closed tracks
         exclude: []) : [])
       ..toList()
@@ -649,12 +649,12 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   List<Personnel?> _getActualPersonnels({bool init = false}) {
-    final puuids = List<String?>.from(widget?.unit?.personnels ?? <String>[]);
+    final puuids = List<String?>.from(widget.unit?.personnels ?? <String>[]);
     if (init) {
       puuids.addAll(widget.personnels?.map((p) => p!.uuid) ?? <String>[]);
     }
     final personnels =
-        context.read<PersonnelBloc>().values.where((p) => p!.isAvailable).where((p) => puuids.contains(p!.uuid)).toList();
+        context.read<PersonnelBloc>().values.where((p) => p.isAvailable).where((p) => puuids.contains(p.uuid)).toList();
     return personnels;
   }
 
@@ -669,30 +669,30 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _defaultNumber() {
-    return "${widget?.unit?.number ?? _nextNumber(_actualType(widget.type))}";
+    return "${widget.unit?.number ?? _nextNumber(_actualType(widget.type))}";
   }
 
   int _nextNumber(UnitType type) => context.read<UnitBloc>().nextAvailableNumber(
         type,
-        reuse: context.read<AppConfigBloc>().config!.callsignReuse,
+        reuse: context.read<AppConfigBloc>().config.callsignReuse,
       );
 
   String _actualNumber() {
-    final values = _formKey?.currentState?.value;
+    final values = _formKey.currentState?.value;
     return values?.containsKey('number') == true
-        ? "${values!['number']}" ?? "${widget?.unit?.number ?? _numberController.text}"
-        : "${widget?.unit?.number ?? _numberController.text}";
+        ? "${values!['number']}" ?? "${widget.unit?.number ?? _numberController.text}"
+        : "${widget.unit?.number ?? _numberController.text}";
   }
 
   UnitType _actualType(UnitType defaultValue) {
     final values = _toJson();
-    return values?.containsKey('type') == true
-        ? UnitModel.fromJson(values).type ?? widget?.unit?.type ?? defaultValue
-        : widget?.unit?.type ?? defaultValue;
+    return values.containsKey('type') == true
+        ? UnitModel.fromJson(values).type ?? widget.unit?.type ?? defaultValue
+        : widget.unit?.type ?? defaultValue;
   }
 
   String _defaultCallSign() {
-    return "${widget?.unit?.callsign ?? _nextCallSign()}";
+    return "${widget.unit?.callsign ?? _nextCallSign()}";
   }
 
   String _nextCallSign() {
@@ -704,10 +704,10 @@ class _UnitEditorState extends State<UnitEditor> {
 
   int _ensureCallSignSuffix() {
     final next = _nextNumber(_actualType(widget.type));
-    final values = _formKey?.currentState?.value;
+    final values = _formKey.currentState?.value;
     final number = values?.containsKey('number') == true
-        ? values!['number'] ?? widget?.unit?.number ?? next
-        : widget?.unit?.number ?? next;
+        ? values!['number'] ?? widget.unit?.number ?? next
+        : widget.unit?.number ?? next;
     return number;
   }
 
@@ -745,7 +745,7 @@ class _UnitEditorState extends State<UnitEditor> {
     }
   }
 
-  bool _changedToRetired(Unit unit) => UnitStatus.retired == unit.status && unit.status != widget?.unit?.status;
+  bool _changedToRetired(Unit unit) => UnitStatus.retired == unit.status && unit.status != widget.unit?.status;
 
   Unit _createdUnit() => UnitModel.fromJson(_toJson()).copyWith(
         uuid: Uuid().v4(),
@@ -761,7 +761,7 @@ class _UnitEditorState extends State<UnitEditor> {
     final json = Map<String, dynamic>.from(
       _formKey.currentState?.value ?? {},
     );
-    json['personnels'] = (json['personnels'] as List<Personnel>?)?.map((p) => p.uuid)?.toList();
+    json['personnels'] = (json['personnels'] as List<Personnel>?)?.map((p) => p.uuid).toList();
     return json;
   }
 }

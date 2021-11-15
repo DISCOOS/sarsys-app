@@ -59,8 +59,8 @@ class PositionListRepositoryImpl extends StatefulRepository<String?, PositionLis
         _sources.clear();
         _sources.update(
           tracks.key,
-          (sources) => sources..add(track.source!.uuid),
-          ifAbsent: () => {track.source!.uuid},
+          (sources) => sources..add(track.source.uuid),
+          ifAbsent: () => {track.source.uuid},
         );
       });
     });

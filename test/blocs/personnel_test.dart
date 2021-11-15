@@ -64,7 +64,7 @@ void main() async {
 
       // Assert
       expect(cached.length, 1, reason: "SHOULD contain one personnel");
-      expect(cached.first.person!.userId, harness.userId, reason: "SHOULD be onboarded user");
+      expect(cached.first.person.userId, harness.userId, reason: "SHOULD be onboarded user");
       expect(fetched.length, 3, reason: "SHOULD contain three personnels");
       expect(
         harness.personnelBloc!.repo.containsKey(personnel1.uuid),
@@ -176,9 +176,9 @@ void main() async {
       expect(harness.personnelBloc!.repo.length, 1, reason: "SHOULD contain 1 personnel");
       expect(harness.affiliationBloc!.persons.length, 1, reason: "SHOULD contain 1 person");
       expect(harness.affiliationBloc!.repo.length, 1, reason: "SHOULD contain 1 affiliation");
-      final person = harness.affiliationBloc!.persons.values.first!;
-      expect(harness.personnelBloc!.repo.values.first!.person, person, reason: "SHOULD be equal");
-      expect(harness.affiliationBloc!.repo.values.first!.person, person, reason: "SHOULD be equal");
+      final person = harness.affiliationBloc!.persons.values.first;
+      expect(harness.personnelBloc!.repo.values.first.person, person, reason: "SHOULD be equal");
+      expect(harness.affiliationBloc!.repo.values.first.person, person, reason: "SHOULD be equal");
 
       // Act
       final updated = await harness.personService!.put(
@@ -201,8 +201,8 @@ void main() async {
       expect(harness.personnelBloc!.repo.length, 1, reason: "SHOULD contain 1 personnel");
 
       expect(harness.affiliationBloc!.persons.values.first, updated, reason: "SHOULD be equal");
-      expect(harness.affiliationBloc!.repo.values.first!.person, updated, reason: "SHOULD be equal");
-      expect(harness.personnelBloc!.repo.values.first!.person, updated, reason: "SHOULD be equal");
+      expect(harness.affiliationBloc!.repo.values.first.person, updated, reason: "SHOULD be equal");
+      expect(harness.personnelBloc!.repo.values.first.person, updated, reason: "SHOULD be equal");
     });
 
     test('SHOULD replace person on conflict', () async {
@@ -245,17 +245,17 @@ void main() async {
       expect(harness.personnelBloc!.repo.length, 2, reason: "SHOULD contain 2 personnels");
 
       expect(
-        harness.affiliationBloc!.persons.find(where: (p) => p!.userId == existing.userId).firstOrNull,
+        harness.affiliationBloc!.persons.find(where: (p) => p.userId == existing.userId).firstOrNull,
         equals(existing),
         reason: "SHOULD be equal",
       );
       expect(
-        harness.affiliationBloc!.repo.find(where: (a) => a!.person!.userId == existing.userId).firstOrNull?.person,
+        harness.affiliationBloc!.repo.find(where: (a) => a.person!.userId == existing.userId).firstOrNull?.person,
         equals(existing),
         reason: "SHOULD be equal",
       );
       expect(
-        harness.personnelBloc!.repo.find(where: (p) => p!.person!.userId == existing.userId).firstOrNull?.person,
+        harness.personnelBloc!.repo.find(where: (p) => p.person.userId == existing.userId).firstOrNull?.person,
         equals(existing),
         reason: "SHOULD be equal",
       );
@@ -277,7 +277,7 @@ void main() async {
       expect(harness.personnelBloc!.repo.length, 1, reason: "SHOULD contain 1 personnel");
       expect(harness.affiliationBloc!.persons.length, 1, reason: "SHOULD contain 1 person");
       expect(harness.affiliationBloc!.repo.length, 1, reason: "SHOULD contain 1 affiliation");
-      final existing = harness.affiliationBloc!.repo.values.first!;
+      final existing = harness.affiliationBloc!.repo.values.first;
 
       // Act - attempt to add another affiliation
       final duplicate = existing.copyWith(uuid: Uuid().v4());

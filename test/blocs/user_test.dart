@@ -58,7 +58,7 @@ void main() async {
       ]);
       await _waitForConfigBloc(harness, StorageStatus.updated);
       expect(harness.userBloc!.user, isNotNull, reason: "SHOULD HAVE User");
-      expect(harness.userBloc!.user!.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
+      expect(harness.userBloc!.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
     });
 
     test('SHOULD reload user', () async {
@@ -75,7 +75,7 @@ void main() async {
 
       // Assert
       expect(harness.userBloc!.user, isNotNull, reason: "SHOULD HAVE User");
-      expect(harness.userBloc!.user!.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
+      expect(harness.userBloc!.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticated>()]);
     });
 
@@ -179,12 +179,12 @@ void main() async {
 
       // Assert
       expect(harness.userBloc!.user, isNotNull, reason: "SHOULD HAVE User");
-      expect(harness.userBloc!.user!.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
+      expect(harness.userBloc!.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticated>()]);
       expect(harness.configBloc!.repo.state!.status, StorageStatus.updated, reason: "SHOULD HAVE updated status");
       expect(harness.configBloc!.repo.state!.isRemote, isTrue, reason: "SHOULD HAVE remote state");
       expect(harness.configBloc!.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
-      expect(harness.configBloc!.config!.talkGroupCatalog, newTalkGroupCatalog, reason: "SHOULD have unchanged config");
+      expect(harness.configBloc!.config.talkGroupCatalog, newTalkGroupCatalog, reason: "SHOULD have unchanged config");
     });
 
     test('and User token is INVALID, token SHOULD not refresh', () async {
@@ -241,11 +241,11 @@ Future _waitForConfigBloc(BlocTestHarness harness, StorageStatus status) async {
     emits(isA<AppConfigLoaded>()),
   );
   await expectStorageStatusLater(
-    harness.configBloc!.config!.uuid,
+    harness.configBloc!.config.uuid,
     harness.configBloc!.repo,
     status,
     remote: true,
-    key: '${harness.configBloc!.config!.version}',
+    key: '${harness.configBloc!.config.version}',
   );
   expect(harness.configBloc!.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
 }

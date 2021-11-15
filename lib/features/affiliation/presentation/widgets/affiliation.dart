@@ -41,7 +41,7 @@ class AffiliationAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       child: SarSysIcons.of(
-        context.read<AffiliationBloc>().orgs[affiliation!.org?.uuid]?.prefix,
+        context.read<AffiliationBloc>().orgs[affiliation.org?.uuid]?.prefix,
         size: size,
       ),
       maxRadius: maxRadius,
@@ -70,7 +70,7 @@ class AffiliationView extends StatelessWidget {
           child: buildCopyableText(
             context: context,
             label: "Tilhørighet",
-            icon: SarSysIcons.of(context.read<AffiliationBloc>().orgs[affiliation?.org?.uuid]?.prefix),
+            icon: SarSysIcons.of(context.read<AffiliationBloc>().orgs[affiliation.org?.uuid]?.prefix),
             value: context.read<AffiliationBloc>().toName(affiliation),
             onMessage: onMessage,
             onComplete: onComplete,
@@ -136,9 +136,9 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   void _apply(Affiliation affiliation) {
     _affiliation = affiliation;
-    _org.value = _affiliation!.org?.uuid;
-    _div.value = _affiliation!.div?.uuid;
-    _dep = _affiliation!.dep?.uuid;
+    _org.value = _affiliation.org?.uuid;
+    _div.value = _affiliation.div?.uuid;
+    _dep = _affiliation.dep?.uuid;
   }
 
   @override
@@ -243,10 +243,10 @@ class AffiliationFormState extends State<AffiliationForm> {
         });
   }
 
-  bool get editable => widget.user == null && (_affiliation?.isAffiliate != true || isTemporary());
+  bool get editable => widget.user == null && (_affiliation.isAffiliate != true || isTemporary());
 
   bool isTemporary() => context.read<AffiliationBloc>().isTemporary(
-        _affiliation?.uuid,
+        _affiliation.uuid,
       );
 
   String? _update(String attribute, String? value) {
@@ -260,13 +260,13 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   String? _ensureDiv(String? ouuid) {
     final org = context.read<AffiliationBloc>().orgs[ouuid];
-    final duuid = _formKey.currentState!.value[DIV_FIELD] ?? _div.value ?? widget.value?.div;
+    final duuid = _formKey.currentState!.value[DIV_FIELD] ?? _div.value ?? widget.value.div;
     return org?.divisions?.contains(duuid) == true ? duuid : org?.divisions?.first;
   }
 
   String? _ensureDep(String? divuuid) {
     final div = context.read<AffiliationBloc>().divs[divuuid];
-    final depuuid = _dep ?? widget.value?.dep;
+    final depuuid = _dep ?? widget.value.dep;
     return (div?.departments?.contains(depuuid) == true ? depuuid as String? : div?.departments?.first);
   }
 
@@ -319,16 +319,16 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   Affiliation save() {
-    _formKey?.currentState?.save();
+    _formKey.currentState?.save();
     final json = _formKey.currentState!.value;
     final affiliation = AffiliationModel(
-      uuid: _affiliation?.uuid,
-      person: _affiliation?.person as PersonModel?,
+      uuid: _affiliation.uuid,
+      person: _affiliation.person as PersonModel?,
       org: AggregateRef.fromType<OrganisationModel>(json[ORG_FIELD]),
       div: AggregateRef.fromType<DivisionModel>(json[DIV_FIELD]),
       dep: AggregateRef.fromType<DepartmentModel>(json[DEP_FIELD]),
-      type: _affiliation?.type ?? _inferType(json),
-      status: _affiliation?.status ?? AffiliationStandbyStatus.available,
+      type: _affiliation.type ?? _inferType(json),
+      status: _affiliation.status ?? AffiliationStandbyStatus.available,
     );
     return affiliation;
   }

@@ -91,7 +91,7 @@ class DeviceTile extends StatelessWidget {
                   avatar: Icon(
                     Icons.my_location,
                     size: 16.0,
-                    color: toPositionStatusColor(device?.position),
+                    color: toPositionStatusColor(device.position),
                   )),
             ),
           ),
@@ -113,12 +113,12 @@ class DeviceChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.caption;
     final person = context.read<AffiliationBloc>().persons.findUser(
-          device!.networkId,
+          device.networkId,
         );
     final name = _toDeviceTitle(
       context,
       person!,
-      device!,
+      device,
     );
     return Chip(
       key: ObjectKey(device),
@@ -128,12 +128,12 @@ class DeviceChip extends StatelessWidget {
         children: <Widget>[
           CircleAvatar(
             child: Icon(
-              toDeviceIconData(device!.type),
+              toDeviceIconData(device.type),
               size: 14.0,
               color: Colors.white,
             ),
             maxRadius: 10.0,
-            backgroundColor: toPositionStatusColor(device!.position),
+            backgroundColor: toPositionStatusColor(device.position),
           ),
           SizedBox(width: 6.0),
           if (name != null) Text(name, style: style),
@@ -271,7 +271,7 @@ class DeviceWidget extends StatelessWidget {
   List<Widget> _buildData(BuildContext context, TextTheme theme) {
     final bloc = context.read<AffiliationBloc>();
     final entity = _getEntity(bloc, person!, device);
-    final org = organisation ?? bloc.orgs[entity?.org?.uuid];
+    final org = organisation ?? bloc.orgs[entity.org?.uuid];
 
     return [
       _buildTypeAndStatusInfo(context),
@@ -305,14 +305,14 @@ class DeviceWidget extends StatelessWidget {
   ListTile _buildHeader(TextTheme theme, BuildContext context) => ListTile(
       selected: true,
       title: Text('Apparat', style: theme.headline6),
-      subtitle: Text('${device!.name}'),
+      subtitle: Text('${device.name}'),
       trailing: IconButton(
         icon: Icon(Icons.close),
         onPressed: () => _onComplete(device),
       ));
 
   Widget _buildMap(BuildContext context) {
-    final center = device!.position?.toLatLng();
+    final center = device.position?.toLatLng();
     return Padding(
       padding: const EdgeInsets.all(8.0).copyWith(top: 0.0),
       child: Material(
@@ -324,7 +324,7 @@ class DeviceWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(CORNER),
             child: GestureDetector(
               child: MapWidget(
-                key: ObjectKey(device!.uuid),
+                key: ObjectKey(device.uuid),
                 center: center,
                 zoom: 16.0,
                 readZoom: true,
@@ -359,9 +359,9 @@ class DeviceWidget extends StatelessWidget {
   Widget _buildLocationInfo(BuildContext context, TextTheme theme) => Column(
         children: [
           CoordinateWidget(
-            point: device!.position?.geometry,
-            timestamp: device!.position?.timestamp,
-            accuracy: device!.position?.acc,
+            point: device.position?.geometry,
+            timestamp: device.position?.timestamp,
+            accuracy: device.position?.acc,
             onGoto: (point) => navigateToLatLng(context, toLatLng(point)),
             onMessage: onMessage,
             withIcons: true,
@@ -399,7 +399,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Type",
               icon: Icon(Icons.headset_mic),
-              value: translateDeviceType(device!.type),
+              value: translateDeviceType(device.type),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -409,7 +409,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Status",
               icon: Icon(Icons.live_help),
-              value: translateDeviceStatus(device!.status),
+              value: translateDeviceStatus(device.status),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -424,7 +424,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Alias",
               icon: Icon(Icons.info),
-              value: device!.alias ?? '-',
+              value: device.alias ?? '-',
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -435,12 +435,12 @@ class DeviceWidget extends StatelessWidget {
                 context: context,
                 label: "Nummer",
                 icon: Icon(Icons.phone),
-                value: device!.number ?? "Ukjent",
+                value: device.number ?? "Ukjent",
                 onMessage: onMessage,
                 onComplete: _onComplete,
               ),
               onTap: () {
-                final number = device!.number ?? '';
+                final number = device.number ?? '';
                 if (number.isNotEmpty) launch("tel:$number");
               },
             ),
@@ -465,7 +465,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Funksjon",
               icon: Icon(Icons.functions),
-              value: context.read<AffiliationBloc>().findFunction(device!.number)?.name ?? 'Ingen',
+              value: context.read<AffiliationBloc>().findFunction(device.number)?.name ?? 'Ingen',
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -516,7 +516,7 @@ class DeviceWidget extends StatelessWidget {
             context: context,
             label: "Aktivitet",
             icon: Icon(Icons.local_activity),
-            value: translateActivityType(device!.position?.activity?.type),
+            value: translateActivityType(device.position?.activity?.type),
           ),
         ),
         Expanded(
@@ -537,7 +537,7 @@ class DeviceWidget extends StatelessWidget {
     return (tracking != null
             ? TrackingUtils.find(
                 tracking.tracks,
-                device!.uuid,
+                device.uuid,
               )?.positions
             : null) ??
         [];
@@ -629,7 +629,7 @@ class DeviceActionGroup extends StatelessWidget {
           child: _buildAddToUnitAction(context),
           onPressed: _onAddToUnit,
         ),
-      if (device!.manual == true && context.read<UserBloc>().user!.isAdmin)
+      if (device.manual == true && context.read<UserBloc>().user.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,
@@ -677,7 +677,7 @@ class DeviceActionGroup extends StatelessWidget {
     final result = await addToPersonnel([device], personnel: personnel)!;
     if (result.isRight()) {
       var actual = result.toIterable().first;
-      _onMessage("${device!.name} er tilknyttet ${actual.left.name}");
+      _onMessage("${device.name} er tilknyttet ${actual.left.name}");
       _onChanged(device);
     }
   }
@@ -704,9 +704,9 @@ class DeviceActionGroup extends StatelessWidget {
   }
 
   Future _onRemoveFromUnit() async {
-    final result = await removeFromUnit(unit, devices: [device!])!;
+    final result = await removeFromUnit(unit, devices: [device])!;
     if (result.isRight()) {
-      _onMessage("${device!.name} er fjernet fra ${unit!.name}");
+      _onMessage("${device.name} er fjernet fra ${unit!.name}");
       _onChanged(device);
     }
   }
@@ -733,9 +733,9 @@ class DeviceActionGroup extends StatelessWidget {
   }
 
   Future _onRemoveFromPersonnel() async {
-    final result = await removeFromPersonnel(personnel, devices: [device!])!;
+    final result = await removeFromPersonnel(personnel, devices: [device])!;
     if (result.isRight()) {
-      _onMessage("${device!.name} er fjernet fra ${unit!.name}");
+      _onMessage("${device.name} er fjernet fra ${unit!.name}");
       _onChanged(device);
     }
   }
@@ -754,7 +754,7 @@ class DeviceActionGroup extends StatelessWidget {
           onPressed: () async {
             final result = await deleteDevice(device)!;
             if (result.isRight()) {
-              _onMessage("${device!.name} er slettet");
+              _onMessage("${device.name} er slettet");
               _onDelete();
             }
           }),
@@ -764,7 +764,7 @@ class DeviceActionGroup extends StatelessWidget {
   void _onDelete() async {
     final result = await deleteDevice(device)!;
     if (result.isRight()) {
-      _onMessage("${device!.name} er slettet");
+      _onMessage("${device.name} er slettet");
       _onDeleted();
       _onCompleted();
     }
@@ -789,21 +789,21 @@ class DeviceActionGroup extends StatelessWidget {
 
 Affiliation _getEntity(AffiliationBloc bloc, Person person, Device device) {
   return person == null
-      ? bloc.findEntity(device!.number)
+      ? bloc.findEntity(device.number)
       : bloc.findAffiliates(person).firstWhere(
-            (a) => a!.isOrganized,
-            orElse: () => bloc.findEntity(device!.number),
+            (a) => a.isOrganized,
+            orElse: () => bloc.findEntity(device.number),
           );
 }
 
 String _toDeviceTitle(BuildContext context, Person person, Device device) {
   final bloc = context.read<AffiliationBloc>();
   final entity = _getEntity(bloc, person, device);
-  final name = person?.fname ?? device.alias ?? bloc.orgs[entity?.org?.uuid]?.fleetMap?.alias;
+  final name = person.fname ?? device.alias ?? bloc.orgs[entity.org?.uuid]?.fleetMap?.alias;
   final alias = device.type != DeviceType.app
       ? device.alias ?? device.number
-      : device.uuid!.substring(
-          device.uuid!.length - 5,
+      : device.uuid.substring(
+          device.uuid.length - 5,
         );
   final title = '${[name, alias].where((e) => e != null).toSet().join(' | ')}';
   return title;
@@ -815,5 +815,5 @@ String _toUsage(
   Device device,
 ) {
   final name = units[device.uuid]?.name ?? personnel![device.uuid]?.formal ?? '';
-  return "$name ${formatSince(device?.position?.timestamp, defaultValue: "ingen")}";
+  return "$name ${formatSince(device.position?.timestamp, defaultValue: "ingen")}";
 }

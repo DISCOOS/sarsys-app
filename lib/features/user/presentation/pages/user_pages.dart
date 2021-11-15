@@ -387,7 +387,7 @@ class UserStatusPageState extends State<UserStatusPage> {
   }
 
   PersonnelWidget _buildPersonnelWidget(BuildContext context) {
-    final tuuid = _personnel!.tracking!.uuid;
+    final tuuid = _personnel!.tracking.uuid;
     final tracking = context.read<TrackingBloc>().trackings[tuuid];
     return PersonnelWidget(
       withName: true,
@@ -432,7 +432,7 @@ class UserUnitPageState extends State<UserUnitPage> {
       ..add(context.read<UserBloc>().stream)
       ..add(context.read<PersonnelBloc>().stream)
       ..add(context.read<UnitBloc>().onChanged(_unit?.uuid))
-      ..add(context.read<TrackingBloc>().onChanged(_unit?.tracking?.uuid));
+      ..add(context.read<TrackingBloc>().onChanged(_unit?.tracking.uuid));
     _unit = widget.unit;
   }
 
@@ -456,7 +456,7 @@ class UserUnitPageState extends State<UserUnitPage> {
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final state = snapshot.data;
-              if (state is UnitUpdated && state.data!.uuid == widget.unit!.uuid) {
+              if (state is UnitUpdated && state.data.uuid == widget.unit!.uuid) {
                 _unit = state.data;
               }
               return _unit == null
@@ -479,7 +479,7 @@ class UserUnitPageState extends State<UserUnitPage> {
   }
 
   Widget _build(BuildContext context) {
-    final tracking = context.read<TrackingBloc>().trackings[_unit!.tracking!.uuid];
+    final tracking = context.read<TrackingBloc>().trackings[_unit!.tracking.uuid];
     return UnitWidget(
       unit: _unit,
       withMap: true,
@@ -488,7 +488,7 @@ class UserUnitPageState extends State<UserUnitPage> {
       tracking: tracking,
       onMessage: widget.onMessage,
       onGoto: (point) => jumpToPoint(context, center: point),
-      devices: context.read<TrackingBloc>().devices(_unit!.tracking!.uuid),
+      devices: context.read<TrackingBloc>().devices(_unit!.tracking.uuid),
     );
   }
 }

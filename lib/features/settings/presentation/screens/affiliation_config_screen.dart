@@ -54,7 +54,7 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
                     depId: affiliation.dep!.uuid,
                   ),
             ),
-            if (context.read<UserBloc>().user!.isAffiliated)
+            if (context.read<UserBloc>().user.isAffiliated)
               Padding(
                   padding: const EdgeInsets.only(top: 24.0),
                   child: InputDecorator(

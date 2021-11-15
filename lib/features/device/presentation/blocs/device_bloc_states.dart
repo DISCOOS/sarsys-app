@@ -74,8 +74,8 @@ class DeviceUpdated extends DeviceState<Device> {
   final Device previous;
 
   bool isChanged() => data != previous;
-  bool isStatusChanged() => data!.status != previous?.status;
-  bool isLocationChanged() => data!.position != previous?.position;
+  bool isStatusChanged() => data.status != previous.status;
+  bool isLocationChanged() => data.position != previous.position;
 
   @override
   String toString() => '$runtimeType {device: $data, previous: $previous, isRemote: $isRemote}';

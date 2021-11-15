@@ -182,9 +182,9 @@ void main() async {
       final u2 = await (harness.unitBloc!.create(UnitBuilder.create(ouuid: ouuid, personnels: [p2.uuid])) as FutureOr<Unit>);
       final u3 = await (harness.unitBloc!.create(UnitBuilder.create(ouuid: ouuid, personnels: [p3.uuid])) as FutureOr<Unit>);
 
-      final ut1 = await (harness.trackingBloc!.attach(u1.tracking!.uuid, personnels: [p1]) as FutureOr<Tracking>);
-      final ut2 = await (harness.trackingBloc!.attach(u2.tracking!.uuid, personnels: [p2]) as FutureOr<Tracking>);
-      final ut3 = await (harness.trackingBloc!.attach(u3.tracking!.uuid, personnels: [p3]) as FutureOr<Tracking>);
+      final ut1 = await (harness.trackingBloc!.attach(u1.tracking.uuid, personnels: [p1]) as FutureOr<Tracking>);
+      final ut2 = await (harness.trackingBloc!.attach(u2.tracking.uuid, personnels: [p2]) as FutureOr<Tracking>);
+      final ut3 = await (harness.trackingBloc!.attach(u3.tracking.uuid, personnels: [p3]) as FutureOr<Tracking>);
 
       // Assert unit trackings
       final units = harness.trackingBloc!.units;
@@ -696,7 +696,7 @@ void main() async {
       final unit = await (harness.unitBloc!.create(
         UnitBuilder.create(ouuid: operation.uuid),
       ) as FutureOr<Unit>);
-      final tuuid = unit.tracking!.uuid;
+      final tuuid = unit.tracking.uuid;
 
       // Assert local state
       await _assertTrackingState<TrackingCreated>(
@@ -1301,7 +1301,7 @@ void main() async {
       final unit = await (harness.unitBloc!.create(
         UnitBuilder.create(ouuid: operation.uuid),
       ) as FutureOr<Unit>);
-      final tuuid = unit.tracking!.uuid;
+      final tuuid = unit.tracking.uuid;
 
       // Assert CREATED
       await expectThroughLater(
@@ -1433,12 +1433,12 @@ FutureOr<Tracking?> _attachDeviceToTrackable(BlocTestHarness harness, Trackable?
     await waitThroughStateWithData<TrackingCreated, Tracking?>(
       harness.trackingBloc!.bus,
       map: (state) => state!.data,
-      test: (state) => trackable!.tracking!.uuid == state.data!.uuid,
+      test: (state) => trackable!.tracking.uuid == state.data.uuid,
       act: (t) async {
-        await harness.trackingBloc!.attach(t!.uuid, devices: [device!]);
+        await harness.trackingBloc!.attach(t!.uuid, devices: [device]);
         await waitForEventMatching<TrackingUpdated>(
           harness.trackingBloc!,
-          (event) => event.data!.uuid == t.uuid,
+          (event) => event.data.uuid == t.uuid,
         );
         return harness.trackingBloc!.repo[t.uuid];
       },
@@ -1494,7 +1494,7 @@ Future<Tracking> _shouldReplaceTrackingDirectly<T extends Trackable?>(
   expect(t2.sources.length, 1, reason: "SHOULD be length 1");
   expect(t2.sources.last.uuid, equals(d2.uuid), reason: "SHOULD be uuid of d2");
   expect(t2.tracks.length, 2, reason: "SHOULD be length 2");
-  expect(t2.tracks.last.source!.uuid, equals(d2.uuid), reason: "SHOULD be uuid of d2");
+  expect(t2.tracks.last.source.uuid, equals(d2.uuid), reason: "SHOULD be uuid of d2");
   expect(t2.tracks.last.positions!.length, 1, reason: "SHOULD be length 1");
   expect(t2.tracks.last.positions!.last!.geometry, p2.geometry, reason: "SHOULD be position p2");
 
@@ -1531,7 +1531,7 @@ Future<Tracking> _shouldAttachToTrackingDirectly<T extends Trackable?>(
   expect(t2.sources.length, 2, reason: "SHOULD be length 2");
   expect(t2.sources.last.uuid, equals(d2.uuid), reason: "SHOULD be uuid of d2");
   expect(t2.tracks.length, 2, reason: "SHOULD be length 2");
-  expect(t2.tracks.last.source!.uuid, equals(d2.uuid), reason: "SHOULD be uuid of d2");
+  expect(t2.tracks.last.source.uuid, equals(d2.uuid), reason: "SHOULD be uuid of d2");
   expect(t2.tracks.last.positions!.length, 1, reason: "SHOULD be length 1");
   expect(t2.tracks.last.positions!.last!.geometry, p2.geometry, reason: "SHOULD be position p2");
 
@@ -1546,7 +1546,7 @@ Future<Tracking> _shouldDetachFromTrackingDirectly<T extends Trackable?>(
     harness,
     act: act,
   );
-  final d1 = harness.deviceBloc!.repo![t1.sources.last.uuid!]!;
+  final d1 = harness.deviceBloc!.repo![t1.sources.last.uuid]!;
   final p2 = Position.now(lat: 1, lon: 1, source: PositionSource.manual);
 
   // Act
@@ -1561,9 +1561,9 @@ Future<Tracking> _shouldDetachFromTrackingDirectly<T extends Trackable?>(
   expect(t2.sources.length, 1, reason: "SHOULD be length 2");
   expect(t2.sources.map((e) => e.uuid), isNot(contains(d1.uuid)), reason: "SHOULD NOT contain uuid of d1");
   expect(t2.tracks.length, 2, reason: "SHOULD be length 2");
-  expect(t2.tracks.map((e) => e.source!.uuid), contains(d1.uuid), reason: "SHOULD contain uuid of d1");
+  expect(t2.tracks.map((e) => e.source.uuid), contains(d1.uuid), reason: "SHOULD contain uuid of d1");
   expect(
-    t2.tracks.firstWhere((e) => d1.uuid == e.source!.uuid).status,
+    t2.tracks.firstWhere((e) => d1.uuid == e.source.uuid).status,
     equals(TrackStatus.detached),
     reason: "SHOULD BE detached",
   );
@@ -1586,7 +1586,7 @@ Future<Tracking> _shouldDetachFromTrackingWhenDeviceUnavailable<T extends Tracka
   expect(t2.sources.length, 3, reason: "SHOULD be length 3");
   expect(t2.sources.map((e) => e.uuid), contains(d3.uuid), reason: "SHOULD contain uuid of d3");
   expect(t2.tracks.length, 3, reason: "SHOULD be length 3");
-  expect(t2.tracks.map((e) => e.source!.uuid), contains(d3.uuid), reason: "SHOULD contain uuid of d3");
+  expect(t2.tracks.map((e) => e.source.uuid), contains(d3.uuid), reason: "SHOULD contain uuid of d3");
 
   // Act
   await harness.deviceBloc!.detach(d3);
@@ -1603,8 +1603,8 @@ Future<Tracking> _shouldDetachFromTrackingWhenDeviceUnavailable<T extends Tracka
   expect(t3.sources.length, 2, reason: "SHOULD be length 2");
   expect(t3.sources.map((e) => e.uuid), isNot(contains(d3.uuid)), reason: "SHOULD NOT contain uuid of d3");
   expect(t3.tracks.length, 3, reason: "SHOULD be length 3");
-  expect(t3.tracks.map((e) => e.source!.uuid), contains(d3.uuid), reason: "SHOULD contain uuid of d3");
-  expect(t3.tracks.last.source!.uuid, equals(d3.uuid), reason: "SHOULD contain uuid of d3");
+  expect(t3.tracks.map((e) => e.source.uuid), contains(d3.uuid), reason: "SHOULD contain uuid of d3");
+  expect(t3.tracks.last.source.uuid, equals(d3.uuid), reason: "SHOULD contain uuid of d3");
   expect(t3.tracks.last.status, equals(TrackStatus.detached), reason: "SHOULD be detached");
 
   return t3;
@@ -1629,7 +1629,7 @@ Future<Tracking> _shouldDeleteFromTrackingWhenDeviceDeleted<T extends Trackable?
   expect(t2.sources.length, 3, reason: "SHOULD be length 3");
   expect(t2.sources.map((e) => e.uuid), contains(d3.uuid), reason: "SHOULD NOT contain uuid of d3");
   expect(t2.tracks.length, 3, reason: "SHOULD be length 3");
-  expect(t2.tracks.map((e) => e.source!.uuid), contains(d3.uuid), reason: "SHOULD NOT contain uuid of d3");
+  expect(t2.tracks.map((e) => e.source.uuid), contains(d3.uuid), reason: "SHOULD NOT contain uuid of d3");
 
   // Act
   await harness.deviceBloc!.delete(d3.uuid);
@@ -1653,7 +1653,7 @@ Future<Tracking> _shouldDeleteFromTrackingWhenDeviceDeleted<T extends Trackable?
   expect(t3.sources.length, 2, reason: "SHOULD be length 2");
   expect(t3.sources.map((e) => e.uuid), isNot(contains(d3.uuid)), reason: "SHOULD contain uuid of d3");
   expect(t3.tracks.length, 2, reason: "SHOULD be length 2");
-  expect(t3.tracks.map((e) => e.source!.uuid), isNot(contains(d3.uuid)), reason: "SHOULD contain uuid of d3");
+  expect(t3.tracks.map((e) => e.source.uuid), isNot(contains(d3.uuid)), reason: "SHOULD contain uuid of d3");
 
   return t3;
 }
@@ -1674,7 +1674,7 @@ Future _shouldCreateTrackingForActiveUnitsOnly<T extends Trackable?>(
   );
   expectTrackingCount(harness, 1);
   expect(
-    harness.trackingBloc!.repo.containsKey(trackable!.tracking!.uuid),
+    harness.trackingBloc!.repo.containsKey(trackable!.tracking.uuid),
     isTrue,
     reason: "SHOULD contain tracking for trackable ${trackable.uuid}",
   );
@@ -1706,10 +1706,10 @@ Future _shouldThrowWhenAttachingSourcesAlreadyTracked<T extends Trackable?>(
     harness.trackingBloc!.stream,
     emits(isA<TrackingCreated>()),
   );
-  final first = harness.trackingBloc!.repo[trackables.first!.tracking!.uuid!]!;
+  final first = harness.trackingBloc!.repo[trackables.first!.tracking.uuid!]!;
   final d1 = await harness.deviceBloc!.create(DeviceBuilder.create(position: p1, status: DeviceStatus.available));
-  await harness.trackingBloc!.attach(first.uuid, devices: [d1!]);
-  final last = harness.trackingBloc!.repo[trackables.last!.tracking!.uuid!];
+  await harness.trackingBloc!.attach(first.uuid, devices: [d1]);
+  final last = harness.trackingBloc!.repo[trackables.last!.tracking.uuid!];
 
   // Assert
   await expectLater(
@@ -1861,7 +1861,7 @@ Future _shouldUpdateUnitTrackingWhenPersonnelRemoved(
   expect(updated.sources.length, 1, reason: "SHOULD contain 1 source(s)");
   expect(
     updated.sources.map((s) => s.uuid),
-    [...ut1.sources.map((s) => s.uuid).where((suuid) => suuid != personnel!.uuid)],
+    [...ut1.sources.map((s) => s.uuid).where((suuid) => suuid != personnel.uuid)],
     reason: "SHOULD NOT contain detached personnel",
   );
   expect(updated.tracks.length, 2, reason: "SHOULD contain 2 track(s)");
@@ -1888,7 +1888,7 @@ Future<Tracking> _shouldUpdateTrackingWhenDeviceAdded<T extends Trackable?>(
   );
   if (harness.isOnline) {
     harness.deviceService!.put(
-      device!,
+      device,
     );
     await harness.deviceBloc!.load();
     await expectDeviceStatusLater(harness, device, StorageStatus.created);
@@ -1898,7 +1898,7 @@ Future<Tracking> _shouldUpdateTrackingWhenDeviceAdded<T extends Trackable?>(
   expect(harness.deviceBloc!.repo!.length, count, reason: "SHOULD contain $count device(s)");
 
   // Act
-  final updated = await (harness.trackingBloc!.attach(automatic.value!.uuid, devices: [device!]) as FutureOr<Tracking>);
+  final updated = await (harness.trackingBloc!.attach(automatic.value!.uuid, devices: [device]) as FutureOr<Tracking>);
   await expectDataIsNotEmpty<TrackingUpdated>(
     harness,
     isRemote: harness.isOnline,
@@ -1907,7 +1907,7 @@ Future<Tracking> _shouldUpdateTrackingWhenDeviceAdded<T extends Trackable?>(
   // Assert
   expect(
     updated.sources.map((source) => source.uuid),
-    contains(device!.uuid),
+    contains(device.uuid),
     reason: "SHOULD contain ${device.uuid}",
   );
   expect(updated.tracks.length, 1, reason: "SHOULD contain 1 track");
@@ -2061,7 +2061,7 @@ Future<StorageState<Tracking?>> _shouldCreateTrackingAutomatically<T extends Tra
 
   // Act LOCALLY
   final trackable = await act(operation.uuid);
-  final tuuid = trackable!.tracking!.uuid;
+  final tuuid = trackable!.tracking.uuid;
 
   // Assert locally CREATED
   final state = await _assertTrackingState<TrackingCreated>(
@@ -2147,7 +2147,7 @@ Future _assertReopensClosedTrackingAutomatically<T extends Trackable?>(
 }) async {
   // Act LOCALLY
   final trackable = await act();
-  final tuuid = trackable!.tracking!.uuid;
+  final tuuid = trackable!.tracking.uuid;
 
   // Assert local state
   await _assertTrackingState<TrackingUpdated>(
@@ -2420,7 +2420,7 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
   final Tracking t2 = harness.trackingBloc!.repo.values.first;
   final personnels = harness.personnelBloc!.findUser();
   final personnel = personnels.first!;
-  expect(t2.uuid, personnel.tracking!.uuid, reason: "SHOULD track mobilized user");
+  expect(t2.uuid, personnel.tracking.uuid, reason: "SHOULD track mobilized user");
 }
 
 /// Prepare blocs for testing

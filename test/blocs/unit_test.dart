@@ -452,7 +452,7 @@ Future _testShouldDeleteReferenceWhenPersonnelIsDeleted(BlocTestHarness harness,
   expect(
     harness.unitBloc!.repo[unit.uuid]!.personnels
         .where((puuid) => puuid == updated!.uuid)
-        .map((puuid) => harness.personnelBloc!.repo[puuid!])
+        .map((puuid) => harness.personnelBloc!.repo[puuid])
         .firstOrNull
         ?.status,
     isNull,
@@ -626,7 +626,7 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {requir
     harness.unitBloc!.stream,
     emits(isA<UnitsLoaded>()),
   );
-  final ouuid = (await operation2)!.uuid;
+  final ouuid = (await operation2).uuid;
   expect(harness.unitBloc!.ouuid, ouuid, reason: "SHOULD change to $ouuid");
   expect(harness.unitBloc!.repo.length, 0, reason: "SHOULD BE empty");
   expect(

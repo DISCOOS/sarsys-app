@@ -31,7 +31,7 @@ abstract class PersonnelState<T> extends PushableBlocEvent<T> {
 
   bool isStatusChanged() => false;
   bool isMobilized() => (data is Personnel) ? (data as Personnel).isMobilized : false;
-  bool isTracked() => (data is Personnel) ? (data as Personnel).tracking?.uuid != null : false;
+  bool isTracked() => (data is Personnel) ? (data as Personnel).tracking.uuid != null : false;
   bool isRetired() => (data is Personnel) ? (data as Personnel).status == PersonnelStatus.retired : false;
 }
 
@@ -59,7 +59,7 @@ class PersonnelCreated extends PersonnelState<Personnel?> {
   }) : super(data, isRemote: isRemote);
 
   @override
-  bool isTracked() => data!.tracking?.uuid != null;
+  bool isTracked() => data!.tracking.uuid != null;
 
   @override
   String toString() => '$runtimeType {personnel: $data, isRemote: $isRemote}';
@@ -75,7 +75,7 @@ class UserMobilized extends PersonnelCreated {
   final User user;
 
   @override
-  bool isTracked() => data!.tracking?.uuid != null;
+  bool isTracked() => data!.tracking.uuid != null;
 
   @override
   String toString() => '$runtimeType {personnel: $data, user: $user, isRemote: $isRemote}';
@@ -90,7 +90,7 @@ class PersonnelUpdated extends PersonnelState<Personnel> {
   }) : super(data, isRemote: isRemote, props: [previous]);
 
   @override
-  bool isTracked() => data.tracking?.uuid != null;
+  bool isTracked() => data.tracking.uuid != null;
 
   @override
   bool isStatusChanged() => data.status != previous.status;

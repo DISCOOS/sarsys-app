@@ -20,7 +20,7 @@ class AffiliationUtils {
 
   /// Ensure tracking reference
   static AggregateRef<Affiliation>? ensureRef<T extends Affiliate>(T affiliate, {String? auuid}) =>
-      affiliate?.affiliation?.uuid == null
+      affiliate.affiliation.uuid == null
           // Create new ref
           ? newRef(auuid: auuid)
           // Use old ref
@@ -31,7 +31,7 @@ class AffiliationUtils {
   /// [Affiliate]s should contain a [Affiliation]
   /// reference when  they are created.
   static String assertRef<T extends Affiliate?>(T affiliate) {
-    final auuid = affiliate!.affiliation?.uuid;
+    final auuid = affiliate!.affiliation.uuid;
     if (auuid == null) {
       throw ArgumentError(
         "${typeOf<T>()} is not configured correctly: AggregateRef is null",
@@ -42,12 +42,12 @@ class AffiliationUtils {
 
   /// Get [FleetMap.prefix] from [FleetMap] number
   static String? toPrefix(String? number) => emptyAsNull(
-        number?.isEmpty == false && number!.length >= 3 ? number?.substring(0, 2) : null,
+        number?.isEmpty == false && number!.length >= 3 ? number.substring(0, 2) : null,
       );
 
   /// Get [FleetMapNumber.suffix] from [FleetMap] number
   static String? toSuffix(String? number) => emptyAsNull(
-        number?.isEmpty == false && number!.length >= 5 ? number?.substring(2, 5) : null,
+        number?.isEmpty == false && number!.length >= 5 ? number.substring(2, 5) : null,
       );
 
   static OperationalFunction? findFunction(FleetMap map, String? number) =>
@@ -59,9 +59,9 @@ class AffiliationUtils {
   static List<TalkGroup> findTalkGroups(TalkGroupCatalog? catalog, String query) {
     final match = query.toLowerCase();
     return catalog?.groups
-            ?.where((tg) => tg.name!.toLowerCase().contains(match) || tg.type.toString().toLowerCase().contains(match))
-            ?.take(5)
-            ?.toList(growable: false) ??
+            .where((tg) => tg.name!.toLowerCase().contains(match) || tg.type.toString().toLowerCase().contains(match))
+            .take(5)
+            .toList(growable: false) ??
         [];
   }
 }

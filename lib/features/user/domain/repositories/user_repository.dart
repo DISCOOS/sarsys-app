@@ -93,10 +93,10 @@ class UserRepository implements Repository<String, User> {
   Iterable<User>? get values => isReady && _users != null ? List.unmodifiable(_users!.values) : null;
 
   /// Check if user with [userId] is cached
-  bool containsKey(String? userId) => !isReady ? false : (_users?.keys?.contains(userId) ?? false);
+  bool containsKey(String? userId) => !isReady ? false : (_users?.keys.contains(userId) ?? false);
 
   /// Check if given [user] is cached
-  bool containsValue(User user) => !isReady ? false : (_users?.values?.contains(user) ?? false);
+  bool containsValue(User user) => !isReady ? false : (_users?.values.contains(user) ?? false);
 
   /// Check if repository is ready
   bool get isReady => _users?.isOpen == true;
@@ -141,7 +141,7 @@ class UserRepository implements Repository<String, User> {
 
       await _putToken(
         actualToken,
-        security: user?.security,
+        security: user.security,
       );
 
       actualId = _userId;
@@ -279,9 +279,9 @@ class UserRepository implements Repository<String, User> {
         await _delete(
           actualUserId,
           // Always delete untrusted users
-          user: delete || actualUser!.isUntrusted,
+          user: delete || actualUser.isUntrusted,
         );
-        return actualUser!;
+        return actualUser;
       }
       throw UserServiceException(
         'Failed to logout user ${actualUserId ?? 'unknown'}',
@@ -556,7 +556,7 @@ class UserRepository implements Repository<String, User> {
   }
 
   void dispose() {
-    _controller?.close();
+    _controller.close();
   }
 }
 

@@ -30,7 +30,7 @@ abstract class UnitState<T> extends PushableBlocEvent<T> {
   bool isUnloaded() => this is UnitsUnloaded;
 
   bool isStatusChanged() => false;
-  bool isTracked() => (data is Unit) ? (data as Unit).tracking?.uuid != null : false;
+  bool isTracked() => (data is Unit) ? (data as Unit).tracking.uuid != null : false;
   bool isRetired() => (data is Unit) ? (data as Unit).status == UnitStatus.retired : false;
 }
 
@@ -83,7 +83,7 @@ class UnitUpdated extends UnitState<Unit> {
   }) : super(data, isRemote: isRemote, props: [previous]);
 
   @override
-  bool isStatusChanged() => data!.status != previous!.status;
+  bool isStatusChanged() => data.status != previous!.status;
 
   @override
   String toString() => '$runtimeType {unit: $data, previous: $previous, isRemote: $isRemote}';

@@ -88,7 +88,7 @@ class UserOnboarded extends AffiliationState<Affiliation> {
     required this.person,
     bool isRemote = false,
     required Affiliation affiliation,
-  }) : super(affiliation!, isRemote: isRemote);
+  }) : super(affiliation, isRemote: isRemote);
 
   final String? userId;
   final Person person;

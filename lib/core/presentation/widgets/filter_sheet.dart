@@ -36,7 +36,7 @@ class FilterSheet<T> extends StatefulWidget {
         identifier: identifier,
       ) as List?)
           ?.map((e) => onRead != null ? onRead(e) : e as T)
-          ?.toSet() ??
+          .toSet() ??
       defaultValue;
 }
 
@@ -106,7 +106,7 @@ class _FilterSheetState<T> extends State<FilterSheet<T?>> {
               identifier: widget.identifier,
             ) as List?)
                 ?.map((e) => widget.onRead != null ? widget.onRead!(e) : e as T)
-                ?.toSet() ??
+                .toSet() ??
             widget.initial as Set<T?>?;
   }
 

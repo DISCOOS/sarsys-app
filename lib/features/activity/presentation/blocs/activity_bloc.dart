@@ -53,7 +53,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   var _isReady = false;
 
   /// Check if current profile allows tracking
-  bool get isTrackable => _profile?.isTrackable ?? false;
+  bool get isTrackable => _profile.isTrackable ?? false;
 
   /// Get current [ActivityProfile]
   ActivityProfile get profile => _profile;
@@ -88,7 +88,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     if (event.data is AppConfig) {
       _config = event.data;
       final next = _toOptions(
-        _config!,
+        _config,
         defaultAccuracy: null,
       );
       final manual = await isManual;
@@ -102,7 +102,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   void _processPersonnel<T extends PersonnelState>(BaseBloc bloc, PersonnelState event) {
     final personnelBloc = (bloc as PersonnelBloc);
-    final config = personnelBloc.operationBloc!.userBloc!.config;
+    final config = personnelBloc.operationBloc!.userBloc.config;
     if (event.data is Personnel) {
       final personnel = event.data as Personnel;
       if (personnelBloc.isUser(personnel.uuid)) {
@@ -176,7 +176,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     final next = manual
         ? _toOptions(
             (_config = config!),
-            defaultAccuracy: profile?.options?.accuracy ?? options!.accuracy,
+            defaultAccuracy: profile?.options.accuracy ?? options!.accuracy,
           )
         // Override current if
         : profile?.options ?? options;
@@ -244,13 +244,13 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   Future<LocationOptions?> _apply(LocationOptions? options, Device device) async {
     final isChanged = service.options != options ||
         service.token != _users?.token && _users?.isTokenValid == true ||
-        service.duuid != device?.uuid;
+        service.duuid != device.uuid;
 
     if (_isReady && isChanged) {
       await service.configure(
         options: options,
         share: isTrackable,
-        duuid: device?.uuid,
+        duuid: device.uuid,
         token: _users!.token,
       );
     }

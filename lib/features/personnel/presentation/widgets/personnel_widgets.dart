@@ -68,7 +68,7 @@ class PersonnelWidget extends StatelessWidget {
   static const ELEVATION = 2.0;
 
   bool isTemporary(BuildContext context) => context.read<AffiliationBloc>().isTemporary(
-        personnel!.affiliation?.uuid,
+        personnel.affiliation.uuid,
       );
 
   @override
@@ -79,7 +79,7 @@ class PersonnelWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) _buildHeader(context, personnel!, theme),
+        if (withHeader) _buildHeader(context, personnel, theme),
         if (withMap) _buildMap(context),
         if (isTemporary(context)) _buildTemporaryPersonnelWarning(context),
         if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
@@ -158,7 +158,7 @@ class PersonnelWidget extends StatelessWidget {
         ],
       );
 
-  bool isAffiliated(BuildContext context) => context.read<AffiliationBloc>().repo[personnel!.affiliation!.uuid] != null;
+  bool isAffiliated(BuildContext context) => context.read<AffiliationBloc>().repo[personnel.affiliation.uuid] != null;
 
   Widget _buildLandscape(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
@@ -219,7 +219,7 @@ class PersonnelWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(CORNER),
             child: GestureDetector(
               child: MapWidget(
-                key: ObjectKey(personnel!.uuid),
+                key: ObjectKey(personnel.uuid),
                 center: center,
                 zoom: 16.0,
                 readZoom: true,
@@ -235,7 +235,7 @@ class PersonnelWidget extends StatelessWidget {
                 withControlsLayer: true,
                 withControlsBaseMap: true,
                 withControlsOffset: 16.0,
-                showRetired: PersonnelStatus.retired == personnel!.status,
+                showRetired: PersonnelStatus.retired == personnel.status,
                 showLayers: [
                   MapWidgetState.LAYER_POI,
                   MapWidgetState.LAYER_PERSONNEL,
@@ -286,7 +286,7 @@ class PersonnelWidget extends StatelessWidget {
 
   Widget _buildAffiliationView(BuildContext context) => AffiliationView(
         onMessage: onMessage,
-        affiliation: context.read<AffiliationBloc>().repo[personnel!.affiliation!.uuid]!,
+        affiliation: context.read<AffiliationBloc>().repo[personnel.affiliation.uuid]!,
         onComplete: () => _onComplete(personnel),
       );
 
@@ -348,7 +348,7 @@ class PersonnelActionGroup extends StatelessWidget {
           child: _buildAddToUnitAction(context),
           onPressed: _onAddToUnit,
         ),
-      if (context.read<UserBloc>().user!.isAdmin)
+      if (context.read<UserBloc>().user.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,
@@ -357,7 +357,7 @@ class PersonnelActionGroup extends StatelessWidget {
   }
 
   ActionMenuItem _buildTransitionActionItem(BuildContext context) {
-    switch (personnel!.status) {
+    switch (personnel.status) {
       case PersonnelStatus.retired:
         return ActionMenuItem(
           child: _buildMobilizeAction(context),
@@ -423,7 +423,7 @@ class PersonnelActionGroup extends StatelessWidget {
     final result = await addToUnit(personnels: [personnel], unit: unit)!;
     if (result.isRight()) {
       var actual = result.toIterable().first;
-      _onMessage('${personnel!.name} er tilknyttet ${actual.name}');
+      _onMessage('${personnel.name} er tilknyttet ${actual.name}');
       _onChanged(personnel);
     }
   }
@@ -443,7 +443,7 @@ class PersonnelActionGroup extends StatelessWidget {
   void _onRemoveFromUnit() async {
     final result = await removeFromUnit(unit, personnels: [personnel])!;
     if (result.isRight()) {
-      _onMessage('${personnel!.name} er fjernet fra ${unit!.name}');
+      _onMessage('${personnel.name} er fjernet fra ${unit!.name}');
       _onChanged(personnel);
     }
   }
@@ -590,7 +590,7 @@ class PersonnelActionGroup extends StatelessWidget {
   void _onDelete() async {
     final result = await deletePersonnel(personnel)!;
     if (result.isRight()) {
-      _onMessage('${personnel!.name} er slettet');
+      _onMessage('${personnel.name} er slettet');
       _onDeleted();
       _onCompleted();
     }
@@ -760,7 +760,7 @@ class PersonnelTile extends StatelessWidget {
     return ListTile(
       key: ObjectKey(personnel),
       leading: AffiliationAvatar(
-        affiliation: context.read<AffiliationBloc>().repo[personnel.affiliation!.uuid]!,
+        affiliation: context.read<AffiliationBloc>().repo[personnel.affiliation.uuid]!,
         size: 10.0,
       ),
       title: Text(personnel.name),
@@ -786,7 +786,7 @@ class PersonnelChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           AffiliationAvatar(
-            affiliation: context.read<AffiliationBloc>().repo[personnel!.affiliation!.uuid!]!,
+            affiliation: context.read<AffiliationBloc>().repo[personnel!.affiliation.uuid]!,
             size: 6.0,
             maxRadius: 10.0,
           ),

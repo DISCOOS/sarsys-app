@@ -134,7 +134,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   Widget _buildUnit(List<Unit?> units, int index) {
     var unit = units[index]!;
-    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking!.uuid];
+    var tracking = unit.tracking == null ? null : context.read<TrackingBloc>().trackings[unit.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && isCommander
@@ -372,7 +372,7 @@ class UnitSearch extends SearchDelegate<Unit?> {
       builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
         return _buildSuggestionList(
           context,
-          suggestions?.where(_matches)?.toList() ?? [],
+          suggestions?.where(_matches).toList() ?? [],
         );
       },
     );

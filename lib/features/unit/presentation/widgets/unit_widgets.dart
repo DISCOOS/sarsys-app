@@ -345,10 +345,10 @@ class UnitWidget extends StatelessWidget {
 
   String? _toPersonnel(PersonnelRepository repo) {
     final personnel = unit?.personnels
-        ?.map((puuid) => repo[puuid!])
-        ?.where((p) => p!.isAvailable)
-        ?.map((p) => p?.formal ?? 'Mannskap')
-        ?.join(', ');
+        .map((puuid) => repo[puuid])
+        .where((p) => p!.isAvailable)
+        .map((p) => p?.formal ?? 'Mannskap')
+        .join(', ');
     return personnel?.isEmpty == true ? 'Ingen' : personnel;
   }
 
@@ -378,8 +378,8 @@ class UnitWidget extends StatelessWidget {
       );
 
   String _toDeviceNumbers() {
-    final numbers = devices?.map((device) => device!.number ?? device.alias);
-    return numbers?.isNotEmpty == true ? numbers!.join(', ') : 'Ingen';
+    final numbers = devices.map((device) => device.number ?? device.alias);
+    return numbers.isNotEmpty == true ? numbers.join(', ') : 'Ingen';
   }
 
   Row _buildEffortInfo(BuildContext context) => Row(
@@ -443,7 +443,7 @@ class UnitActionGroup extends StatelessWidget {
         onPressed: _onEdit,
       ),
       _buildTransitionActionItem(context),
-      if (context.read<UserBloc>().user!.isAdmin)
+      if (context.read<UserBloc>().user.isAdmin)
         ActionMenuItem(
           child: _buildDeleteAction(context),
           onPressed: _onDelete,

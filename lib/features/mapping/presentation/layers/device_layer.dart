@@ -28,7 +28,7 @@ class DeviceLayerOptions extends LayerOptions {
     this.showTail = false,
     this.showLabels = true,
     this.onMessage,
-  }) : super(rebuild: bloc.deviceBloc!.stream.where((state) => state.isLocationChanged()).map((_) => null));
+  }) : super(rebuild: bloc.deviceBloc.stream.where((state) => state.isLocationChanged()).map((_) => null));
 
   final TrackingBloc bloc;
   final ActionCallback? onMessage;
@@ -63,8 +63,8 @@ class DeviceLayer extends MapPlugin {
   Widget _build(BuildContext context, Size size, DeviceLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final ids = options.bloc.asDeviceIds();
-    final devices = options.bloc.deviceBloc!.values.where(
-      (device) => bounds.contains(toLatLng(device!.position?.geometry)),
+    final devices = options.bloc.deviceBloc.values.where(
+      (device) => bounds.contains(toLatLng(device.position?.geometry)),
     );
     return devices.isEmpty
         ? Container()
@@ -82,8 +82,8 @@ class DeviceLayer extends MapPlugin {
                           ids,
                         ))
                     .toList() as Iterable<Widget>,
-              if (options.showLabels) ...devices.map((device) => _buildLabel(context, options, map, device!)).toList() as Iterable<Widget>,
-              ...devices.map((device) => _buildPoint(context, options, map, device!)).toList(),
+              if (options.showLabels) ...devices.map((device) => _buildLabel(context, options, map, device)).toList() as Iterable<Widget>,
+              ...devices.map((device) => _buildPoint(context, options, map, device)).toList(),
             ],
           );
   }
@@ -102,7 +102,7 @@ class DeviceLayer extends MapPlugin {
     Map<String?, Set<Tracking?>> trackings,
   ) {
     if (trackings != null) {
-      final track = _toTrack(trackings, device!);
+      final track = _toTrack(trackings, device);
       if (track?.isNotEmpty == true) {
         var offsets = track!.positions!.reversed.take(10).map((position) {
           var pos = map.project(toLatLng(position!.geometry));

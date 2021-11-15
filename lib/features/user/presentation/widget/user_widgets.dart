@@ -55,7 +55,7 @@ class UserWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) _buildHeader(context, user!, theme),
+        if (withHeader) _buildHeader(context, user, theme),
         if (withHeader) Divider() else SizedBox(height: 8.0),
         if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
         if (withActions) ...[
@@ -524,7 +524,7 @@ class UserNameView extends StatelessWidget {
             context: context,
             label: "Fornavn",
             icon: Icon(Icons.person),
-            value: user!.fname,
+            value: user.fname,
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -534,7 +534,7 @@ class UserNameView extends StatelessWidget {
             context: context,
             label: "Etternavn",
             icon: Icon(Icons.person_outline),
-            value: user!.lname,
+            value: user.lname,
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -565,11 +565,11 @@ class UserContactView extends StatelessWidget {
             context: context,
             label: "Mobil",
             icon: Icon(Icons.phone),
-            value: user!.phone ?? "Ukjent",
+            value: user.phone ?? "Ukjent",
             onMessage: onMessage,
             onComplete: onComplete,
             onTap: () {
-              final number = user!.phone ?? '';
+              final number = user.phone ?? '';
               if (number.isNotEmpty) launch("tel:$number");
             },
           ),

@@ -76,7 +76,7 @@ Catcher? _catcher;
 
 // Convenience method for running apps with Catcher
 void runAppWithCatcher(Widget app, AppController controller) {
-  final sentryDns = controller.bloc<AppConfigBloc>()!.config!.sentryDns;
+  final sentryDns = controller.bloc<AppConfigBloc>()!.config.sentryDns;
 
   // Catch unhandled bloc and repository exceptions
   Bloc.observer = controller.observer;

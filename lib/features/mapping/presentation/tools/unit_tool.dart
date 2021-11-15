@@ -52,7 +52,7 @@ class UnitTool extends MapTool with MapSelectable<Unit?> {
 
   @override
   LatLng toPoint(Unit? unit) {
-    return toLatLng(bloc.trackings[unit!.tracking!.uuid]?.position?.geometry);
+    return toLatLng(bloc.trackings[unit!.tracking.uuid]?.position?.geometry);
   }
 
   void _show(BuildContext context, List<Unit?> units) {
@@ -88,7 +88,7 @@ class UnitTool extends MapTool with MapSelectable<Unit?> {
       context: context,
       barrierDismissible: true,
       builder: (context) {
-        final tracking = bloc.trackings[unit!.tracking!.uuid];
+        final tracking = bloc.trackings[unit!.tracking.uuid];
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
@@ -107,7 +107,7 @@ class UnitTool extends MapTool with MapSelectable<Unit?> {
                   onMessage: onMessage,
                   withActions: bloc.operationBloc!.isAuthorizedAs(UserRole.commander),
                   onGoto: (point) => _goto(context, point),
-                  devices: bloc.devices(unit!.tracking!.uuid),
+                  devices: bloc.devices(unit!.tracking.uuid),
                   onCompleted: (_) => Navigator.pop(context),
                 );
               },

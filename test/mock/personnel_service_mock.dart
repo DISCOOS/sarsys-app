@@ -170,7 +170,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
         );
       }
       final personnel = state.value;
-      final affiliation = personnel.affiliation!;
+      final affiliation = personnel.affiliation;
       if (affiliation.isAffiliate) {
         final remote = affiliations!.affiliationRepo[affiliation.uuid] ??
             StorageState.created(

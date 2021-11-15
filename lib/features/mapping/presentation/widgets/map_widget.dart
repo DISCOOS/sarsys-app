@@ -377,7 +377,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void _initWakeLock() async {
     _wakeLockWasOn = await Wakelock.enabled;
     if (mounted) {
-      await Wakelock.toggle(enable: context.read<AppConfigBloc>().config!.keepScreenOn);
+      await Wakelock.toggle(enable: context.read<AppConfigBloc>().config.keepScreenOn);
     }
   }
 
@@ -452,7 +452,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
           ),
           PersonnelTool(
             context.read<TrackingBloc>(),
-            user: context.read<UserBloc>().user!,
+            user: context.read<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers!.contains(LAYER_PERSONNEL),
@@ -539,8 +539,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   LatLng _centerFromIncident(Position? current) {
     final candidate = widget.center ??
-        (context.read<OperationBloc>()?.selected?.meetup != null
-            ? toLatLng(context.read<OperationBloc>()?.selected?.meetup?.point)
+        (context.read<OperationBloc>().selected?.meetup != null
+            ? toLatLng(context.read<OperationBloc>().selected?.meetup?.point)
             : null) ??
         (current != null ? LatLng(current.lat!, current.lon!) : Defaults.origo);
     return candidate;
@@ -697,7 +697,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       );
 
   bool get useRetinaMode =>
-      context.read<AppConfigBloc>().config!.mapRetinaMode && MediaQuery.of(context).devicePixelRatio > 1.0;
+      context.read<AppConfigBloc>().config.mapRetinaMode && MediaQuery.of(context).devicePixelRatio > 1.0;
 
   void _onTap(LatLng point) {
     if (_searchMatch == null) _clearSearchField();
@@ -925,7 +925,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _updateLocationToolState({bool force = false}) {
-    if (force || _locationController!.isLocated != _isLocating!.value?.toggled) {
+    if (force || _locationController!.isLocated != _isLocating!.value.toggled) {
       _isLocating!.value = MapControlState(
         toggled: _locationController!.isLocated,
         locked: _locationController!.isLocked,
@@ -934,7 +934,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _clearSearchField() {
-    _searchFieldKey?.currentState?.clear();
+    _searchFieldKey.currentState?.clear();
   }
 
   void _onSearchMatch(LatLng? point) {

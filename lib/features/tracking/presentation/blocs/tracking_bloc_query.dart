@@ -55,7 +55,7 @@ class TrackableQuery<T extends Trackable?> {
   /// rule guarantees a one-to-one mapping if found.
   ///
   T? trackedBy(String? tuuid) => _data.values.firstWhereOrNull(
-        (trackable) => trackable!.tracking?.uuid == tuuid,
+        (trackable) => trackable!.tracking.uuid == tuuid,
       );
 
   /// Find aggregate of type [T] tracking [tracked]
@@ -69,7 +69,7 @@ class TrackableQuery<T extends Trackable?> {
   }) {
     var found;
     // Use direct lookup if trackable
-    final tuuid = tracked is Trackable ? tracked.tracking?.uuid : null;
+    final tuuid = tracked is Trackable ? tracked.tracking.uuid : null;
     if (tuuid != null) {
       found = trackedBy(tuuid);
     }
@@ -77,7 +77,7 @@ class TrackableQuery<T extends Trackable?> {
     if (found == null) {
       found = where(exclude: exclude).trackables.firstWhereOrNull(
             (trackable) =>
-                bloc.repo[trackable!.tracking.uuid!]?.sources?.any(
+                bloc.repo[trackable!.tracking.uuid!]?.sources.any(
                   (source) => source.uuid == tracked!.uuid,
                 ) ??
                 false,
@@ -114,8 +114,8 @@ class TrackableQuery<T extends Trackable?> {
   }) {
     final Map<String?, T> map = {};
     trackables.forEach((trackable) {
-      bloc.devices(trackable!.tracking?.uuid).forEach((device) {
-        map.update(device!.uuid, (set) => trackable, ifAbsent: () => trackable);
+      bloc.devices(trackable!.tracking.uuid).forEach((device) {
+        map.update(device.uuid, (set) => trackable, ifAbsent: () => trackable);
       });
     });
     return UnmodifiableMapView(map);

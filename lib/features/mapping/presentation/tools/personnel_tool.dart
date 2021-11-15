@@ -57,7 +57,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel?> {
 
   @override
   LatLng toPoint(Personnel? personnel) {
-    return toLatLng(bloc.trackings[personnel!.tracking!.uuid]?.position?.geometry);
+    return toLatLng(bloc.trackings[personnel!.tracking.uuid]?.position?.geometry);
   }
 
   void _show(BuildContext context, List<Personnel?> personnel) {
@@ -104,7 +104,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel?> {
                 if (snapshot.data is Personnel) {
                   personnel = snapshot.data;
                 }
-                final tracking = bloc.trackings[personnel!.tracking!.uuid];
+                final tracking = bloc.trackings[personnel!.tracking.uuid];
                 return PersonnelWidget(
                   withMap: false,
                   tracking: tracking,
@@ -113,7 +113,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel?> {
                   onDeleted: () => Navigator.pop(context),
                   onCompleted: (_) => Navigator.pop(context),
                   onGoto: (point) => _goto(context, point),
-                  devices: bloc.devices(personnel!.tracking!.uuid),
+                  devices: bloc.devices(personnel!.tracking.uuid),
                   unit: context.read<UnitBloc>().repo.findPersonnel(personnel!.uuid).firstOrNull,
                   withActions: context.read<OperationBloc>().isAuthorizedAs(UserRole.commander),
                 );

@@ -130,12 +130,12 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         .read<PersonnelBloc>()
         .repo
         .values
-        .where((personnel) => _filter!.contains(personnel!.status))
+        .where((personnel) => _filter!.contains(personnel.status))
         .where((personnel) => widget.where == null || widget.where!(personnel))
-        .where((personnel) => widget.query == null || _prepare(personnel!).contains(widget.query!.toLowerCase()))
+        .where((personnel) => widget.query == null || _prepare(personnel).contains(widget.query!.toLowerCase()))
         .toList();
     if (!widget.withGrouped) {
-      personnels.sort((p1, p2) => p1!.name.toLowerCase().compareTo(p2!.name.toLowerCase()));
+      personnels.sort((p1, p2) => p1.name.toLowerCase().compareTo(p2.name.toLowerCase()));
     }
     return personnels;
   }
@@ -160,7 +160,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
             },
             groupBy: (personnel) {
               final affiliation = _toAffiliation(personnel);
-              final org = affiliationBloc.orgs[affiliation?.org?.uuid];
+              final org = affiliationBloc.orgs[affiliation.org?.uuid];
               return AffiliationGroupEntry(
                 prefix: org?.prefix ?? '0',
                 name: affiliationBloc
@@ -186,7 +186,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   Widget _buildPersonnel(Personnel personnel) {
     final unit = _toUnit(personnel);
-    final tracking = context.read<TrackingBloc>().trackings[personnel.tracking?.uuid];
+    final tracking = context.read<TrackingBloc>().trackings[personnel.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && isCommander
@@ -298,12 +298,12 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   bool get isCommander => context.read<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
-  Affiliation _toAffiliation(Personnel? personnel) => affiliationBloc.repo[personnel!.affiliation!.uuid]!;
+  Affiliation _toAffiliation(Personnel? personnel) => affiliationBloc.repo[personnel!.affiliation.uuid]!;
 
   AffiliationBloc get affiliationBloc => context.read<AffiliationBloc>();
 
   bool isTemporary(Personnel personnel) => affiliationBloc.isTemporary(
-        personnel.affiliation!.uuid,
+        personnel.affiliation.uuid,
       );
 
   String _toUsage(
@@ -516,7 +516,7 @@ class PersonnelSearch extends SearchDelegate<Personnel?> {
             builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
               return _buildSuggestionList(
                 context,
-                suggestions?.where(_matches)?.toList() ?? [],
+                suggestions?.where(_matches).toList() ?? [],
               );
             },
           )

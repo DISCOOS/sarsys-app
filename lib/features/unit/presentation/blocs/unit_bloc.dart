@@ -153,7 +153,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   Stream<Unit?> onChanged(String? uuid) => stream
       .where(
         (state) =>
-            (state is UnitUpdated && state.data!.uuid == uuid) || (state is UnitsLoaded && state.data!.contains(uuid)),
+            (state is UnitUpdated && state.data.uuid == uuid) || (state is UnitsLoaded && state.data.contains(uuid)),
       )
       .map((state) => state is UnitsLoaded ? repo[uuid!] : state.data);
 
@@ -171,10 +171,10 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   Iterable<Personnel?> findAvailablePersonnel(PersonnelRepository personnels) {
     final assigned = repo.values.fold<List<String?>>(
       [],
-      (personnels, unit) => personnels..addAll(unit!.personnels),
+      (personnels, unit) => personnels..addAll(unit.personnels),
     );
     return personnels.values.where(
-      (personnel) => !assigned.contains(personnel!.uuid),
+      (personnel) => !assigned.contains(personnel.uuid),
     );
   }
 
@@ -187,9 +187,9 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
       (type) {
         final name = translateUnitType(type).toLowerCase();
         final match = template.length >= name.length
-            ? template.substring(0, min(name.length, template.length))?.trim()
+            ? template.substring(0, min(name.length, template.length)).trim()
             : template;
-        return name.startsWith(match!.toLowerCase());
+        return name.startsWith(match.toLowerCase());
       },
     );
 
@@ -347,7 +347,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
 
   Stream<UnitState> _create(CreateUnit command) async* {
     _assertData(command.data);
-    final unit = repo.apply(command.data)!;
+    final unit = repo.apply(command.data);
     yield toOK(
       command,
       UnitCreated(
@@ -377,7 +377,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
   Stream<UnitState> _update(UpdateUnit command) async* {
     _assertData(command.data);
     final previous = repo[command.data!.uuid];
-    final unit = repo.apply(command.data!)!;
+    final unit = repo.apply(command.data!);
 
     yield toOK(
       command,

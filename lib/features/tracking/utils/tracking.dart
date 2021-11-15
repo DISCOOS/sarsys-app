@@ -35,7 +35,7 @@ class TrackingUtils {
 
   /// Ensure tracking reference
   static AggregateRef<Tracking>? ensureRef<T extends Trackable?>(T trackable, {String? tuuid}) =>
-      trackable?.tracking?.uuid == null
+      trackable?.tracking.uuid == null
           // Create new ref
           ? newRef(tuuid: tuuid)
           // Use old ref
@@ -50,10 +50,10 @@ class TrackingUtils {
   /// This allows for offline creation of tracking objects
   /// in apps resulting in a better user experience
   static String assertRef<T extends Trackable?>(T trackable) {
-    final tuuid = trackable!.tracking?.uuid;
+    final tuuid = trackable!.tracking.uuid;
     if (tuuid == null) {
       throw ArgumentError(
-        "${trackable?.tracking?.type ?? typeOf<T>()} is not configured for tracking: AggregateRef is null",
+        "${trackable.tracking.type ?? typeOf<T>()} is not configured for tracking: AggregateRef is null",
       );
     }
     return tuuid;
@@ -220,7 +220,7 @@ class TrackingUtils {
   static List<TrackingSourceModel> _toReplaced(List<TrackingTrack> attached, Iterable<String?> suuids) {
     return attached
         // limit sources to suuids
-        .where((t) => suuids.contains(t.source!.uuid))
+        .where((t) => suuids.contains(t.source.uuid))
         .map((track) => track.source)
         .cast<TrackingSourceModel>()
         .toList();
@@ -234,7 +234,7 @@ class TrackingUtils {
     final suuids = sources.map((source) => source.uuid).toList();
     final List<TrackingTrack> unchanged = tracks.toList()
       ..removeWhere(
-        (track) => suuids.contains(track.source!.uuid),
+        (track) => suuids.contains(track.source.uuid),
       );
     return unchanged as List<TrackingTrackModel>
       ..addAll(attached.cast<TrackingTrackModel>())
@@ -335,7 +335,7 @@ class TrackingUtils {
     final found = findAll(tracks, suuids);
     final next = List<TrackingTrackModel>.from(tracks)
       ..removeWhere(
-        (track) => suuids.contains(track.source!.uuid),
+        (track) => suuids.contains(track.source.uuid),
       )
       ..addAll(
         found.map(
@@ -373,7 +373,7 @@ class TrackingUtils {
   static List<TrackingTrackModel> _deleteAll(List<TrackingTrackModel> tracks, Iterable<String?> suuids) {
     return tracks.toList()
       ..removeWhere(
-        (track) => suuids.contains(track.source!.uuid),
+        (track) => suuids.contains(track.source.uuid),
       );
   }
 
@@ -425,7 +425,7 @@ class TrackingUtils {
     distance ??= 0;
     var offset = max(0, track.length - tail);
     var i = offset + 1;
-    track?.skip(offset)?.where((p) => p!.isNotEmpty)?.forEach((p) {
+    track.skip(offset).where((p) => p!.isNotEmpty).forEach((p) {
       distance += i < track.length
           ? ProjMath.eucledianDistance(
               p!.lat!,
@@ -440,7 +440,7 @@ class TrackingUtils {
   }
 
   /// Calculate effort from history
-  static Duration effort(List<Position?> track) => track?.isNotEmpty == true
+  static Duration effort(List<Position?> track) => track.isNotEmpty == true
       ? track.last!.timestamp!.difference(
           track.first!.timestamp!,
         )
@@ -553,17 +553,17 @@ class TrackingUtils {
 
   /// Get list of [Point] from given [track]
   static List<Point?> toPoints(TrackingTrack track) =>
-      track == null ? [] : track.positions?.map((p) => p!.geometry)?.toList() ?? [];
+      track == null ? [] : track.positions?.map((p) => p!.geometry).toList() ?? [];
 
   /// Find track for given [TrackingSource] with [suuid]
   static TrackingTrack? find(Iterable<TrackingTrack> tracks, String? suuid) => tracks.firstWhereOrNull(
-        (track) => track.source!.uuid == suuid,
+        (track) => track.source.uuid == suuid,
       );
 
   /// Find track for given [TrackingSource] with [suuid]
   static List<TrackingTrack> findAll(Iterable<TrackingTrack> tracks, Iterable<String?> suuids) => tracks
       .where((track) => suuids.contains(
-            track.source!.uuid,
+            track.source.uuid,
           ))
       .toList();
 
@@ -601,7 +601,7 @@ class PositionableSource<T extends Aggregate> extends TrackingSourceModel
     required T aggregate,
     required this.position,
   }) : super(
-          uuid: aggregate!.uuid,
+          uuid: aggregate.uuid,
           type: TrackingSource.toSourceType<T>(),
         );
 

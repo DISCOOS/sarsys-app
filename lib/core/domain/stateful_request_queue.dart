@@ -206,12 +206,12 @@ class StatefulRequestQueue<K, V extends JsonObject?, S extends StatefulServiceDe
         });
         if (shouldEvict) {
           _repo!.evict(
-            retainKeys: states.map((s) => s!.value).map(_repo!.toKey),
+            retainKeys: states.map((s) => s.value).map(_repo!.toKey),
           );
         }
         states.forEach(
           (state) {
-            if (_repo!.toKey(state!.value) != null) {
+            if (_repo!.toKey(state.value) != null) {
               _repo!.put(
                 _patch(state),
               );
@@ -375,17 +375,17 @@ class StatefulRequestQueue<K, V extends JsonObject?, S extends StatefulServiceDe
           onResult: onResult,
           fallback: () {
             return Future.value(
-              state!.value,
+              state.value,
             );
           },
           execute: () {
-            return _repo!.isReady ? _executePush(key) : state!.value as Future<StreamResult<V?>>?;
+            return _repo!.isReady ? _executePush(key) : state.value as Future<StreamResult<V?>>?;
           },
         ));
         return state.value;
       }
       return stash(
-        state!,
+        state,
         onResult: onResult,
       );
     }
@@ -472,7 +472,7 @@ class StatefulRequestQueue<K, V extends JsonObject?, S extends StatefulServiceDe
         rethrow;
       }
     }
-    return state!;
+    return state;
   }
 
   /// Patch [next] state with existing in repository

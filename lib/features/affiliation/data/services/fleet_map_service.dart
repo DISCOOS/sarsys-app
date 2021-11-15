@@ -67,7 +67,7 @@ class FleetMapService extends Service {
         ?.where(
           (test) => test.name == catalog,
         )
-        ?.firstOrNull
+        .firstOrNull
         ?.groups;
   }
 

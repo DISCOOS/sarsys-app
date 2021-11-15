@@ -107,7 +107,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     var current = getState('$version');
     if (force || current == null) {
       current = await _initFromAssets(current);
-    } else if ((current.value!.version ?? 0) < version) {
+    } else if ((current.value.version ?? 0) < version) {
       current = await _upgrade(current);
     }
     return current;
@@ -119,7 +119,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     final newJson = jsonDecode(assetData) as Map<String, dynamic>;
     var init = AppConfigModel.fromJson(newJson);
     final udid = await FlutterUdid.consistentUdid;
-    final uuid = current?.value?.uuid ?? Uuid().v4();
+    final uuid = current?.value.uuid ?? Uuid().v4();
     final next = init.copyWith(
       uuid: uuid,
       udid: udid,
@@ -141,7 +141,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     var assetData = await rootBundle.loadString(assets);
     final newJson = jsonDecode(assetData) as Map<String, dynamic>;
     // Overwrite current configuration
-    final next = state.value!.toJson();
+    final next = state.value.toJson();
     next.addAll(newJson);
     return state.replace(AppConfigModel.fromJson(next
       ..addAll({
@@ -155,7 +155,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppC
     final state = getState('$version')!;
     requestQueue!.load(
       () async {
-        final ServiceResponse<StorageState<AppConfig>> response = await service.getFromId(state.value!.uuid);
+        final ServiceResponse<StorageState<AppConfig>> response = await service.getFromId(state.value.uuid);
         return response.copyWith<List<StorageState<AppConfig>?>>(
           body: [response.body],
         );

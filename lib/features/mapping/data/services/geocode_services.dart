@@ -102,9 +102,9 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
     if (response.statusCode == 200) {
       final doc = XmlDocument.parse(toUtf8(response.body));
       final result = doc.findAllElements('sokRes').first;
-      final state = result.findAllElements('ok')?.first?.text;
+      final state = result.findAllElements('ok').first.text;
       if (state == 'false') {
-        throw 'Not found, ${doc.findAllElements('melding')?.first?.text}';
+        throw 'Not found, ${doc.findAllElements('melding').first.text}';
       }
       return result.findElements('stedsnavn').map((node) => _toResult(query, node)).toList();
     } else
@@ -120,12 +120,12 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
       query: query,
       icon: Icons.place,
       title: [
-        node.findElements('stedsnavn')?.first?.text,
+        node.findElements('stedsnavn').first.text,
         _prepareNamedType(node),
       ].join(', '),
       address: [
-        node.findElements('kommunenavn')?.first?.text,
-        node.findElements('fylkesnavn')?.first?.text,
+        node.findElements('kommunenavn').first.text,
+        node.findElements('fylkesnavn').first.text,
       ].join(', '),
       position: toUTM(point),
       latitude: point.lat,
@@ -376,10 +376,10 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           // Search in unit
           _prepare(unit!.searchable).contains(match) ||
           // Search in devices tracked with this unit
-          controller.bloc<TrackingBloc>()!.devices(unit.tracking!.uuid).any((device) => _prepare(device).contains(match)))
+          controller.bloc<TrackingBloc>()!.devices(unit.tracking.uuid).any((device) => _prepare(device).contains(match)))
       .map((unit) => AddressLookup(
             query: query,
-            point: controller.bloc<TrackingBloc>()!.trackings[unit!.tracking!.uuid]!.position?.geometry,
+            point: controller.bloc<TrackingBloc>()!.trackings[unit!.tracking.uuid]!.position?.geometry,
             icon: Icons.group,
             title: unit.name,
             type: GeocodeType.Object,
@@ -392,15 +392,15 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
       .repo
       .map
       .values
-      .where((p) => withRetired! || p!.status != PersonnelStatus.retired)
+      .where((p) => withRetired! || p.status != PersonnelStatus.retired)
       .where((p) =>
           // Search in personnel
-          _prepare(p!.searchable).contains(match) ||
+          _prepare(p.searchable).contains(match) ||
           // Search in devices tracked with this personnel
-          controller.bloc<TrackingBloc>()!.devices(p.tracking!.uuid).any((device) => _prepare(device).contains(match)))
+          controller.bloc<TrackingBloc>()!.devices(p.tracking.uuid).any((device) => _prepare(device).contains(match)))
       .map((p) => AddressLookup(
             query: query,
-            point: controller.bloc<TrackingBloc>()!.find(p!).firstOrNull?.position?.geometry,
+            point: controller.bloc<TrackingBloc>()!.find(p).firstOrNull?.position?.geometry,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,
@@ -411,7 +411,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
   Iterable<AddressLookup> _findDevices(RegExp match, String query) =>
       controller.bloc<DeviceBloc>()!.values.where((p) => _prepare(p).contains(match)).map((p) => AddressLookup(
             query: query,
-            point: p!.position?.geometry,
+            point: p.position?.geometry,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,

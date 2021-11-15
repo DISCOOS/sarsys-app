@@ -55,14 +55,14 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   StreamSubscription<Tracking?>? _onMoved;
 
   /// Use current personnel name
-  String? get title => _personnel?.name;
+  String? get title => _personnel.name;
 
   @override
   void initState() {
     super.initState();
 
     _personnel = widget.personnel;
-    routeData = widget?.personnel?.uuid;
+    routeData = widget.personnel.uuid;
   }
 
   @override
@@ -71,16 +71,16 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     if (_group != null) _group!.close();
     _group = StreamGroup.broadcast()
       ..add(context.read<PersonnelBloc>().onChanged(widget.personnel))
-      ..add(context.read<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid, skipPosition: true));
+      ..add(context.read<TrackingBloc>().onChanged(widget.personnel.tracking.uuid, skipPosition: true));
     if (_onMoved != null) _onMoved!.cancel();
-    _onMoved = context.read<TrackingBloc>().onMoved(widget.personnel?.tracking?.uuid).listen(_onMove);
+    _onMoved = context.read<TrackingBloc>().onMoved(widget.personnel.tracking.uuid).listen(_onMove);
   }
 
   @override
   void dispose() {
     _group?.close();
     _onMoved?.cancel();
-    _controller?.cancel();
+    _controller.cancel();
     _group = null;
     _onMoved = null;
     super.dispose();
@@ -97,7 +97,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               onMessage: showMessage,
               onDeleted: () => Navigator.pop(context),
               type: ActionGroupType.popupMenuButton,
-              unit: context.read<UnitBloc>().repo.findPersonnel(_personnel!.uuid).firstOrNull,
+              unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
               onChanged: (personnel) => setState(() => _personnel = personnel),
             )
           ]
@@ -138,9 +138,9 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         withActions: false,
         personnel: _personnel,
         controller: _controller,
-        devices: context.read<TrackingBloc>().devices(_personnel!.tracking?.uuid),
-        tracking: context.read<TrackingBloc>().trackings[_personnel!.tracking?.uuid],
-        unit: context.read<UnitBloc>().repo.findPersonnel(_personnel!.uuid).firstOrNull,
+        devices: context.read<TrackingBloc>().devices(_personnel.tracking.uuid),
+        tracking: context.read<TrackingBloc>().trackings[_personnel.tracking.uuid],
+        unit: context.read<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
         onGoto: (point) => jumpToPoint(context, center: point),
         onMessage: showMessage,
         onDeleted: () => Navigator.pop(context),

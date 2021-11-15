@@ -65,12 +65,12 @@ class UnitLayer extends MapPlugin {
     final tracking = options.bloc.trackings;
     final units = sortMapValues<String?, Unit?, TrackingStatus>(
             options.bloc.units.where(exclude: options.showRetired ? [] : [TrackingStatus.closed]).map,
-            (unit) => tracking[unit!.tracking!.uuid]!.status,
+            (unit) => tracking[unit!.tracking.uuid]!.status,
             (s1, s2) => s1!.index - s2!.index)
         .values
-        .where((unit) => tracking[unit!.tracking!.uuid]?.position?.isNotEmpty == true)
+        .where((unit) => tracking[unit!.tracking.uuid]?.position?.isNotEmpty == true)
         .where((unit) => options.showRetired || unit!.status != UnitStatus.retired)
-        .where((unit) => bounds.contains(toLatLng(tracking[unit!.tracking!.uuid]?.position?.geometry)));
+        .where((unit) => bounds.contains(toLatLng(tracking[unit!.tracking.uuid]?.position?.geometry)));
     return tracking.isEmpty
         ? Container()
         : Stack(
@@ -78,14 +78,14 @@ class UnitLayer extends MapPlugin {
             children: [
               if (options.showTail)
                 ...units
-                    .map((unit) => _buildTrack(context, size, options, map, unit, tracking[unit!.tracking!.uuid]!))
+                    .map((unit) => _buildTrack(context, size, options, map, unit, tracking[unit!.tracking.uuid]!))
                     .toList() as Iterable<Widget>,
               if (options.showLabels)
                 ...units
                     .map((unit) =>
-                        _buildLabel(context, options, map, unit!, tracking[unit.tracking!.uuid]!.position?.geometry))
+                        _buildLabel(context, options, map, unit!, tracking[unit.tracking.uuid]!.position?.geometry))
                     .toList() as Iterable<Widget>,
-              ...units.map((unit) => _buildPoint(context, options, map, unit!, tracking[unit.tracking!.uuid]!)).toList(),
+              ...units.map((unit) => _buildPoint(context, options, map, unit!, tracking[unit.tracking.uuid]!)).toList(),
             ],
           );
   }

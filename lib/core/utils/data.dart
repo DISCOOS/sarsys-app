@@ -96,15 +96,15 @@ LatLng toLatLng(Point? point) {
 
 Point toPoint(LatLng point) {
   return Point.fromCoords(
-    lat: point?.latitude ?? 0,
-    lon: point?.longitude ?? 0,
+    lat: point.latitude ?? 0,
+    lon: point.longitude ?? 0,
   );
 }
 
 Position toPosition(LatLng point) {
   return Position.now(
-    lat: point?.latitude ?? 0,
-    lon: point?.longitude ?? 0,
+    lat: point.latitude ?? 0,
+    lon: point.longitude ?? 0,
     source: PositionSource.manual,
   );
 }
@@ -150,8 +150,8 @@ List<String> asUnitTemplates(String? prefix, int count) {
     (type) {
       final name = translateUnitType(type).toLowerCase();
       final match =
-          prefix!.length >= name.length ? prefix.substring(0, min(name.length, prefix.length))?.trim() : prefix;
-      return name.startsWith(match!.toLowerCase());
+          prefix!.length >= name.length ? prefix.substring(0, min(name.length, prefix.length)).trim() : prefix;
+      return name.startsWith(match.toLowerCase());
     },
   );
   final templates = types.fold<List<String>>(
@@ -165,7 +165,7 @@ List<String> asUnitTemplates(String? prefix, int count) {
       );
       return templates;
     },
-  )?.toList();
+  ).toList();
   return templates ?? <String>[];
 }
 

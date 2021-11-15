@@ -140,7 +140,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           );
   }
 
-  bool _inProgress(UserBloc bloc) => bloc.isAuthenticating || bloc?.state?.isPending() == true;
+  bool _inProgress(UserBloc bloc) => bloc.isAuthenticating || bloc.state.isPending() == true;
 
   Container _buildProgress(BuildContext context) {
     _animController ??= AnimationController(
@@ -378,7 +378,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                if (bloc.isPersonal || context.read<AppConfigBloc>().config!.idpHints.contains('rodekors'))
+                if (bloc.isPersonal || context.read<AppConfigBloc>().config.idpHints.contains('rodekors'))
                   _buildOrgLoginAction(bloc),
                 if (bloc.isPersonal) _buildGoogleLoginAction(bloc),
                 _buildDivider(),

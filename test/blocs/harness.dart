@@ -305,48 +305,48 @@ class BlocTestHarness implements BlocObserver {
     tearDown(() async {
       debugPrint('teardown...');
       if (_withConfigBloc) {
-        await _configBloc?.close()?.catchError(
+        await _configBloc?.close().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _configBloc.close() failed', e, stackTrace),
             );
       }
       if (_withUserBloc) {
-        await _userBloc?.close()?.timeout(Duration(seconds: 1))?.catchError(
+        await _userBloc?.close().timeout(Duration(seconds: 1)).catchError(
               (e, stackTrace) => debugPrintError('tearDown > _userBloc.close() failed', e, stackTrace),
             );
       }
       if (_withAffiliationBloc) {
-        await _affiliationBloc?.close()?.catchError(
+        await _affiliationBloc?.close().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _affiliationBloc.close() failed', e, stackTrace),
             );
-        await _personService?.dispose()?.catchError(
+        await _personService?.dispose().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _personService.dispose() failed', e, stackTrace),
             );
-        await _affiliationService?.dispose()?.catchError(
+        await _affiliationService?.dispose().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _affiliationService.dispose() failed', e, stackTrace),
             );
       }
       if (_withOperationBloc) {
-        await _operationsBloc?.close()?.catchError(
+        await _operationsBloc?.close().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _operationsBloc.close() failed', e, stackTrace),
             );
       }
       if (_withDeviceBloc) {
-        await _deviceBloc?.close()?.catchError(
+        await _deviceBloc?.close().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _deviceBloc.close() failed', e, stackTrace),
             );
       }
       if (_withPersonnelBloc) {
-        await _personnelBloc?.close()?.catchError(
+        await _personnelBloc?.close().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _personnelBloc.close() failed', e, stackTrace),
             );
       }
       if (_withUnitBloc) {
-        await _unitBloc?.close()?.catchError(
+        await _unitBloc?.close().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _unitBloc.close() failed', e, stackTrace),
             );
       }
       if (_withTrackingBloc) {
-        await _trackingBloc?.close()?.catchError(
+        await _trackingBloc?.close().catchError(
               (e, stackTrace) => debugPrintError('tearDown > _trackingBloc.close() failed', e, stackTrace),
             );
         _trackingService?.reset();
@@ -354,7 +354,7 @@ class BlocTestHarness implements BlocObserver {
       history.clear();
       errors.clear();
       bus.unsubscribeAll();
-      _connectivity?.dispose();
+      _connectivity.dispose();
       timer?.cancel();
       timer = null;
       _streamEvents.clear();
@@ -529,24 +529,24 @@ class BlocTestHarness implements BlocObserver {
   void _buildConnectivity() {
     _connectivity = ConnectivityServiceMock();
 
-    when(_connectivity!.isOnline).thenAnswer((_) => ConnectivityStatus.offline != _connectivity!.status);
-    when(_connectivity!.isOffline).thenAnswer((_) => ConnectivityStatus.offline == _connectivity!.status);
-    when(_connectivity!.isWifi).thenAnswer((_) => ConnectivityStatus.wifi == _connectivity!.status);
-    when(_connectivity!.isCellular).thenAnswer((_) => ConnectivityStatus.cellular == _connectivity!.status);
+    when(_connectivity.isOnline).thenAnswer((_) => ConnectivityStatus.offline != _connectivity.status);
+    when(_connectivity.isOffline).thenAnswer((_) => ConnectivityStatus.offline == _connectivity.status);
+    when(_connectivity.isWifi).thenAnswer((_) => ConnectivityStatus.wifi == _connectivity.status);
+    when(_connectivity.isCellular).thenAnswer((_) => ConnectivityStatus.cellular == _connectivity.status);
 
-    when(_connectivity!.changes).thenAnswer((_) => _connectivity!._controller.stream);
-    when(_connectivity!.whenOnline).thenAnswer(
-      (_) => _connectivity!._controller.stream.where(
+    when(_connectivity.changes).thenAnswer((_) => _connectivity._controller.stream);
+    when(_connectivity.whenOnline).thenAnswer(
+      (_) => _connectivity._controller.stream.where(
         (status) => ConnectivityStatus.offline != status,
       ),
     );
-    when(_connectivity!.whenOffline).thenAnswer(
-      (_) => _connectivity!._controller.stream.where(
+    when(_connectivity.whenOffline).thenAnswer(
+      (_) => _connectivity._controller.stream.where(
         (status) => ConnectivityStatus.offline == status,
       ),
     );
-    when(_connectivity!.update()).thenAnswer((_) async => _connectivity!.state);
-    when(_connectivity!.test()).thenAnswer((_) async => ConnectivityStatus.offline != _connectivity!.status);
+    when(_connectivity.update()).thenAnswer((_) async => _connectivity.state);
+    when(_connectivity.test()).thenAnswer((_) async => ConnectivityStatus.offline != _connectivity.status);
   }
 
   void _buildAppConfigBloc() {
@@ -1003,7 +1003,7 @@ StreamSubscription _printStream(String test, Stream stream) {
   final buffer = StringBuffer();
   buffer.writeln('------STREAM------');
   buffer.writeln('test: $test');
-  buffer.writeln('type: ${stream?.runtimeType}');
+  buffer.writeln('type: ${stream.runtimeType}');
   buffer.writeln('event: listening');
   _logStreamEvent(key, buffer);
 
@@ -1011,7 +1011,7 @@ StreamSubscription _printStream(String test, Stream stream) {
     final buffer = StringBuffer();
     buffer.writeln('------STREAM------');
     buffer.writeln('test: $test');
-    buffer.writeln('type: ${stream?.runtimeType}');
+    buffer.writeln('type: ${stream.runtimeType}');
     buffer.writeln('event: ${e.runtimeType}');
     _logStreamEvent(key, buffer);
   });
@@ -1033,7 +1033,7 @@ Future<void>? _cancelPrintStream(String test, Stream stream, StreamSubscription?
   final buffer = StringBuffer();
   buffer.writeln('------STREAM------');
   buffer.writeln('test: $test');
-  buffer.writeln('type: ${stream?.runtimeType}');
+  buffer.writeln('type: ${stream.runtimeType}');
   buffer.writeln('event: cancelled');
   _logStreamEvent(key, buffer);
   return sub?.cancel();

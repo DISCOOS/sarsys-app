@@ -405,7 +405,7 @@ class NotLeaderPasscodeDescription extends StatelessWidget {
             ),
           ),
         ),
-        for (var role in user!.roles.map(translateUserRole))
+        for (var role in user.roles.map(translateUserRole))
           Text.rich(
             TextSpan(
               text: '* $role',

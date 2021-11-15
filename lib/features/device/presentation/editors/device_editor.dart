@@ -144,7 +144,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     );
   }
 
-  String _defaultName() => widget?.device?.name ?? "";
+  String _defaultName() => widget.device?.name ?? "";
 
   Widget _buildNumberField() {
     final originalNumber = widget.device?.number;
@@ -215,7 +215,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   }
 
   bool isSameNumber(Device device, String? number) =>
-      number?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device!.number?.toString() == number;
+      number?.isNotEmpty == true && device.uuid != widget.device?.uuid && device.number?.toString() == number;
 
   Widget _buildAffiliationInfo() => InputDecorator(
         decoration: InputDecoration(
@@ -232,7 +232,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       );
 
-  String _defaultAffiliation() => context.read<AffiliationBloc>().findEntityName(widget?.device?.number);
+  String _defaultAffiliation() => context.read<AffiliationBloc>().findEntityName(widget.device?.number);
 
   InputDecorator _buildOrgAliasField() => InputDecorator(
         decoration: InputDecoration(
@@ -266,7 +266,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       );
 
-  String _defaultFunction() => context.read<AffiliationBloc>().findFunction(widget?.device?.number)?.name ?? '';
+  String _defaultFunction() => context.read<AffiliationBloc>().findFunction(widget.device?.number)?.name ?? '';
 
   FormBuilderTextField _buildAliasField() {
     var originalValue = widget.device?.alias;
@@ -306,11 +306,11 @@ class _DeviceEditorState extends State<DeviceEditor> {
   }
 
   bool _isSameAlias(Device device, String? alias) =>
-      alias?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device!.alias == alias;
+      alias?.isNotEmpty == true && device.uuid != widget.device?.uuid && device.alias == alias;
 
   void _setText(TextEditingController controller, String? value) {
     setText(controller, value);
-    _formKey?.currentState?.save();
+    _formKey.currentState?.save();
   }
 
   void _onNumberOrAliasEdit(
@@ -354,7 +354,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
 
   Widget _buildPointField() => PositionField(
         name: 'point',
-        initialValue: widget?.device?.position,
+        initialValue: widget.device?.position,
         labelText: "Siste posisjon",
         hintText: 'Ingen posisjon',
         errorText: 'Posisjon må oppgis',
@@ -362,24 +362,24 @@ class _DeviceEditorState extends State<DeviceEditor> {
       );
 
   DeviceType _getActualType(DeviceType defaultValue) {
-    final values = _formKey?.currentState?.value;
+    final values = _formKey.currentState?.value;
     return values?.containsKey('type') == true
         ? DeviceModel.fromJson(values!).type ?? defaultValue
-        : widget?.device?.type ?? defaultValue;
+        : widget.device?.type ?? defaultValue;
   }
 
   String? _getActualAlias() {
-    final values = _formKey?.currentState?.value;
+    final values = _formKey.currentState?.value;
     return values?.containsKey('alias') == true
-        ? DeviceModel.fromJson(values!).alias ?? widget?.device?.alias
-        : widget?.device?.alias;
+        ? DeviceModel.fromJson(values!).alias ?? widget.device?.alias
+        : widget.device?.alias;
   }
 
   String? _getActualNumber() {
-    final values = _formKey?.currentState?.value;
+    final values = _formKey.currentState?.value;
     return values?.containsKey('number') == true
-        ? DeviceModel.fromJson(values!).number ?? widget?.device?.number
-        : widget?.device?.number;
+        ? DeviceModel.fromJson(values!).number ?? widget.device?.number
+        : widget.device?.number;
   }
 
   void _submit(BuildContext context) async {

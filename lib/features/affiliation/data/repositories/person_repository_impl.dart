@@ -42,7 +42,7 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
 
   /// Find Person with given userId
   Person? findUser(String? userId) =>
-      userId == null ? null : find(where: (person) => person!.userId == userId).firstOrNull;
+      userId == null ? null : find(where: (person) => person.userId == userId).firstOrNull;
 
   @override
   Iterable<Person> find({bool where(Person person)?}) => isReady ? values.where(where!) : [];
@@ -85,7 +85,7 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
         for (var uuid in uuids!) {
           // Do not attempt to load local values
           final state = getState(uuid);
-          if (state == null || state?.shouldLoad == true) {
+          if (state == null || state.shouldLoad == true) {
             final ServiceResponse<StorageState<Person>> response = await service.getFromId(uuid);
             if (response != null) {
               if (response.is200) {
@@ -117,7 +117,7 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
 
   @override
   Future<Iterable<Person>> onReset({Iterable<Person>? previous = const []}) => Future.value(_fetch(
-        previous!.map((a) => a!.uuid).toList(),
+        previous!.map((a) => a.uuid).toList(),
         replace: true,
       ));
 

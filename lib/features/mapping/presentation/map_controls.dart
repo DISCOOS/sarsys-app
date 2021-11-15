@@ -69,7 +69,7 @@ class _MapControlsState extends State<MapControls> {
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
-    final active = widget._controller?.tools?.firstWhereOrNull(
+    final active = widget._controller?.tools.firstWhereOrNull(
           (tool) => tool.active(),
         ) !=
         null;

@@ -49,13 +49,13 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   StreamSubscription<Device>? _onMoved;
 
   /// Use current device name
-  String? get title => _device?.name;
+  String? get title => _device.name;
 
   @override
   void initState() {
     super.initState();
     routeWriter = false;
-    routeData = widget?.device?.uuid;
+    routeData = widget.device.uuid;
     _device = widget.device;
   }
 
@@ -72,7 +72,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   void dispose() {
     _group?.close();
     _onMoved?.cancel();
-    _controller?.cancel();
+    _controller.cancel();
     _group = null;
     _onMoved = null;
     super.dispose();
@@ -122,7 +122,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                   );
               final person = personnel?.person ??
                   context.read<AffiliationBloc>().persons.findUser(
-                        _device!.networkId,
+                        _device.networkId,
                       );
               return DeviceWidget(
                 unit: unit,
@@ -137,7 +137,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                 onDeleted: () => Navigator.pop(context),
                 onGoto: (point) => jumpToPoint(context, center: point),
                 onChanged: (device) => setState(() => _device = device),
-                tracking: context.read<TrackingBloc>().trackings[unit?.tracking?.uuid],
+                tracking: context.read<TrackingBloc>().trackings[unit?.tracking.uuid],
               );
             },
           ),
@@ -151,7 +151,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   }
 
   void _onMove(Device event) {
-    final center = toCenter(event?.position?.geometry);
+    final center = toCenter(event.position?.geometry);
     if (center != null) {
       _controller.animatedMove(center, _controller.zoom, this);
     }

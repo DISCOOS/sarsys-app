@@ -38,9 +38,9 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
           // Keep person in sync with local copy
           onGet: (StorageState<Personnel>? state) {
             if (affiliations.isReady) {
-              final value = state!.value!;
-              final auuid = value.affiliation!.uuid;
-              return state.replace(state.value!.copyWith(
+              final value = state!.value;
+              final auuid = value.affiliation.uuid;
+              return state.replace(state.value.copyWith(
                   affiliation: affiliations.get(
                 auuid,
               )));
@@ -49,7 +49,7 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
           },
           onPut: (StorageState<Personnel?> state, bool isDeleted) {
             if (!isDeleted && affiliations.isReady) {
-              final affiliation = state.value!.affiliation!;
+              final affiliation = state.value!.affiliation;
               if (affiliation.isAffiliate) {
                 affiliations.replace(
                   affiliation,
@@ -84,7 +84,7 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   /// Get [Personnel.uuid] from [value]
   @override
   String toKey(Personnel? value) {
-    return value!.uuid!;
+    return value!.uuid;
   }
 
   /// Create [Personnel] from json
@@ -109,11 +109,11 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   int count({
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
-      exclude?.isNotEmpty == false
+      exclude.isNotEmpty == false
           ? length
           : values
               .where(
-                (personnel) => !exclude.contains(personnel!.status),
+                (personnel) => !exclude.contains(personnel.status),
               )
               .length;
 
@@ -124,9 +124,9 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       values
-          .where((personnel) => !exclude.contains(personnel!.status))
+          .where((personnel) => !exclude.contains(personnel.status))
           .where((personnel) => where == null || where(personnel))
-          .where((personnel) => personnel!.userId == userId);
+          .where((personnel) => personnel.userId == userId);
 
   /// GET ../personnels
   Future<List<Personnel?>> load(
@@ -149,11 +149,11 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
 
   @override
   Future<Iterable<Personnel>> onReset({Iterable<Personnel>? previous}) =>
-      _ouuid != null ? load(_ouuid!)! as Future<Iterable<Personnel>> : Future.value(previous!);
+      _ouuid != null ? load(_ouuid!) as Future<Iterable<Personnel>> : Future.value(previous!);
 
   @override
   Future<StorageState<Personnel>> onCreate(StorageState<Personnel> state) async {
-    assert(state.value!.operation!.uuid == _ouuid);
+    assert(state.value.operation!.uuid == _ouuid);
     final response = await service.create(state);
     if (response.isOK) {
       return response.body!;
@@ -180,7 +180,7 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
 
   @override
   Future<StorageState<Personnel>> onDelete(StorageState<Personnel> state) async {
-    ServiceResponse<StorageState<Personnel>> response = await service.delete!(state);
+    ServiceResponse<StorageState<Personnel>> response = await service.delete(state);
     if (response.isOK) {
       return response.body!;
     }
@@ -227,7 +227,7 @@ class MergePersonnelStrategy extends StatefulMergeStrategy<String?, Personnel?, 
 
           // Delete duplicate affiliation
           affiliations.remove(
-            state.value!.affiliation!,
+            state.value!.affiliation,
           );
         }
 
@@ -241,12 +241,12 @@ class MergePersonnelStrategy extends StatefulMergeStrategy<String?, Personnel?, 
 
           // Delete duplicate person
           persons.remove(
-            state!.value!.person!,
+            state.value!.person,
           );
         }
 
         return repository.getState(
-          repository.toKey(state!.value!),
+          repository.toKey(state.value!),
         );
     }
     return super.onExists(conflict, state);

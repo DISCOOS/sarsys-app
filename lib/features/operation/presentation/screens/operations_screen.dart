@@ -367,7 +367,7 @@ class _OperationsPageState extends State<OperationsPage> {
     );
   }
 
-  bool get hasRoles => context.read<UserBloc>()?.hasRoles == true;
+  bool get hasRoles => context.read<UserBloc>().hasRoles == true;
 
   String _toDescription(Operation operation) {
     String? meetup = operation.meetup!.description;
@@ -461,7 +461,7 @@ class OperationSearch extends SearchDelegate<Operation?> {
             builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
               return _buildSuggestionList(
                 context,
-                suggestions?.where(_matches)?.toList() ?? [],
+                suggestions?.where(_matches).toList() ?? [],
               );
             },
           )

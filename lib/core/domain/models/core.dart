@@ -74,15 +74,15 @@ class JsonUtils {
     List<String> remove = const [],
   }) {
     assert(
-      !(retain?.isNotEmpty == true && remove?.isNotEmpty == true),
+      !(retain.isNotEmpty == true && remove.isNotEmpty == true),
       'Only use retain or remove',
     );
     final json = value!.toJson();
-    if (retain?.isNotEmpty == true) {
+    if (retain.isNotEmpty == true) {
       json.removeWhere(
         (key, _) => !retain.contains(key),
       );
-    } else if (remove?.isNotEmpty == true) {
+    } else if (remove.isNotEmpty == true) {
       json.removeWhere(
         (key, _) => remove.contains(key),
       );
@@ -153,8 +153,8 @@ class JsonUtils {
     bool strict = false,
   }) {
     final patches = diff(
-      oldJson?.toJson() ?? {},
-      newJson?.toJson() ?? {},
+      oldJson.toJson() ?? {},
+      newJson.toJson() ?? {},
     );
     return apply(oldJson, patches, strict: strict);
   }

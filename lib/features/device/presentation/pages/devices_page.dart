@@ -117,7 +117,7 @@ class DevicesPageState extends State<DevicesPage> {
       .read<DeviceBloc>()
       .values
       .where((device) =>
-          _filter!.contains(device!.type) &&
+          _filter!.contains(device.type) &&
           (widget.query == null || _prepare(device).contains(widget.query!.toLowerCase())))
       .toList()
         ..sort(
@@ -130,7 +130,7 @@ class DevicesPageState extends State<DevicesPage> {
       .toLowerCase();
 
   int _compare(Device d1, Device d2) {
-    return '${d1!.number}'.toLowerCase().compareTo('${d2!.number}'.toLowerCase());
+    return '${d1.number}'.toLowerCase().compareTo('${d2.number}'.toLowerCase());
   }
 
   Widget _buildDevice(
@@ -140,7 +140,7 @@ class DevicesPageState extends State<DevicesPage> {
     Map<String?, Personnel?> personnel,
     Map<String?, Set<Tracking?>> tracked,
   ) {
-    final device = devices[index]!;
+    final device = devices[index];
     final status = _toTrackingStatus(tracked, device);
     final isThisApp = context.read<DeviceBloc>().isThisApp(device);
     return GestureDetector(

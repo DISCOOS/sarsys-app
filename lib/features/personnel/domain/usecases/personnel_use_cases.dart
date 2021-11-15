@@ -37,7 +37,7 @@ class PersonnelParams extends BlocParams<PersonnelBloc, Personnel?> {
   final Affiliation? affiliation;
   OperationBloc? get operationBloc => bloc.operationBloc;
   AffiliationBloc? get affiliationBloc => bloc.affiliationBloc;
-  User get user => operationBloc!.userBloc!.user;
+  User get user => operationBloc!.userBloc.user;
   PersonnelParams({
     Personnel? personnel,
     this.devices,
@@ -84,7 +84,7 @@ class CreatePersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
     final tracking = await (waitThroughStateWithData<TrackingCreated, Tracking?>(
       params.bus!,
       map: (state) => state!.data,
-      test: (state) => state.data!.uuid == personnel!.tracking!.uuid,
+      test: (state) => state.data.uuid == personnel!.tracking.uuid,
     ) as FutureOr<Tracking>);
 
     // Update tracking
@@ -152,10 +152,10 @@ class MobilizePersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   }
 
   Personnel? _findPersonnel(PersonnelParams params, Affiliation affiliation) =>
-      params.bloc.repo.find(where: (p) => p!.person?.uuid == affiliation.person!.uuid).firstOrNull;
+      params.bloc.repo.find(where: (p) => p.person.uuid == affiliation.person!.uuid).firstOrNull;
 
   Iterable<String?> _selectables(PersonnelParams params) =>
-      params.bloc.repo.values.where((p) => p!.status != PersonnelStatus.retired).map((p) => p!.affiliation!.uuid);
+      params.bloc.repo.values.where((p) => p.status != PersonnelStatus.retired).map((p) => p.affiliation.uuid);
 }
 
 /// Mobilize current [user] if not already mobilized
@@ -193,7 +193,7 @@ class EditPersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
       builder: (context) => PersonnelEditor(
         personnel: params.data,
         devices: params.devices,
-        affiliation: params.affiliationBloc!.repo[params.data!.affiliation!.uuid],
+        affiliation: params.affiliationBloc!.repo[params.data!.affiliation.uuid],
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -208,7 +208,7 @@ class EditPersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
     // Only update tracking if mobilized
     if (personnel.isMobilized) {
       await params.context!.read<TrackingBloc>().replace(
-            personnel.tracking!.uuid,
+            personnel.tracking.uuid,
             devices: result.devices,
             position: result.position,
           );
@@ -230,7 +230,7 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
   Future<dartz.Either<bool, Position>> execute(params) async {
     assert(params.data != null, "Personnel must be supplied");
 
-    final tuuid = params.data!.tracking!.uuid;
+    final tuuid = params.data!.tracking.uuid;
     final tracking = params.context!.read<TrackingBloc>().repo[tuuid!]!;
     assert(tracking != null, "Tracking not found: $tuuid");
 
@@ -272,13 +272,13 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking?>, Personnel
     );
     if (personnel == null) return dartz.Left(false);
 
-    final tuuid = personnel.tracking!.uuid;
+    final tuuid = personnel.tracking.uuid;
     final tracking = params.context!.read<TrackingBloc>().repo[tuuid!]!;
     assert(tracking != null, "Tracking not found: $tuuid");
 
     // Add to tracking
-    final next = await params!.context!.read<TrackingBloc>().attach(
-          personnel.tracking!.uuid,
+    final next = await params.context!.read<TrackingBloc>().attach(
+          personnel.tracking.uuid,
           devices: params.devices,
         );
     return dartz.Right(Pair.of(personnel, next));
@@ -291,10 +291,10 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking?>, Personnel
             params.overlay!.context,
             where: (personnel) =>
                 // Personnel is not tracking any devices?
-                bloc.trackings[personnel.tracking!.uuid] == null ||
+                bloc.trackings[personnel.tracking.uuid] == null ||
                 // Personnel is not tracking given devices?
-                !bloc.trackings[personnel.tracking!.uuid]!.sources.any(
-                  (source) => params.devices?.any((device) => device!.uuid == source.uuid) == true,
+                !bloc.trackings[personnel.tracking.uuid]!.sources.any(
+                  (source) => params.devices?.any((device) => device.uuid == source.uuid) == true,
                 ),
           );
     return personnel;
@@ -323,19 +323,19 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking?, PersonnelParams> {
     var proceed = await prompt(
       params.overlay!.context,
       "Bekreft fjerning",
-      "Dette vil fjerne ${devices.map((device) => device!.name).join((', '))} fra ${personnel.name}",
+      "Dette vil fjerne ${devices.map((device) => device.name).join((', '))} fra ${personnel.name}",
     );
     if (!proceed) return dartz.left(false);
 
     // Collect kept devices and personnel
     final keepDevices = params.context!
         .read<TrackingBloc>()
-        .devices(personnel.tracking!.uuid)
+        .devices(personnel.tracking.uuid)
         .where((test) => !devices.contains(test))
         .toList();
 
     final tracking = await params.context!.read<TrackingBloc>().replace(
-          personnel.tracking!.uuid,
+          personnel.tracking.uuid,
           devices: keepDevices,
         );
     return dartz.right(tracking);
@@ -408,7 +408,7 @@ class RetirePersonnel extends UseCase<bool, Personnel?, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Personnel?>>? execute(params) async {
     // User must use leaveOperation
-    if (params.user!.userId != null && params.user!.userId == params.data!.userId) {
+    if (params.user.userId != null && params.user.userId == params.data!.userId) {
       return leaveOperation()!;
     }
 

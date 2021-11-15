@@ -72,14 +72,14 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
     UnitType? type,
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
-      exclude?.isNotEmpty == false
+      exclude.isNotEmpty == false
           ? length
           : values
               .where(
-                (unit) => type == null || type == unit!.type,
+                (unit) => type == null || type == unit.type,
               )
               .where(
-                (unit) => !exclude.contains(unit!.status),
+                (unit) => !exclude.contains(unit.status),
               )
               .length;
 
@@ -90,10 +90,10 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
   }) =>
       values
           .where(
-            (unit) => !exclude.contains(unit!.status),
+            (unit) => !exclude.contains(unit.status),
           )
           .where(
-            (unit) => unit!.personnels.any((uuid) => puuid == uuid),
+            (unit) => unit.personnels.any((uuid) => puuid == uuid),
           );
 
   /// Get next available [Unit.number]
@@ -102,12 +102,12 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
       var prev = 0;
       final numbers = values
           .where(
-            (unit) => UnitStatus.retired != unit!.status,
+            (unit) => UnitStatus.retired != unit.status,
           )
           .where(
-            (unit) => type == unit!.type,
+            (unit) => type == unit.type,
           )
-          .map((unit) => unit!.number)
+          .map((unit) => unit.number)
           .toList();
       numbers.sort((n1, n2) => n1!.compareTo(n2!));
       final candidates = numbers.takeWhile((next) => (next! - prev++) == 1).toList();
@@ -140,7 +140,7 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
 
   @override
   Future<StorageState<Unit>> onCreate(StorageState<Unit> state) async {
-    assert(state.value!.operation!.uuid == _ouuid);
+    assert(state.value.operation!.uuid == _ouuid);
     var response = await service.create(state);
     if (response.isOK) {
       return response.body!;

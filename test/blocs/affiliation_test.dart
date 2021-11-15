@@ -224,8 +224,8 @@ void main() async {
       await harness.affiliationBloc!.load();
       expect(harness.affiliationBloc!.persons.length, 1, reason: "SHOULD contain 1 person");
       expect(harness.affiliationBloc!.repo.length, 1, reason: "SHOULD contain 1 affiliation");
-      final person = harness.affiliationBloc!.persons.values.first!;
-      expect(harness.affiliationBloc!.repo.values.first!.person, person, reason: "SHOULD be equal");
+      final person = harness.affiliationBloc!.persons.values.first;
+      expect(harness.affiliationBloc!.repo.values.first.person, person, reason: "SHOULD be equal");
 
       // Act
       final updated = await harness.personService!.put(
@@ -247,7 +247,7 @@ void main() async {
       expect(harness.affiliationBloc!.repo.length, 1, reason: "SHOULD contain 1 affiliation");
 
       expect(harness.affiliationBloc!.persons.values.first, updated, reason: "SHOULD be equal");
-      expect(harness.affiliationBloc!.repo.values.first!.person, updated, reason: "SHOULD be equal");
+      expect(harness.affiliationBloc!.repo.values.first.person, updated, reason: "SHOULD be equal");
     });
 
     test('SHOULD replace person on conflict', () async {
@@ -288,12 +288,12 @@ void main() async {
       expect(harness.affiliationBloc!.repo.length, 2, reason: "SHOULD contain 2 affiliations");
 
       expect(
-        harness.affiliationBloc!.persons.find(where: (p) => p!.userId == existing.userId).firstOrNull,
+        harness.affiliationBloc!.persons.find(where: (p) => p.userId == existing.userId).firstOrNull,
         equals(existing),
         reason: "SHOULD be equal",
       );
       expect(
-        harness.affiliationBloc!.repo.find(where: (a) => a!.person!.userId == existing.userId).firstOrNull?.person,
+        harness.affiliationBloc!.repo.find(where: (a) => a.person!.userId == existing.userId).firstOrNull?.person,
         equals(existing),
         reason: "SHOULD be equal",
       );
@@ -482,13 +482,13 @@ Future<Affiliation> _seed(
   final dep2 = harness.departmentService!.add(div2.uuid);
   final p1 = harness.affiliationBloc!.persons.values
       .where(
-        (person) => person!.userId == harness.userId,
+        (person) => person.userId == harness.userId,
       )
       .first;
   expect(
     harness.affiliationBloc!.repo.values
         .where(
-          (affiliation) => affiliation!.person!.uuid == p1!.uuid,
+          (affiliation) => affiliation.person!.uuid == p1.uuid,
         )
         .firstOrNull,
     isNotNull,
@@ -540,13 +540,13 @@ Future _authenticate(
       )),
     );
     await expectStorageStatusLater(
-      harness.affiliationBloc!.persons.values.first!.uuid,
+      harness.affiliationBloc!.persons.values.first.uuid,
       harness.affiliationBloc!.persons,
       StorageStatus.created,
       remote: true,
     );
     await expectStorageStatusLater(
-      harness.affiliationBloc!.repo.values.first!.uuid,
+      harness.affiliationBloc!.repo.values.first.uuid,
       harness.affiliationBloc!.repo,
       StorageStatus.created,
       remote: true,

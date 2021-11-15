@@ -39,17 +39,17 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
           dependencies: [persons, orgs, divs, deps],
           // Keep person in sync with local copy
           onGet: (StorageState<Affiliation>? state) {
-            final value = state!.value!;
+            final value = state!.value;
             final puuid = value.person!.uuid;
-            return state.replace(state.value!.withPerson(persons.get(
+            return state.replace(state.value.withPerson(persons.get(
               puuid,
-            )!));
+            )));
           },
           onPut: (StorageState<Affiliation> state, bool isDeleted) {
             if (!isDeleted && persons.isReady) {
-              final affiliation = state.value!;
+              final affiliation = state.value;
               if (affiliation.isAffiliate) {
-                final person = state.value!.person!;
+                final person = state.value.person!;
                 if (persons.containsKey(person.uuid)) {
                   // Patch locally only
                   persons.patch(
@@ -106,7 +106,7 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
   /// Get [Operation.uuid] from [state]
   @override
   String toKey(Affiliation value) {
-    return value!.uuid!;
+    return value.uuid;
   }
 
   /// Create [Affiliation] from json
@@ -115,7 +115,7 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
 
   /// Find [Affiliation]s for affiliate with given [Person.uuid]
   @override
-  Iterable<Affiliation> findPerson(String? puuid) => find(where: (affiliation) => affiliation!.person?.uuid == puuid);
+  Iterable<Affiliation> findPerson(String? puuid) => find(where: (affiliation) => affiliation.person?.uuid == puuid);
 
   /// Find [Affiliation]s matching given query
   @override
@@ -196,7 +196,7 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
       onResult: onRemote,
       shouldEvict: replace,
     );
-    return uuids.map((uuid) => get(uuid!)).whereNotNull().toList() as FutureOr<List<Affiliation>>;
+    return uuids.map((uuid) => get(uuid)).whereNotNull().toList() as FutureOr<List<Affiliation>>;
   }
 
   Future<List<Affiliation>> _search(
@@ -204,7 +204,7 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
     int? limit,
     int? offset,
   }) async {
-    if (connectivity!.isOnline) {
+    if (connectivity.isOnline) {
       try {
         final ServiceResponse<List<StorageState<Affiliation>>> response = await service.search(
           filter,
@@ -303,7 +303,7 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
 
   @override
   Future<Iterable<Affiliation>> onReset({Iterable<Affiliation>? previous}) => _fetch(
-        (previous ?? values).map((a) => a!.uuid).toList(),
+        (previous ?? values).map((a) => a.uuid).toList(),
         replace: true,
       );
 
@@ -337,7 +337,7 @@ class MergeAffiliationStrategy extends StatefulMergeStrategy<String?, Affiliatio
           );
 
           // Delete duplicate
-          repository.remove(state.value!);
+          repository.remove(state.value);
 
           // Patch with existing state
           repository.patch(
@@ -349,13 +349,13 @@ class MergeAffiliationStrategy extends StatefulMergeStrategy<String?, Affiliatio
         if (conflict.isCode('duplicate_user_id')) {
           // Replace duplicate person with existing person
           repository.apply(
-            state.value!.copyWith(
+            state.value.copyWith(
               person: PersonModel.fromJson(conflict.base!),
             ),
           );
           // Delete duplicate person
           persons.remove(
-            state!.value!.person!,
+            state.value.person!,
           );
         }
 

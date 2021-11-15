@@ -227,7 +227,7 @@ class PersonServiceMock extends Mock implements PersonService {
   }
 
   static Person? findExistingUser(Person person, Map<String?, StorageState<Person>> personRepo) => person.userId != null
-      ? personRepo.values.map((s) => s.value).where((p) => p!.userId == person.userId).firstOrNull
+      ? personRepo.values.map((s) => s.value).where((p) => p.userId == person.userId).firstOrNull
       : null;
 
   static Future _doThrottle() async {

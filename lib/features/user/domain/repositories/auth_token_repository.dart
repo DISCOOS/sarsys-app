@@ -28,8 +28,8 @@ class AuthTokenRepository implements Repository<String, AuthToken?> {
   Iterable<String> get keys => List.unmodifiable(_tokens?.keys ?? []);
   Iterable<AuthToken> get values => List.unmodifiable((_tokens?.values ?? []) as Iterable<dynamic>);
 
-  bool containsKey(String? userId) => _tokens?.keys?.contains(userId) ?? false;
-  bool containsValue(AuthToken token) => _tokens?.values?.contains(token) ?? false;
+  bool containsKey(String? userId) => _tokens?.keys.contains(userId) ?? false;
+  bool containsValue(AuthToken token) => _tokens?.values.contains(token) ?? false;
 
   bool get isReady => _tokens?.isOpen == true;
   void _assert() {

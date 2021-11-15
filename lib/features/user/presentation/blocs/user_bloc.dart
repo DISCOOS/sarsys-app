@@ -50,7 +50,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   AuthToken? get token => repo.token;
 
   /// Id of authenticated use
-  String? get userId => repo.user?.userId;
+  String? get userId => repo.user.userId;
 
   /// Get [AppConfig]
   AppConfig get config => configBloc!.config;
@@ -59,25 +59,25 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   Iterable<User>? get users => repo.values;
 
   /// Get current security applied to user
-  Security? get security => user?.security;
+  Security? get security => user.security;
 
   /// Check if user has roles
-  bool get hasRoles => user?.hasRoles == true;
+  bool get hasRoles => user.hasRoles == true;
 
   /// Check if application is running on a shared device (multiple uses accounts allowed)
-  bool get isShared => SecurityMode.shared == config!.securityMode;
+  bool get isShared => SecurityMode.shared == config.securityMode;
 
   /// Check if application is running on a private device (only one account is allowed)
-  bool get isPersonal => SecurityMode.personal == config!.securityMode;
+  bool get isPersonal => SecurityMode.personal == config.securityMode;
 
   /// Get requested security mode from [AppConfig]
-  SecurityMode get securityMode => config!.securityMode;
+  SecurityMode get securityMode => config.securityMode;
 
   /// Get requested security type from [AppConfig]
-  SecurityType get securityType => config!.securityType;
+  SecurityType get securityType => config.securityType;
 
   /// Get trusted domains from [AppConfig]
-  List<String?> get trustedDomains => config!.trustedDomains;
+  List<String?> get trustedDomains => config.trustedDomains;
 
   /// User identity is secured
   bool get isSecured => security != null;
@@ -116,11 +116,11 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   bool get isPending => state.isPending();
 
   /// Check if user has roles
-  bool isAuthor(Operation data) => user?.isAuthor(data) == true;
+  bool isAuthor(Operation data) => user.isAuthor(data) == true;
 
   /// Check if current [user] is authorized access to given [operation]
   bool isAuthorized(Operation? operation) {
-    return isAuthenticated && (getAuthorization(operation)!.isAuthorized() || user!.isAuthor(operation!));
+    return isAuthenticated && (getAuthorization(operation)!.isAuthorized() || user.isAuthor(operation!));
   }
 
   /// Check if current [user] is authorized access to given [operation] with given [role]
@@ -132,9 +132,9 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   UserAuthorized? getAuthorization(Operation? operation) {
     if (isAuthenticated && operation != null) {
       // Look for passcode?
-      if (!_authorized.containsKey(operation.uuid) && user!.passcodes?.isNotEmpty == true) {
-        final withCommanderCode = user!.passcodes!.any((p) => operation.passcodes!.commander == p.commander);
-        final withPersonnelCode = user!.passcodes!.any((p) => operation.passcodes!.personnel == p.personnel);
+      if (!_authorized.containsKey(operation.uuid) && user.passcodes?.isNotEmpty == true) {
+        final withCommanderCode = user.passcodes!.any((p) => operation.passcodes!.commander == p.commander);
+        final withPersonnelCode = user.passcodes!.any((p) => operation.passcodes!.personnel == p.personnel);
         if (withPersonnelCode || withCommanderCode) {
           _authorized[operation.uuid] = UserAuthorized(
             user,
@@ -146,7 +146,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
       if (_authorized.containsKey(operation.uuid)) {
         return _authorized[operation.uuid];
       }
-      if (user?.userId == operation.author!.userId) {
+      if (user.userId == operation.author!.userId) {
         return UserAuthorized(
           user,
           operation: operation,
@@ -252,8 +252,8 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
         command.data,
         trusted: trustUser(),
         locked: command.locked,
-        type: config!.securityType,
-        mode: config!.securityMode,
+        type: config.securityType,
+        mode: config.securityMode,
       );
       return _toEvent(command, response);
     } on Exception catch (e) {
@@ -262,10 +262,10 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   bool trustUser() {
-    final email = user!.email;
+    final email = user.email;
     if (email != null) {
-      final domain = UserService.toDomain(email);
-      return config!.trustedDomains.contains(domain);
+      final domain =UserService.toDomain(email);
+      return config.trustedDomains.contains(domain);
     }
     return false;
   }
@@ -463,7 +463,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     var isLocationAlwaysGranted = await Permission.locationAlways.isGranted;
     var isLocationWhenInUseGranted = await Permission.locationWhenInUse.isGranted;
     var isActivityRecognitionGranted = await Permission.activityRecognition.isGranted;
-    final config = configBloc!.config!;
+    final config = configBloc!.config;
     if (config.storage != isStorageGranted ||
         config.locationAlways != isLocationAlwaysGranted ||
         config.locationWhenInUse != isLocationWhenInUseGranted ||
@@ -655,7 +655,7 @@ class UserAuthenticating extends UserState<String?> {
 class UserAuthenticated extends UserState<User> {
   UserAuthenticated(User user) : super(user);
   @override
-  String toString() => '$runtimeType {userid: ${data!.userId}}';
+  String toString() => '$runtimeType {userid: ${data.userId}}';
 }
 
 class UserAuthorized extends UserState<User> {
@@ -678,12 +678,12 @@ class UserAuthorized extends UserState<User> {
   bool isAuthorized() => withPersonnelCode == true || withCommanderCode == true;
 
   bool get isMobilized => operation != null;
-  bool get isCommander => data?.isCommander == true;
-  bool get isPersonnel => data?.isPersonnel == true;
-  bool get isUnitLeader => data?.isUnitLeader == true;
-  bool get isPlanningChief => data?.isPlanningChief == true;
-  bool get isOperationsChief => data?.isOperationsChief == true;
-  bool get isAuthor => data != null && operation?.author?.userId == data!.userId;
+  bool get isCommander => data.isCommander == true;
+  bool get isPersonnel => data.isPersonnel == true;
+  bool get isUnitLeader => data.isUnitLeader == true;
+  bool get isPlanningChief => data.isPlanningChief == true;
+  bool get isOperationsChief => data.isOperationsChief == true;
+  bool get isAuthor => data != null && operation?.author?.userId == data.userId;
   bool get isLeader => isCommander || isUnitLeader || isPlanningChief || isOperationsChief;
 
   /// Check [User] [data] is authorized access to given [operation] with given [role]

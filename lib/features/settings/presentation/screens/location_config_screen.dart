@@ -34,17 +34,17 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   }
 
   LocationOptions? get options => context.read<ActivityBloc>().options;
-  int get timeInterval => _manual! ? bloc.config!.locationFastestInterval : options!.timeInterval;
+  int get timeInterval => _manual! ? bloc.config.locationFastestInterval : options!.timeInterval;
 
-  int get distanceFilter => _manual! ? bloc.config!.locationSmallestDisplacement : options!.distanceFilter;
+  int get distanceFilter => _manual! ? bloc.config.locationSmallestDisplacement : options!.distanceFilter;
 
   bool get locationStoreLocally =>
-      _manual! ? context.read<AppConfigBloc>().config!.locationStoreLocally : options!.locationStoreLocally;
+      _manual! ? context.read<AppConfigBloc>().config.locationStoreLocally : options!.locationStoreLocally;
 
   bool get locationAllowSharing =>
-      _manual! ? context.read<AppConfigBloc>().config!.locationAllowSharing : options!.locationAllowSharing;
+      _manual! ? context.read<AppConfigBloc>().config.locationAllowSharing : options!.locationAllowSharing;
 
-  bool get _locationDebug => _manual! ? context.read<AppConfigBloc>().config!.locationDebug : options!.debug;
+  bool get _locationDebug => _manual! ? context.read<AppConfigBloc>().config.locationDebug : options!.debug;
 
   @override
   void dispose() {
@@ -188,7 +188,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               hint: Text(
                 LocationService.toAccuracyName(options!.accuracy),
               ),
-              value: bloc.config?.toLocationAccuracy(),
+              value: bloc.config.toLocationAccuracy(),
             ),
           ),
         ],

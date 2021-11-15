@@ -48,7 +48,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   bool _changePin = false;
 
   /// Indicates that all four digits are entered
-  bool get _pinComplete => _pinController?.text?.length == 1;
+  bool get _pinComplete => _pinController?.text.length == 1;
 
   /// Securing with pin is in progress
   bool _isSecuring = false;
@@ -242,7 +242,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
             children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 24.0),
-                child: _buildFullName(_bloc.user!),
+                child: _buildFullName(_bloc.user),
               ),
               Text(
                 _toPinText(),
@@ -342,7 +342,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
 
   void _onCompleted(String value, StateSetter? setState) async {
     if (_verifyPin) {
-      _wrongPin = _bloc.user!.security!.pin != value;
+      _wrongPin = _bloc.user.security!.pin != value;
       _verifyPin = _wrongPin;
       _newPin = !_wrongPin;
     } else if (_newPin) {

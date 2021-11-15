@@ -78,7 +78,7 @@ class _AboutScreenState extends State<AboutScreen> {
               isDense: true,
               context: context,
               onMessage: showMessage,
-              value: auuid?.substring(auuid.length - 5) ?? 'Ikke funnet',
+              value: auuid.substring(auuid.length - 5) ?? 'Ikke funnet',
             ),
           ),
           ListTile(
@@ -249,7 +249,7 @@ class _AboutScreenState extends State<AboutScreen> {
       if (!channel.isOpen) {
         channel.open(
           url: channel.url!,
-          appId: context.read<AppConfigBloc>().config!.udid,
+          appId: context.read<AppConfigBloc>().config.udid,
         );
       }
       setState(() {});

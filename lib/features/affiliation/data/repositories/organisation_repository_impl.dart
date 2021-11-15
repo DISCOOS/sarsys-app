@@ -22,8 +22,8 @@ class OrganisationRepositoryImpl extends StatefulRepository<String?, Organisatio
             connectivity: connectivity,
             onGet: (StorageState<Organisation>? state) {
               return state!.replace(
-                state.value!.copyWith(
-                  fleetMap: FleetMapService().fetchFleetMap(state.value!.prefix),
+                state.value.copyWith(
+                  fleetMap: FleetMapService().fetchFleetMap(state.value.prefix),
                 ),
               );
             });
@@ -103,7 +103,7 @@ class OrganisationRepositoryImpl extends StatefulRepository<String?, Organisatio
 
   StorageState<Organisation> _withFleetMap(StorageState<Organisation> state) {
     final fleetMap = FleetMapService().fetchFleetMap(
-      state.value!.prefix,
+      state.value.prefix,
     );
     return fleetMap == null
         ? state

@@ -45,19 +45,19 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
   bool get isComplete =>
       (isLocationWhenInUseGranted || isLocationAlwaysGranted) && (isStorageGranted || !Platform.isAndroid);
 
-  bool get isStorageGranted => _isStorageGranted || (_permissionsKey?.currentState?.isStorageGranted ?? false);
+  bool get isStorageGranted => _isStorageGranted || (_permissionsKey.currentState?.isStorageGranted ?? false);
   bool _isStorageGranted = false;
 
   bool get isLocationAlwaysGranted =>
-      _isLocationAlwaysGranted || (_permissionsKey?.currentState?.isLocationAlwaysGranted ?? false);
+      _isLocationAlwaysGranted || (_permissionsKey.currentState?.isLocationAlwaysGranted ?? false);
   bool _isLocationAlwaysGranted = false;
 
   bool get isLocationWhenInUseGranted =>
-      _isLocationWhenInUseGranted || (_permissionsKey?.currentState?.isLocationWhenInUseGranted ?? false);
+      _isLocationWhenInUseGranted || (_permissionsKey.currentState?.isLocationWhenInUseGranted ?? false);
   bool _isLocationWhenInUseGranted = false;
 
   bool get isActivityRecognitionGranted =>
-      _isActivityRecognitionGranted || (_permissionsKey?.currentState?.isActivityRecognitionGranted ?? false);
+      _isActivityRecognitionGranted || (_permissionsKey.currentState?.isActivityRecognitionGranted ?? false);
   bool _isActivityRecognitionGranted = false;
 
   @override

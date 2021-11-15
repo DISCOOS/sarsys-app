@@ -128,24 +128,24 @@ class AffiliationsPageState extends State<AffiliationsPage> {
         .read<AffiliationBloc>()
         .repo
         .values
-        .where((affiliation) => _filter!.contains(affiliation!.status))
+        .where((affiliation) => _filter!.contains(affiliation.status))
         .where((affiliation) => widget.where == null || widget.where!(affiliation))
         .where((affiliation) => _matches(bloc, affiliation))
         .toList()
           ..sort(
-            (p1, p2) => _prepare(bloc, p1!).compareTo(_prepare(bloc, p2!)),
+            (p1, p2) => _prepare(bloc, p1).compareTo(_prepare(bloc, p2)),
           );
 
     if (!widget.withGrouped) {
       affiliations.sort(
-        (p1, p2) => _prepare(bloc, p1!).compareTo(_prepare(bloc, p2!)),
+        (p1, p2) => _prepare(bloc, p1).compareTo(_prepare(bloc, p2)),
       );
     }
     return affiliations;
   }
 
   bool _matches(AffiliationBloc bloc, Affiliation affiliation) =>
-      widget.query == null || _prepare(bloc, affiliation!).contains(widget.query!.toLowerCase());
+      widget.query == null || _prepare(bloc, affiliation).contains(widget.query!.toLowerCase());
 
   String _prepare(AffiliationBloc bloc, Affiliation affiliation) =>
       "${bloc.toSearchable(affiliation.uuid)}".toLowerCase();
@@ -164,11 +164,11 @@ class AffiliationsPageState extends State<AffiliationsPage> {
             itemBuilder: (context, affiliation) {
               return Container(
                 height: 56.0,
-                child: _buildAffiliation(bloc, affiliation!),
+                child: _buildAffiliation(bloc, affiliation),
               );
             },
             groupBy: (affiliation) {
-              final org = affiliationBloc.orgs[affiliation!.org?.uuid];
+              final org = affiliationBloc.orgs[affiliation.org?.uuid];
               return AffiliationGroupEntry(
                 prefix: org?.prefix ?? '0',
                 name: affiliationBloc.toName(
@@ -221,12 +221,12 @@ class AffiliationsPageState extends State<AffiliationsPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Chip(
-              label: Text("${person?.name ?? 'Mannskap'}"),
+              label: Text("${person.name ?? 'Mannskap'}"),
               backgroundColor: Colors.grey[100],
             ),
             SizedBox(width: 8.0),
             Chip(
-              label: Text("${person?.phone ?? 'Ingen telefon'}"),
+              label: Text("${person.phone ?? 'Ingen telefon'}"),
               backgroundColor: Colors.grey[100],
               labelPadding: EdgeInsets.only(right: 4.0),
               avatar: Icon(
@@ -465,7 +465,7 @@ class AffiliationSearch extends SearchDelegate<Affiliation?> {
             builder: (BuildContext context, Set<String>? suggestions, Widget? child) {
               return _buildSuggestionList(
                 context,
-                suggestions?.where(_matches)?.toList() ?? [],
+                suggestions?.where(_matches).toList() ?? [],
               );
             },
           )
@@ -595,7 +595,7 @@ Future<Affiliation?> selectOrCreateAffiliation(
             Navigator.pop(
               context,
               result.isRight()
-                  ? context.read<AffiliationBloc>().repo[result.toIterable().first.affiliation!.uuid]
+                  ? context.read<AffiliationBloc>().repo[result.toIterable().first.affiliation.uuid]
                   : null,
             );
           },

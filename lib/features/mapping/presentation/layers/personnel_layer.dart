@@ -65,13 +65,13 @@ class PersonnelLayer extends MapPlugin {
     final trackings = options.bloc.trackings;
     final personnels = sortMapValues<String?, Personnel?, TrackingStatus>(
             options.bloc.personnels.where(exclude: options.showRetired ? [] : [TrackingStatus.closed]).map,
-            (personnel) => trackings[personnel!.tracking!.uuid]!.status ?? TrackingStatus.none,
+            (personnel) => trackings[personnel!.tracking.uuid]!.status ?? TrackingStatus.none,
             (s1, s2) => s1!.index - s2!.index)
         .values
-        .where((personnel) => trackings[personnel!.tracking!.uuid]?.position?.isNotEmpty == true)
+        .where((personnel) => trackings[personnel!.tracking.uuid]?.position?.isNotEmpty == true)
         .where((personnel) => options.showRetired || personnel!.status != PersonnelStatus.retired)
         .where(
-          (personnel) => bounds.contains(toLatLng(trackings[personnel!.tracking!.uuid]?.position?.geometry)),
+          (personnel) => bounds.contains(toLatLng(trackings[personnel!.tracking.uuid]?.position?.geometry)),
         );
     return trackings.isEmpty
         ? Container()
@@ -98,7 +98,7 @@ class PersonnelLayer extends MapPlugin {
                 options,
                 map,
                 personnels!,
-                trackings[personnels.tracking!.uuid]!,
+                trackings[personnels.tracking.uuid]!,
               ))
           .toList();
 
@@ -115,7 +115,7 @@ class PersonnelLayer extends MapPlugin {
                 options,
                 map,
                 personnels!,
-                trackings[personnels.tracking!.uuid]?.position?.geometry,
+                trackings[personnels.tracking.uuid]?.position?.geometry,
               ))
           .toList();
 
@@ -134,7 +134,7 @@ class PersonnelLayer extends MapPlugin {
                 options,
                 map,
                 personnels,
-                trackings[personnels!.tracking!.uuid]!,
+                trackings[personnels!.tracking.uuid]!,
               ))
           .toList();
 

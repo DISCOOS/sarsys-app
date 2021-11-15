@@ -40,19 +40,19 @@ class OperationBloc
   ) : super(OperationsEmpty(), bus: bus) {
     assert(this.userBloc != null, "userBloc can not be null");
 
-    registerStreamSubscription(userBloc!.stream.listen(
+    registerStreamSubscription(userBloc.stream.listen(
       // Load and unload operations as needed
       _processUserState,
     ));
 
     // Notify when Incident state has changed
     forward<Incident>(
-      (t) => _NotifyRepositoryStateChanged<Incident?>(t!),
+      (t) => _NotifyRepositoryStateChanged<Incident?>(t),
     );
 
     // Notify when Operation state has changed
     forward<Operation>(
-      (t) => _NotifyRepositoryStateChanged<Operation?>(t!),
+      (t) => _NotifyRepositoryStateChanged<Operation?>(t),
     );
   }
 
@@ -130,7 +130,7 @@ class OperationBloc
   ///
   /// If [operation] is not given, [selected] is used instead.
   ///
-  bool isAuthorizedAs(UserRole role, {Operation? operation}) => userBloc!.isAuthorizedAs(
+  bool isAuthorizedAs(UserRole role, {Operation? operation}) => userBloc.isAuthorizedAs(
         operation ?? selected,
         role,
       );
@@ -140,14 +140,14 @@ class OperationBloc
       .where(
         (state) => state is OperationSelected && state.data!.uuid != _ouuid,
       )
-      .map((state) => state!.data);
+      .map((state) => state.data);
 
   /// Stream of operation changes
   Stream<Operation?> onChanged([Operation? operation]) => stream
       .where(
-        (state) => _isOn(operation, state) && state!.isCreated() || state!.isUpdated() || state.isSelected(),
+        (state) => _isOn(operation, state) && state.isCreated() || state.isUpdated() || state.isSelected(),
       )
-      .map((state) => state!.data);
+      .map((state) => state.data);
 
   bool _isOn(Operation? operation, OperationState? state) => (operation == null || state!.data.uuid == operation.uuid);
 
@@ -345,7 +345,7 @@ class OperationBloc
   Future<String?> _readSelected() async {
     _ouuid = _ouuid ??
         await Storage.readUserValue(
-          userBloc!.user,
+          userBloc.user,
           suffix: SELECTED_KEY_SUFFIX,
         );
     return _ouuid;
@@ -355,7 +355,7 @@ class OperationBloc
     _assertData(command);
     // Execute commands
     incidents.apply(command.incident!);
-    final operation = repo.apply(command.data!)!;
+    final operation = repo.apply(command.data!);
     final unselected = command.selected ? await _unset() : null;
     final selected = command.selected ? await _set(operation) : null;
     // Complete request
@@ -400,7 +400,7 @@ class OperationBloc
     final uuid = _assertUuid(command.data);
     // Execute command
     final previous = repo.get(uuid!);
-    final operation = repo.apply(command.data!)!;
+    final operation = repo.apply(command.data!);
     if (command.incident != null) {
       incidents.apply(command.incident!);
     }
@@ -545,7 +545,7 @@ class OperationBloc
     if (_ouuid != operation?.uuid) {
       _ouuid = operation?.uuid;
       await Storage.writeUserValue(
-        userBloc!.user,
+        userBloc.user,
         suffix: SELECTED_KEY_SUFFIX,
         value: _ouuid,
       );
@@ -579,7 +579,7 @@ class OperationBloc
         unselected = OperationUnselected(operation);
       }
       await Storage.deleteUserValue(
-        userBloc!.user,
+        userBloc.user,
         suffix: SELECTED_KEY_SUFFIX,
       );
     }

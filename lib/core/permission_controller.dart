@@ -266,7 +266,7 @@ class PermissionController {
   }) async {
     var notify = false;
     if (configBloc.isReady) {
-      final config = configBloc.config!;
+      final config = configBloc.config;
       notify = config.storage != (storage ?? config.storage) ||
           config.locationAlways != (locationAlways ?? config.locationAlways) ||
           config.locationWhenInUse != (locationWhenInUse ?? config.locationWhenInUse) ||

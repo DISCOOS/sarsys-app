@@ -235,7 +235,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
         var tracking = next.value.copyWith(
             status: _toStatus(
           next.value.status,
-          next.value.sources?.isNotEmpty == true,
+          next.value.sources.isNotEmpty == true,
         ));
 
 //        // Append position to history if manual and does not exist in track
@@ -549,7 +549,7 @@ class _TrackSimulation {
       double? speed;
       Duration? effort;
 
-      final sources = current?.sources ?? [];
+      final sources = current.sources ?? [];
 
       // Not tracking?
       if (sources.isEmpty) {
@@ -575,7 +575,7 @@ class _TrackSimulation {
       final tracks = current.tracks.where((track) => updated.contains(track.source))
         ..map((track) {
           final positions = track.positions!.toList();
-          final position = _toPosition(track.source!);
+          final position = _toPosition(track.source);
           if (!positions.contains(position)) {
             return TrackingUtils.addUnique(track as TrackingTrackModel, position);
           }
@@ -611,7 +611,7 @@ class _TrackSimulation {
       SourceType.device == source.type ? _fromDevice(source.uuid) : _fromAggregate(source.uuid);
 
   Position? _fromDevice(String? uuid) => devices[uuid]?.position;
-  Position? _fromAggregate(String? uuid) => trackingList[uuid]?.value?.position;
+  Position? _fromAggregate(String? uuid) => trackingList[uuid]?.value.position;
 
   List<num> _aggregate(List<num> sum, Position? position) => position == null
       ? sum

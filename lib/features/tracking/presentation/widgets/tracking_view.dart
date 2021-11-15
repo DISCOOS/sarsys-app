@@ -62,8 +62,8 @@ class TrackingView extends StatelessWidget {
   }
 
   String _toDeviceNumbers(Iterable<Device> devices) {
-    final numbers = devices?.map((device) => device!.number);
-    return numbers?.isNotEmpty == true ? numbers!.join(', ') : 'Ingen';
+    final numbers = devices.map((device) => device.number);
+    return numbers.isNotEmpty == true ? numbers.join(', ') : 'Ingen';
   }
 
   Row _buildEffortInfo(BuildContext context, Tracking? tracking) {

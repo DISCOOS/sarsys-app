@@ -97,7 +97,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Innstillinger",
       withResetAction: false,
       repo: context.read<AppConfigBloc>().repo,
-      subject: (StorageState<AppConfig> state) => 'Unik app-id: ${state?.value?.udid}',
+      subject: (StorageState<AppConfig> state) => 'Unik app-id: ${state.value.udid}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -107,7 +107,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Incident>(
       title: "Hendelser",
       repo: context.read<OperationBloc>().incidents,
-      subject: (StorageState<Incident> state) => '${state?.value?.name}',
+      subject: (StorageState<Incident> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -117,7 +117,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Operation>(
       title: "Aksjoner",
       repo: context.read<OperationBloc>().repo,
-      subject: (StorageState<Operation> state) => '${state?.value?.name}',
+      subject: (StorageState<Operation> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -127,7 +127,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Unit>(
       title: "Enheter",
       repo: context.read<UnitBloc>().repo,
-      subject: (StorageState<Unit> state) => '${state?.value?.name}',
+      subject: (StorageState<Unit> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -137,7 +137,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Person>(
       title: "Personer",
       repo: context.read<AffiliationBloc>().persons,
-      subject: (StorageState<Person> state) => '${state?.value?.name}',
+      subject: (StorageState<Person> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -151,7 +151,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
             state.value,
             empty: translateAffiliationType(AffiliationType.volunteer),
           )}',
-      content: (StorageState<Affiliation> state) => '${emptyAsNull(state?.value?.person?.name) ?? '<Ingen navn>'}',
+      content: (StorageState<Affiliation> state) => '${emptyAsNull(state.value.person?.name) ?? '<Ingen navn>'}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -161,7 +161,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Personnel>(
       title: "Mannskaper",
       repo: context.read<PersonnelBloc>().repo,
-      subject: (StorageState<Personnel> state) => '${state?.value?.name}',
+      subject: (StorageState<Personnel> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -171,7 +171,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Device>(
       title: "Apparater",
       repo: context.read<DeviceBloc>().repo,
-      subject: (StorageState<Device> state) => '${state?.value?.name}',
+      subject: (StorageState<Device> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -183,23 +183,23 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       repo: context.read<TrackingBloc>().repo,
       subject: (StorageState<Tracking> state) {
         final units = context.read<UnitBloc>().repo.find(
-              where: (u) => u!.tracking?.uuid == state.value.uuid,
+              where: (u) => u.tracking.uuid == state.value.uuid,
             );
         if (units.isNotEmpty) {
-          return 'Unit: ${units.first!.name} '
-              '(${translateUnitStatus(units.first!.status)})';
+          return 'Unit: ${units.first.name} '
+              '(${translateUnitStatus(units.first.status)})';
         }
         final personnels = context.read<PersonnelBloc>().repo.find(
-              where: (p) => p!.tracking?.uuid == state.value.uuid,
+              where: (p) => p.tracking.uuid == state.value.uuid,
             );
         if (personnels.isNotEmpty) {
-          return 'Mannskap: ${personnels.first!.person!.name} '
-              '(${translatePersonnelStatus(personnels.first!.status)})';
+          return 'Mannskap: ${personnels.first.person.name} '
+              '(${translatePersonnelStatus(personnels.first.status)})';
         }
 
-        return 'Tracking is ${enumName(state?.value?.status)}';
+        return 'Tracking is ${enumName(state.value.status)}';
       },
-      content: (StorageState<Tracking> state) => '${toUTM(state?.value?.position?.geometry, empty: 'Ingen posisjon')}',
+      content: (StorageState<Tracking> state) => '${toUTM(state.value.position?.geometry, empty: 'Ingen posisjon')}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -209,7 +209,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Organisation>(
       title: "Organisasjoner",
       repo: context.read<AffiliationBloc>().orgs,
-      subject: (StorageState<Organisation> state) => '${state?.value?.name}',
+      subject: (StorageState<Organisation> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -219,7 +219,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Division>(
       title: "Distrikter",
       repo: context.read<AffiliationBloc>().divs,
-      subject: (StorageState<Division> state) => '${state?.value?.name}',
+      subject: (StorageState<Division> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -229,7 +229,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Department>(
       title: "Avdelinger",
       repo: context.read<AffiliationBloc>().deps,
-      subject: (StorageState<Department> state) => '${state?.value?.name}',
+      subject: (StorageState<Department> state) => '${state.value.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
