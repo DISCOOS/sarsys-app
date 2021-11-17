@@ -934,7 +934,7 @@ Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>?, State>(
 }
 
 Stream<StorageStatus> toStatusChanges(Stream<StorageTransition?> changes) =>
-    changes.where((state) => state!.to!.isRemote!).map((state) => state!.to!.status);
+    changes.where((state) => state!.to.isRemote!).map((state) => state!.to.status);
 
 void expectStorageStatus(
   StorageState actual,
@@ -969,8 +969,8 @@ Future expectStorageStatusLater(
         isA<StorageTransition>().having(
           (transition) =>
               transition.status == expected &&
-              transition.to?.value is Aggregate &&
-              (transition.to?.value as Aggregate?)?.uuid == uuid &&
+              transition.to.value is Aggregate &&
+              (transition.to.value as Aggregate?)?.uuid == uuid &&
               (remote ? transition.isRemote : transition.isLocal),
           'is ${remote ? 'remote' : 'local'}',
           isTrue,

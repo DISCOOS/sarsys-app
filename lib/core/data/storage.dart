@@ -486,23 +486,23 @@ class StorageState<T> {
 }
 
 class StorageTransition<T> {
-  StorageTransition({this.from, this.to});
+  StorageTransition({this.from, required this.to});
   final StorageState<T>? from;
-  final StorageState<T>? to;
+  final StorageState<T> to;
 
-  StorageStatus? get status => to?.status;
-  StateVersion? get version => to?.version;
+  StorageStatus? get status => to.status;
+  StateVersion? get version => to.version;
 
-  bool get isError => to?.isError ?? false;
-  bool get isLocal => to?.isLocal ?? false;
-  bool get isRemote => to?.isRemote ?? false;
-  bool get isCreated => to?.isCreated ?? false;
-  bool get isChanged => to?.isChanged ?? false;
-  bool get isDeleted => to?.isDeleted ?? false;
-  bool get isConflict => to?.isConflict ?? false;
-  bool get hasPrevious => to?.hasPrevious ?? false;
+  bool get isError => to.isError ?? false;
+  bool get isLocal => to.isLocal ?? false;
+  bool get isRemote => to.isRemote ?? false;
+  bool get isCreated => to.isCreated ?? false;
+  bool get isChanged => to.isChanged ?? false;
+  bool get isDeleted => to.isDeleted ?? false;
+  bool get isConflict => to.isConflict ?? false;
+  bool get hasPrevious => to.hasPrevious ?? false;
 
-  ConflictModel? get conflict => isConflict ? to!.error as ConflictModel? : null;
+  ConflictModel? get conflict => isConflict ? to.error as ConflictModel? : null;
 }
 
 class TypeJsonAdapter<T> extends TypeAdapter<T> {

@@ -265,7 +265,7 @@ abstract class StatefulRepository<K, V extends JsonObject?, S extends StatefulSe
     try {
       final transition = await onChanged
           .where((transition) => transition!.isRemote || transition.isError || transition.isDeleted)
-          .where((transition) => toKey(transition!.to!.value!) == key)
+          .where((transition) => toKey(transition!.to.value!) == key)
           .firstWhere(
             (transition) => transition!.isError || transition.to != null || transition.isDeleted,
             orElse: () => null,
@@ -275,7 +275,7 @@ abstract class StatefulRepository<K, V extends JsonObject?, S extends StatefulSe
         final state = transition.to;
         if (fail && transition.isError) {
           throw RepositoryRemoteException(
-            'Failed to change state with error ${state!.isConflict ? state.conflict!.error : state.error}',
+            'Failed to change state with error ${state.isConflict ? state.conflict!.error : state.error}',
             this,
             state: state,
             stackTrace: StackTrace.current,

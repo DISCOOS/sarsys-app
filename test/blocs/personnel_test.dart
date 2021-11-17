@@ -89,7 +89,7 @@ void main() async {
       final aggregates = [];
       group.listen((transition) {
         if (transition!.isRemote) {
-          aggregates.add(transition.to!.value);
+          aggregates.add(transition.to.value);
         }
       });
 

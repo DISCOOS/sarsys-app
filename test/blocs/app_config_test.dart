@@ -195,7 +195,7 @@ void main() async {
           emitsThrough(
             isA<StorageTransition<AppConfig>>().having(
               (source) {
-                return source.to!.isRemote;
+                return source.to.isRemote;
               },
               "Should change to remote",
               isTrue,
@@ -259,7 +259,7 @@ Future _testAppConfigShouldUpdateValues(BlocTestHarness harness, bool offline) a
       harness.configBloc!.repo.onChanged,
       emitsThrough(
         isA<StorageTransition<AppConfig>>().having(
-          (source) => source.to!.isRemote,
+          (source) => source.to.isRemote,
           "Should push to remote",
           isTrue,
         ),

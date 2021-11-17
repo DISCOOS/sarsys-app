@@ -70,7 +70,7 @@ void main() async {
         final events = [];
         group.listen((transition) {
           if (transition!.isRemote) {
-            events.add(transition.to!.value);
+            events.add(transition.to.value);
           }
         });
 

@@ -373,9 +373,9 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocState, Error ex
   ) async {
     try {
       if (isOpen && !transition.isError) {
-        final device = transition.to?.value;
+        final device = transition.to.value;
         if (device != null) {
-          final next = transition.to!;
+          final next = transition.to;
           if (next.isRemote!) {
             dispatch(
               builder(transition),
@@ -520,17 +520,17 @@ mixin NotifyBlocStateChangedMixin<S extends BlocState<T>, T> on BlocCommand<S, T
 mixin NotifyRepositoryStateChangedMixin<T> on BlocCommand<StorageTransition<T>, T> {
   Type get type => typeOf<T>();
 
-  T get state => data.to!.value;
+  T get state => data.to.value;
   T? get previous => data.from?.value;
 
   bool get isCreated => data.isCreated;
   bool get isUpdated => data.isChanged;
   bool get isDeleted => data.isDeleted;
 
-  StorageStatus? get status => data.status;
+  StorageStatus get status => data.status!;
   StateVersion? get version => data.version;
 
-  bool get isRemote => data.to?.isRemote == true;
+  bool get isRemote => data.to.isRemote == true;
 
   @override
   String toString() => '$runtimeType {previous: $data, next: $data}';
