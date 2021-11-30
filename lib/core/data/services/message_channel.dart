@@ -400,9 +400,9 @@ class MessageChannelState {
     DateTime? started,
     int inboundCount = 0,
     Map<int, Map<String?, int>> codes = const {},
-  })  : _codes = codes ?? {},
-        _opened = opened ?? 0,
-        _inboundCount = inboundCount ?? 0,
+  })  : _codes = codes,
+        _opened = opened,
+        _inboundCount = inboundCount,
         _fromDate = started ?? DateTime.now();
 
   final int _opened;
@@ -428,11 +428,11 @@ class MessageChannelState {
       (code == null && reason == null) || (code != null && reason != null),
       "arguments 'code' and 'reason' must both be null or set",
     );
-    final Map<int, Map<String?, int>> codes = Map<int, Map<String, int>>.from(_codes ?? {});
+    final Map<int, Map<String?, int>> codes = Map<int, Map<String, int>>.from(_codes);
     if (code != null) {
       codes.update(
         code,
-        (reasons) => Map.from(reasons ?? <String, int>{})..update(reason, (count) => count + 1, ifAbsent: () => 1),
+        (reasons) => Map.from(reasons)..update(reason, (count) => count + 1, ifAbsent: () => 1),
         ifAbsent: () => {reason: 1},
       );
     }

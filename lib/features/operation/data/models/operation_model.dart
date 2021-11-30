@@ -58,7 +58,7 @@ class OperationModel extends Operation implements JsonObject<Map<String, dynamic
   Operation mergeWith(Map<String, dynamic> json) {
     var clone = OperationModel.fromJson(json);
     return OperationModel(
-      uuid: clone.uuid ?? this.uuid,
+      uuid: clone.uuid,
       name: clone.name ?? this.name,
       type: clone.type ?? this.type,
       author: clone.author ?? this.author,

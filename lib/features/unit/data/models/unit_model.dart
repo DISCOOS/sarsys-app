@@ -62,7 +62,7 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
       phone: clone.phone,
       callsign: clone.callsign,
       tracking: clone.tracking,
-      personnels: clone.personnels ?? const [],
+      personnels: clone.personnels,
     );
   }
 
@@ -84,7 +84,7 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
       status: status ?? this.status,
       phone: phone ?? this.phone,
       callsign: callsign ?? this.callsign,
-      personnels: personnels ?? this.personnels ?? const [],
+      personnels: personnels ?? this.personnels,
       tracking: tracking?.cast<TrackingModel>() ?? this.tracking,
       operation: operation?.cast<OperationModel>() ?? this.operation,
     );

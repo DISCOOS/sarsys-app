@@ -72,11 +72,6 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
       ? Position.fromPoint(
             LocationService().current!.geometry!,
             source: PositionSource.manual,
-          ) ??
-          Position.now(
-            lat: 59.5,
-            lon: 10.09,
-            source: PositionSource.manual,
           )
       : widget.position;
 

@@ -432,8 +432,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   String _toShort(String fname, String lname) {
-    fname ??= '';
-    lname ??= '';
     final short = fname.isNotEmpty == true ? fname.substring(0, 1).toUpperCase() : '';
     return "${short.isNotEmpty ? '$short.' : short} $lname";
   }

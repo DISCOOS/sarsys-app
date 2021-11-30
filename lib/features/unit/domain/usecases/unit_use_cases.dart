@@ -238,7 +238,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
     if (params.personnels?.isNotEmpty == true) {
       params.bloc.update(
         unit.copyWith(
-          personnels: List.from(unit.personnels ?? [])..addAll(params.personnels!.map((p) => p.uuid)),
+          personnels: List.from(unit.personnels)..addAll(params.personnels!.map((p) => p.uuid)),
         ),
       );
     }

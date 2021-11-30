@@ -475,7 +475,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   String? _setUser(UserBloc bloc, User user) {
-    _user = user ?? bloc.user;
+    _user = user;
     _username = _user!.uname;
     return _user!.userId;
   }

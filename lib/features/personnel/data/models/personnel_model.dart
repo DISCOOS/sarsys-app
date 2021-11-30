@@ -131,7 +131,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
     required Person person,
     bool? temporary,
   }) {
-    final _person = person ?? this.person;
+    final _person = person;
     return person.copyWith(
       uuid: uuid ?? _person.uuid,
       fname: fname ?? _person.fname,

@@ -43,7 +43,7 @@ class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>>
   Incident mergeWith(Map<String, dynamic> json) {
     var clone = IncidentModel.fromJson(json);
     return IncidentModel(
-      uuid: clone.uuid ?? this.uuid,
+      uuid: clone.uuid,
       name: clone.name ?? this.name,
       type: clone.type ?? this.type,
       status: clone.status ?? this.status,

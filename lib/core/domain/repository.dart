@@ -49,7 +49,7 @@ class RepositorySupervisor {
 
   /// [RepositoryDelegate] setter which sets the singleton [RepositorySupervisor] instance's [RepositoryDelegate].
   static set delegate(RepositoryDelegate d) {
-    _instance._delegate = d ?? RepositoryDelegate();
+    _instance._delegate = d;
   }
 
   /// [RepositoryDelegate] which is notified when events occur in all [bloc]s.

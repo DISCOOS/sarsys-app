@@ -226,7 +226,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                   ? (value) {
                       if (value.isNotEmpty) {
                         bloc.updateWith(
-                          locationSmallestDisplacement: int.parse(value ?? 0 as String),
+                          locationSmallestDisplacement: int.parse(value),
                         );
                       }
                     }
@@ -268,7 +268,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                   ? (value) {
                       if (value.isNotEmpty) {
                         bloc.updateWith(
-                          locationFastestInterval: int.parse(value ?? 0 as String) * 1000,
+                          locationFastestInterval: int.parse(value) * 1000,
                         );
                       }
                     }

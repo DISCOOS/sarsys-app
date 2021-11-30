@@ -72,7 +72,7 @@ class Storage {
     String? suffix,
     String? defaultValue,
   }) =>
-      _storage.read(key: userKey(user, suffix)!).then((value) => value!) ?? defaultValue as Future<String>;
+      _storage.read(key: userKey(user, suffix)!).then((value) => value!);
 
   static Future<void> writeUserValue(
     User user, {
@@ -469,7 +469,7 @@ class StorageState<T> {
         value,
         version,
         error: error,
-        isRemote: isRemote ?? _isRemote,
+        isRemote: isRemote,
       );
 
   @override
@@ -493,14 +493,14 @@ class StorageTransition<T> {
   StorageStatus? get status => to.status;
   StateVersion? get version => to.version;
 
-  bool get isError => to.isError ?? false;
-  bool get isLocal => to.isLocal ?? false;
+  bool get isError => to.isError;
+  bool get isLocal => to.isLocal;
   bool get isRemote => to.isRemote ?? false;
-  bool get isCreated => to.isCreated ?? false;
-  bool get isChanged => to.isChanged ?? false;
-  bool get isDeleted => to.isDeleted ?? false;
-  bool get isConflict => to.isConflict ?? false;
-  bool get hasPrevious => to.hasPrevious ?? false;
+  bool get isCreated => to.isCreated;
+  bool get isChanged => to.isChanged;
+  bool get isDeleted => to.isDeleted;
+  bool get isConflict => to.isConflict;
+  bool get hasPrevious => to.hasPrevious;
 
   ConflictModel? get conflict => isConflict ? to.error as ConflictModel? : null;
 }

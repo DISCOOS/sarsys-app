@@ -99,8 +99,8 @@ class TrackingModel extends Tracking {
       distance: clone.distance ?? distance,
       speed: clone.speed ?? speed,
       effort: clone.effort ?? effort,
-      history: clone.history ?? history,
-      tracks: clone.tracks ?? tracks,
+      history: clone.history,
+      tracks: clone.tracks,
     );
   }
 }

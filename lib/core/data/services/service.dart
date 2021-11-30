@@ -417,7 +417,7 @@ class PageResult {
   final int? limit;
   final int? offset;
 
-  bool get hasNext => next != null && next! < total! ?? 0 as bool;
+  bool get hasNext => next != null && next! < total!;
 
   factory PageResult.from(Map<String, dynamic> body) => PageResult(
         next: body['next'],

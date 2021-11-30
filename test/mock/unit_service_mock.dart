@@ -29,9 +29,9 @@ class UnitBuilder {
       createAsJson(
         ouuid: ouuid,
         uuid: uuid ?? Uuid().v4(),
-        type: type ?? UnitType.team,
-        number: number ?? 1,
-        status: status ?? UnitStatus.mobilized,
+        type: type,
+        number: number,
+        status: status,
         tuuid: tuuid,
         personnels: (personnels ?? []).toList(),
       ),

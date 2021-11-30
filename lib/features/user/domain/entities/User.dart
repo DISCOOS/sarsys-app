@@ -212,7 +212,7 @@ class User extends Equatable {
         dep: dep ?? this.dep,
         security: security ?? this.security,
         roles: List.from(
-          roles ?? this.roles ?? [],
+          roles ?? this.roles,
         ),
         passcodes: List.from(
           passcodes ?? this.passcodes ?? [],

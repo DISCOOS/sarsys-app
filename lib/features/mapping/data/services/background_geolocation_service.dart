@@ -248,9 +248,6 @@ class BackgroundGeolocationService implements LocationService {
     if (isReady) {
       await update();
 
-      // Only set once
-      _positions ??= await (backlog() as FutureOr<List<Position?>>);
-
       _notify(ConfigureEvent(
         _duuid,
         _options,
@@ -448,15 +445,15 @@ class BackgroundGeolocationService implements LocationService {
     AuthToken? token,
     LocationOptions? options,
   }) {
-    return _options?.debug != (debug ?? options!.debug ?? kDebugMode) ||
+    return _options?.debug != (debug ?? options!.debug) ||
         _options?.accuracy != options!.accuracy ||
         _options?.locationAlways != (options.locationAlways ?? false) ||
         _options?.locationWhenInUse != (options.locationWhenInUse ?? false) ||
-        _options?.activityRecognition != (options.activityRecognition ?? false) ||
-        _options?.timeInterval != (options.timeInterval ?? Defaults.locationFastestInterval) ||
-        _options?.distanceFilter != (options.distanceFilter ?? Defaults.locationSmallestDisplacement) ||
-        _options?.locationStoreLocally != (options.locationStoreLocally ?? Defaults.locationStoreLocally) ||
-        _options?.locationAllowSharing != (options.locationAllowSharing ?? Defaults.locationAllowSharing) ||
+        _options?.activityRecognition != options.activityRecognition ||
+        _options?.timeInterval != options.timeInterval ||
+        _options?.distanceFilter != options.distanceFilter ||
+        _options?.locationStoreLocally != options.locationStoreLocally ||
+        _options?.locationAllowSharing != options.locationAllowSharing ||
         _isTokenChanged(token) ||
         _isDeviceChanged(duuid) ||
         _isSharingStateChanged(share);
@@ -587,7 +584,7 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   void _notify(LocationEvent event) {
-    if ((_events.length ?? 0) > maxEvents) {
+    if (_events.length > maxEvents) {
       _events.removeLast();
     }
     _events.insert(0, event);

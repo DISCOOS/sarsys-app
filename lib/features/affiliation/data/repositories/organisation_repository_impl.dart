@@ -43,7 +43,7 @@ class OrganisationRepositoryImpl extends StatefulRepository<String?, Organisatio
     Completer<Iterable<Organisation>>? onRemote,
   }) async {
     await prepare(
-      force: force ?? false,
+      force: force,
     );
     return _load(
       onRemote: onRemote,

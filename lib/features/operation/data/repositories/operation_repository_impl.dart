@@ -51,7 +51,7 @@ class OperationRepositoryImpl extends StatefulRepository<String, Operation, Oper
     Completer<Iterable<Operation>>? onRemote,
   }) async {
     await prepare(
-      force: force ?? false,
+      force: force,
     );
     return _load(
       onRemote: onRemote,

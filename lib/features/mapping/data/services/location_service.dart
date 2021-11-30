@@ -269,16 +269,16 @@ class LocationOptions {
     LocationAccuracy accuracy = LocationAccuracy.best,
   }) =>
       LocationOptions(
-        debug: debug ?? this.debug ?? Defaults.locationDebug,
-        accuracy: accuracy ?? this.accuracy,
+        debug: debug ?? this.debug,
+        accuracy: accuracy,
         locationAlways: locationAlways ?? this.locationAlways ?? false,
         locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse ?? false,
-        activityRecognition: activityRecognition ?? this.activityRecognition ?? false,
-        timeInterval: timeInterval ?? this.timeInterval ?? Defaults.locationFastestInterval,
-        distanceFilter: distanceFilter ?? this.distanceFilter ?? Defaults.locationSmallestDisplacement,
+        activityRecognition: activityRecognition ?? this.activityRecognition,
+        timeInterval: timeInterval ?? this.timeInterval,
+        distanceFilter: distanceFilter ?? this.distanceFilter,
         forceAndroidLocationManager: forceAndroidLocationManager ?? this.forceAndroidLocationManager ?? false,
-        locationStoreLocally: locationStoreLocally ?? this.locationStoreLocally ?? Defaults.locationStoreLocally,
-        locationAllowSharing: locationAllowSharing ?? this.locationAllowSharing ?? Defaults.locationAllowSharing,
+        locationStoreLocally: locationStoreLocally ?? this.locationStoreLocally,
+        locationAllowSharing: locationAllowSharing ?? this.locationAllowSharing,
       );
 
   bool equals(AppConfig config) =>

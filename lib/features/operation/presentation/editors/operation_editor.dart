@@ -99,7 +99,7 @@ class _OperationEditorState extends State<OperationEditor> {
     _isExercise = widget.incident?.exercise ?? false;
 
     final org = context.read<AffiliationBloc>().findUserOrganisation();
-    final catalogs = (org!.fleetMap!.catalogs!.map((e) => e.name!) ?? []).toList()..sort();
+    final catalogs = (org!.fleetMap!.catalogs!.map((e) => e.name!)).toList()..sort();
     _tgCatalog.value = catalogs;
   }
 
@@ -143,7 +143,7 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   bool _isDescriptionEmpty(Location? location, TextEditingController controller) =>
-      emptyAsNull(controller.text ?? location?.description) == null;
+      emptyAsNull(controller.text) == null;
 
   void _updateDescriptions() async {
     if (_isDescriptionEmpty(_ipp, _ippController!) && _ipp?.point?.isNotEmpty == true) {
@@ -928,7 +928,7 @@ class _OperationEditorState extends State<OperationEditor> {
   Position? toPosition(sarsys.Point? point, {sarsys.Point? defaultValue}) {
     return point is sarsys.Point
         ? Position.fromPoint(
-            point ?? defaultValue!,
+            point,
             source: PositionSource.manual,
           )
         : null;

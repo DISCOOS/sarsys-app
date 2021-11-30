@@ -96,15 +96,15 @@ LatLng toLatLng(Point? point) {
 
 Point toPoint(LatLng point) {
   return Point.fromCoords(
-    lat: point.latitude ?? 0,
-    lon: point.longitude ?? 0,
+    lat: point.latitude,
+    lon: point.longitude,
   );
 }
 
 Position toPosition(LatLng point) {
   return Position.now(
-    lat: point.latitude ?? 0,
-    lon: point.longitude ?? 0,
+    lat: point.latitude,
+    lon: point.longitude,
     source: PositionSource.manual,
   );
 }
@@ -166,7 +166,7 @@ List<String> asUnitTemplates(String? prefix, int count) {
       return templates;
     },
   ).toList();
-  return templates ?? <String>[];
+  return templates;
 }
 
 final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;

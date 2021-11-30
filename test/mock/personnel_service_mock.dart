@@ -35,7 +35,7 @@ class PersonnelBuilder {
         userId: userId,
         uuid: uuid ?? Uuid().v4(),
         ouuid: ouuid ?? Uuid().v4(),
-        status: status ?? PersonnelStatus.alerted,
+        status: status,
       )!,
     );
   }
@@ -63,7 +63,7 @@ class PersonnelBuilder {
           '"temporary": $temporary'
           '}},'
           '"function": "${enumName(OperationalFunctionType.personnel)}",'
-          '"operation": {"uuid": "${ouuid ?? Uuid().v4()}", "type": "Operation"},'
+          '"operation": {"uuid": "${ouuid}", "type": "Operation"},'
           '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Personnel"}'
           '}');
 }

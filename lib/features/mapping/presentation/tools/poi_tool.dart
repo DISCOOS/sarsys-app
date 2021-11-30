@@ -84,7 +84,6 @@ class POITool extends MapTool with MapSelectable<POI> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: StatefulBuilder(builder: (context, StateSetter setState) {
-            actual ??= poi.point;
             return POIWidget(
               poi: POIType.IPP == poi.type
                   ? POI(

@@ -44,7 +44,7 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
     Completer<Iterable<Incident>>? onRemote,
   }) async {
     await prepare(
-      force: force ?? false,
+      force: force,
     );
     return _load(
       onRemote: onRemote,

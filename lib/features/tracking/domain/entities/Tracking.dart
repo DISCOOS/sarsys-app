@@ -39,9 +39,9 @@ abstract class Tracking extends Positionable<Map<String, dynamic>> {
 
     /// Map from track id to list of positions
     List<TrackingTrack> tracks = const [],
-  })  : tracks = tracks ?? [],
-        sources = sources ?? [],
-        history = history ?? [],
+  })  : tracks = tracks,
+        sources = sources,
+        history = history,
         super(uuid, position, fields: [
           status,
           position,

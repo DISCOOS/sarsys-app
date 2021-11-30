@@ -68,7 +68,7 @@ class _AboutScreenState extends State<AboutScreen> {
               isDense: true,
               context: context,
               onMessage: showMessage,
-              value: auuid ?? 'Ikke funnet',
+              value: auuid,
               text: auuid == null ? Text('Ikke funnet') : Text(auuid),
             ),
           ),
@@ -78,7 +78,7 @@ class _AboutScreenState extends State<AboutScreen> {
               isDense: true,
               context: context,
               onMessage: showMessage,
-              value: auuid.substring(auuid.length - 5) ?? 'Ikke funnet',
+              value: auuid.substring(auuid.length - 5),
             ),
           ),
           ListTile(

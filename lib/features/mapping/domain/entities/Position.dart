@@ -264,7 +264,7 @@ class PositionProperties extends Equatable {
         speed: speed ?? this.speed,
         source: source as PositionSource? ?? this.source,
         bearing: bearing ?? this.bearing,
-        activity: activity ?? this.activity,
+        activity: activity,
         isMoving: isMoving ?? this.isMoving,
         timestamp: timestamp ?? this.timestamp,
       );

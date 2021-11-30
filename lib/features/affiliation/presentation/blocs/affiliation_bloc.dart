@@ -437,7 +437,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       user = users!.repo.user;
     }
     if (user != null) {
-      final name = (user ?? users!.user).dep?.toLowerCase();
+      final name = (user).dep?.toLowerCase();
       final duuids = div?.departments ?? <String>[];
       return deps.values
           .where((department) => duuids.isEmpty || duuids.contains(department.uuid))
@@ -509,7 +509,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   /// Get all [Organisation] sorted on [Organisation.name]
   Iterable<Organisation?> getOrganisations() {
     return sortMapValues<String?, Organisation, String>(
-      orgs.map ?? <String, Organisation>{},
+      orgs.map,
       (org) => org!.name,
     ).values;
   }
@@ -520,7 +520,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     if (org?.divisions?.isNotEmpty == true) {
       final divisions = Map.fromEntries(org!.divisions!.map((uuid) => MapEntry(uuid, divs[uuid])));
       return sortMapValues<String, Division?, String>(
-        divisions ?? <String, Division>{},
+        divisions,
         (division) => division!.name,
       ).values;
     }
@@ -533,7 +533,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     if (div?.departments?.isNotEmpty == true) {
       final departments = Map.fromEntries(div!.departments!.map((uuid) => MapEntry(uuid, deps[uuid])));
       return sortMapValues<String, Department?, String>(
-        departments ?? {},
+        departments,
         (department) => department!.name,
       ).values;
     }

@@ -93,7 +93,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ''),
               onChanged: (value) {
-                _bloc.updateWith(mapCacheTTL: int.parse(value ?? 0 as String));
+                _bloc.updateWith(mapCacheTTL: int.parse(value));
               },
             ),
           ),
@@ -128,7 +128,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ''),
               onChanged: (value) {
-                _bloc.updateWith(mapCacheCapacity: int.parse(value ?? 0 as String));
+                _bloc.updateWith(mapCacheCapacity: int.parse(value));
               },
             ),
           ),

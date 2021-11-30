@@ -97,7 +97,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
             onChanged: (value) => setState(() {
               _bloc.updateWith(talkGroupCatalog: value);
             }),
-            value: _bloc.config.talkGroupCatalog ?? Defaults.talkGroupCatalog,
+            value: _bloc.config.talkGroupCatalog,
           ),
         ),
       ],

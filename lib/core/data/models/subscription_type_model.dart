@@ -19,7 +19,7 @@ class SubscriptionTypeModel extends Equatable {
     FilterMatch match = FilterMatch.any,
     List<SubscriptionEventModel>? events = const <SubscriptionEventModel>[],
     List<SubscriptionFilterModel>? filters = const <SubscriptionFilterModel>[],
-  })  : match = match ?? FilterMatch.any,
+  })  : match = match,
         events = events ?? const <SubscriptionEventModel>[],
         filters = filters ?? const <SubscriptionFilterModel>[],
         super();

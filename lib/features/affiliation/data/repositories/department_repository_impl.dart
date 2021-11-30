@@ -37,7 +37,7 @@ class DepartmentRepositoryImpl extends StatefulRepository<String?, Department, D
     Completer<Iterable<Department>>? onRemote,
   }) async {
     await prepare(
-      force: force ?? false,
+      force: force,
     );
     return _load(
       onResult: onRemote,

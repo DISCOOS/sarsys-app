@@ -53,7 +53,7 @@ class TrackingUtils {
     final tuuid = trackable!.tracking.uuid;
     if (tuuid == null) {
       throw ArgumentError(
-        "${trackable.tracking.type ?? typeOf<T>()} is not configured for tracking: AggregateRef is null",
+        "${trackable.tracking.type} is not configured for tracking: AggregateRef is null",
       );
     }
     return tuuid;
@@ -422,7 +422,6 @@ class TrackingUtils {
     double distance = 0,
     int tail = 2,
   }) {
-    distance ??= 0;
     var offset = max(0, track.length - tail);
     var i = offset + 1;
     track.skip(offset).where((p) => p!.isNotEmpty).forEach((p) {
@@ -474,7 +473,7 @@ class TrackingUtils {
 
     // Only add tracking history if position has changed
     if (tracking.position != next && next!.isNotEmpty) {
-      final history = List<Position?>.from(tracking.history ?? [])..add(next);
+      final history = List<Position?>.from(tracking.history)..add(next);
       final distance = TrackingUtils.distance(
         history,
         distance: tracking.distance ?? 0,
@@ -497,7 +496,7 @@ class TrackingUtils {
       distance: tracking.distance ?? 0.0,
       effort: tracking.effort ?? Duration.zero,
       speed: tracking.speed ?? 0.0,
-      history: tracking.history ?? [],
+      history: tracking.history,
       status: _inferStatus(
         status ?? tracking.status,
         tracking.isNotEmpty,

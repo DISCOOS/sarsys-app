@@ -153,7 +153,7 @@ class PermissionController {
     List<Permission> permissions = REQUIRED,
     VoidCallback? onReady,
   }) async {
-    _permissions.addAll(permissions ?? REQUIRED);
+    _permissions.addAll(permissions);
     if (_permissions.contains(Permission.storage))
       await ask(
         storageRequest.copyWith(onReady: onReady),

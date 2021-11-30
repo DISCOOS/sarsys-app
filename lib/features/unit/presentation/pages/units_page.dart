@@ -416,7 +416,7 @@ class UnitSearch extends SearchDelegate<Unit?> {
   Widget buildResults(BuildContext context) {
     final recent = _recent.value!.toSet()..add(query);
     _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-    _recent.value = (recent.toSet() ?? []) as Set<String>?;
+    _recent.value = recent.toSet() as Set<String>?;
     return UnitsPage(
       query: query,
       withActions: false,
@@ -426,7 +426,7 @@ class UnitSearch extends SearchDelegate<Unit?> {
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = (recent.toSet() ?? []) as Set<String>?;
+    _recent.value = recent.toSet() as Set<String>?;
     buildSuggestions(context);
   }
 }

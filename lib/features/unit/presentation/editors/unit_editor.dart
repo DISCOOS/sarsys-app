@@ -416,8 +416,8 @@ class _UnitEditorState extends State<UnitEditor> {
 
   void _onTypeOrNumberEdit(UnitType type, String number, bool update) {
     _formKey.currentState?.save();
-    final name = translateUnitType(type ?? widget.type);
-    if (number.isEmpty) number = "${_nextNumber(type ?? widget.type)}";
+    final name = translateUnitType(type);
+    if (number.isEmpty) number = "${_nextNumber(type)}";
     _editedName = "$name $number";
     if (update) setState(() {});
   }
@@ -680,7 +680,7 @@ class _UnitEditorState extends State<UnitEditor> {
   String _actualNumber() {
     final values = _formKey.currentState?.value;
     return values?.containsKey('number') == true
-        ? "${values!['number']}" ?? "${widget.unit?.number ?? _numberController.text}"
+        ? "${values!['number']}"
         : "${widget.unit?.number ?? _numberController.text}";
   }
 

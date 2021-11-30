@@ -54,7 +54,7 @@ class DeviceModel extends Device implements JsonObject<Map<String, dynamic>> {
   Device mergeWith(Map<String, dynamic> json) {
     var clone = DeviceModel.fromJson(json);
     return DeviceModel(
-      uuid: clone.uuid ?? this.uuid,
+      uuid: clone.uuid,
       type: clone.type ?? this.type,
       alias: clone.alias ?? this.alias,
       manual: clone.manual ?? this.manual,

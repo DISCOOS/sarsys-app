@@ -378,7 +378,7 @@ class MyLocationLayerController {
             if (moveMap) {
               mapController.animatedMove(
                 point,
-                mapController.zoom ?? Defaults.zoom,
+                mapController.zoom,
                 tickerProvider,
               );
             }
@@ -392,7 +392,7 @@ class MyLocationLayerController {
             if (moveMap) {
               mapController.move(
                 point,
-                mapController.zoom ?? Defaults.zoom,
+                mapController.zoom,
               );
             }
           }

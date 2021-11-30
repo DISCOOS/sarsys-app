@@ -37,7 +37,7 @@ class PersonBuilder {
         phone: phone,
         email: email,
         userId: userId,
-        temporary: temporary ?? false,
+        temporary: temporary,
       ),
     );
   }

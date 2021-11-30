@@ -53,7 +53,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   var _isReady = false;
 
   /// Check if current profile allows tracking
-  bool get isTrackable => _profile.isTrackable ?? false;
+  bool get isTrackable => _profile.isTrackable;
 
   /// Get current [ActivityProfile]
   ActivityProfile get profile => _profile;
@@ -262,15 +262,15 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     required LocationAccuracy? defaultAccuracy,
   }) =>
       LocationOptions(
-        debug: config.locationDebug ?? Defaults.locationDebug,
+        debug: config.locationDebug,
         accuracy: _toAccuracy(config, defaultAccuracy),
-        locationAlways: config.locationAlways ?? false,
-        locationWhenInUse: config.locationWhenInUse ?? false,
-        activityRecognition: config.activityRecognition ?? false,
-        timeInterval: config.locationFastestInterval ?? Defaults.locationFastestInterval,
-        locationStoreLocally: config.locationStoreLocally ?? Defaults.locationStoreLocally,
-        locationAllowSharing: config.locationAllowSharing ?? Defaults.locationAllowSharing,
-        distanceFilter: config.locationSmallestDisplacement ?? Defaults.locationSmallestDisplacement,
+        locationAlways: config.locationAlways,
+        locationWhenInUse: config.locationWhenInUse,
+        activityRecognition: config.activityRecognition,
+        timeInterval: config.locationFastestInterval,
+        locationStoreLocally: config.locationStoreLocally,
+        locationAllowSharing: config.locationAllowSharing,
+        distanceFilter: config.locationSmallestDisplacement,
       );
 
   LocationAccuracy? _toAccuracy(AppConfig config, LocationAccuracy? defaultAccuracy) {

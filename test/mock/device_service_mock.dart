@@ -28,10 +28,10 @@ class DeviceBuilder {
     return DeviceModel.fromJson(
       createDeviceAsJson(
         uuid ?? Uuid().v4(),
-        type ?? DeviceType.app,
+        type,
         number ?? '1',
         position ?? toPosition(Defaults.origo),
-        status ?? DeviceStatus.unavailable,
+        status,
         randomize,
       )!,
     );
@@ -55,7 +55,7 @@ class DeviceBuilder {
     return json.decode('{'
         '"uuid": "$uuid",'
         '"type": "${enumName(type)}",'
-        '"status": "${enumName(status ?? DeviceStatus.unavailable)}",'
+        '"status": "${enumName(status)}",'
         '"number": "$number",'
         '"position": $actual,'
         '"manual": false'

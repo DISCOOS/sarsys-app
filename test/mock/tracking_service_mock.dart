@@ -38,10 +38,10 @@ class TrackingBuilder {
       createAsJson(
         uuid ?? Uuid().v4(),
         position: position,
-        status: status ?? TrackingStatus.ready,
-        tracks: (tracks ?? []).map((p) => jsonEncode(p.toJson())).toList(),
-        sources: (sources ?? []).map((p) => jsonEncode(p.toJson())).toList(),
-        history: (history ?? []).map((p) => jsonEncode(p.toJson())).toList(),
+        status: status,
+        tracks: tracks.map((p) => jsonEncode(p.toJson())).toList(),
+        sources: sources.map((p) => jsonEncode(p.toJson())).toList(),
+        history: history.map((p) => jsonEncode(p.toJson())).toList(),
       )!,
     );
     return tracking;
@@ -549,7 +549,7 @@ class _TrackSimulation {
       double? speed;
       Duration? effort;
 
-      final sources = current.sources ?? [];
+      final sources = current.sources;
 
       // Not tracking?
       if (sources.isEmpty) {

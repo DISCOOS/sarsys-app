@@ -63,7 +63,7 @@ class Ellipsoid extends Equatable {
       poleRadius: poleRadius,
       eccentricity: math.sqrt(eccentricity2),
       eccentricitySquared: eccentricity2,
-      name: name ?? shortName,
+      name: name,
     );
   }
 
@@ -81,7 +81,7 @@ class Ellipsoid extends Equatable {
       poleRadius: equatorRadius * math.sqrt(1.0 - eccentricitySquared),
       eccentricity: math.sqrt(eccentricitySquared),
       eccentricitySquared: eccentricitySquared,
-      name: name ?? shortName,
+      name: name,
     );
   }
 

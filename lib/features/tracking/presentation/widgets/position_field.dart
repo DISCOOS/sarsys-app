@@ -83,7 +83,7 @@ class PositionField extends StatelessWidget {
     );
     if (selected != field.value) {
       field.didChange(selected ?? initialValue);
-      if (onChanged != null) onChanged!(selected! ?? initialValue!);
+      if (onChanged != null) onChanged!(selected!);
     }
   }
 }

@@ -321,7 +321,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     alias = emptyAsNull(alias!);
     number = emptyAsNull(number!);
     _editedName = alias ?? number ?? _defaultName();
-    _editedAffiliation = affiliations.findEntityName(number, empty: '-') ?? _editedAffiliation;
+    _editedAffiliation = affiliations.findEntityName(number, empty: '-');
     _editedOrgAlias = affiliations.findOrganisation(number)?.fleetMap?.alias ?? _editedOrgAlias;
     _editedFunction = affiliations.findFunction(number)?.name ?? _editedFunction;
     if (update) setState(() {});

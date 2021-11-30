@@ -653,7 +653,7 @@ void setText(TextEditingController? controller, String? value) {
     controller.value = TextEditingValue(
       text: value,
       selection:
-      (selection.extentOffset > (value.length ?? 0)) ? TextSelection.collapsed(offset: value.length ?? 0) : selection,
+      (selection.extentOffset > (value.length)) ? TextSelection.collapsed(offset: value.length) : selection,
     );
   }
 }

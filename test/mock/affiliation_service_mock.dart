@@ -46,7 +46,7 @@ class AffiliationBuilder {
         orguuid: orguuid,
         divuuid: divuuid,
         depuuid: depuuid,
-        active: active ?? true,
+        active: active,
       ),
     );
   }
@@ -103,7 +103,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
       orguuid: orguuid,
       divuuid: divuuid,
       depuuid: depuuid,
-      active: active ?? true,
+      active: active,
     );
 
     final state = StorageState.created(

@@ -42,7 +42,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     this.trustedDomains = Defaults.trustedDomains,
     this.securityLockAfter = Defaults.securityLockAfter,
     this.locationDebug = Defaults.locationDebug,
-  })  : this.talkGroups = talkGroups ?? const <String>[],
+  })  : this.talkGroups = talkGroups,
         this.units = units ?? const <String>[],
         super(uuid, fields: [
           udid,
@@ -56,7 +56,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
           locationAlways,
           locationWhenInUse,
           activityRecognition,
-          talkGroups ?? const <String>[],
+          talkGroups,
           talkGroupCatalog,
           mapCacheTTL,
           mapRetinaMode,

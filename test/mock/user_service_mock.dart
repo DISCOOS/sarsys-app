@@ -40,7 +40,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
   }) {
     UserServiceMock._username = username ?? UserServiceMock._username;
     UserServiceMock._password = password ?? UserServiceMock._password;
-    UserServiceMock._maxAge = maxAge ?? UserServiceMock._maxAge;
+    UserServiceMock._maxAge = maxAge;
   }
 
   AuthToken? invalidateToken() {

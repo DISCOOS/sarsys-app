@@ -37,7 +37,7 @@ class DivisionRepositoryImpl extends StatefulRepository<String?, Division, Divis
     Completer<Iterable<Division>>? onRemote,
   }) async {
     await prepare(
-      force: force ?? false,
+      force: force,
     );
     return _load(
       onRemote: onRemote,
