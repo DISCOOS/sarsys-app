@@ -1,5 +1,3 @@
-
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
@@ -458,11 +456,12 @@ class StatefulRequestQueue<K, V extends JsonObject?, S extends StatefulServiceDe
             return await _repo!.onUpdate(state);
           case StorageStatus.deleted:
             return await _repo!.onDelete(state);
+          default:
+            throw RepositoryException(
+              'Unable to process $state',
+              _repo,
+            );
         }
-        throw RepositoryException(
-          'Unable to process $state',
-          _repo,
-        );
       } on ServiceException catch (e) {
         if (e.is409) {
           return await _repo!.onResolve(state, e.response!);

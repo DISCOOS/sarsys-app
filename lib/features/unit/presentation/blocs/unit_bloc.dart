@@ -1,5 +1,3 @@
-
-
 import 'dart:async';
 import 'dart:math';
 
@@ -186,9 +184,8 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     final type = UnitType.values.firstWhereOrNull(
       (type) {
         final name = translateUnitType(type).toLowerCase();
-        final match = template.length >= name.length
-            ? template.substring(0, min(name.length, template.length)).trim()
-            : template;
+        final match =
+            template.length >= name.length ? template.substring(0, min(name.length, template.length)).trim() : template;
         return name.startsWith(match.toLowerCase());
       },
     );
@@ -504,12 +501,13 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
           ),
           result: state,
         );
+      default:
+        return toError(
+          command,
+          'Unknown state status ${command.status}',
+          stackTrace: StackTrace.current,
+        );
     }
-    return toError(
-      command,
-      'Unknown state status ${command.status}',
-      stackTrace: StackTrace.current,
-    );
   }
 
   @override

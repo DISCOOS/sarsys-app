@@ -1,5 +1,3 @@
-
-
 import 'dart:async';
 import 'dart:io';
 
@@ -437,12 +435,13 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
           ),
           result: state,
         );
+      default:
+        return toError(
+          command,
+          'Unknown state status ${command.status}',
+          stackTrace: StackTrace.current,
+        );
     }
-    return toError(
-      command,
-      'Unknown state status ${command.status}',
-      stackTrace: StackTrace.current,
-    );
   }
 
   Future<DeviceState> _unload(UnloadDevices command) async {

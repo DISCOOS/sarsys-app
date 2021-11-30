@@ -579,12 +579,13 @@ class PersonnelBloc
           ),
           result: state,
         );
+      default:
+        return toError(
+          command,
+          'Unknown state status ${command.status}',
+          stackTrace: StackTrace.current,
+        );
     }
-    return toError(
-      command,
-      'Unknown state status ${command.status}',
-      stackTrace: StackTrace.current,
-    );
   }
 
   @override

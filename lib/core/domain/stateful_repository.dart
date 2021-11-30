@@ -688,8 +688,9 @@ abstract class StatefulRepository<K, V extends JsonObject?, S extends StatefulSe
           throw RepositoryStateNotExistsException(this, state);
         }
         return state;
+      default:
+        throw RepositoryIllegalStateException(previous!, state, this);
     }
-    throw RepositoryIllegalStateException(previous, state, this);
   }
 
   /// Test if given transition should

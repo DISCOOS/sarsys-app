@@ -794,7 +794,6 @@ class TrackingBloc
           ),
           result: tracking,
         );
-        break;
       case StorageStatus.updated:
         return toOK(
           command,
@@ -805,7 +804,6 @@ class TrackingBloc
           ),
           result: tracking,
         );
-        break;
       case StorageStatus.deleted:
         return toOK(
           command,
@@ -815,7 +813,6 @@ class TrackingBloc
           ),
           result: tracking,
         );
-        break;
       default:
         return toError(
           command,

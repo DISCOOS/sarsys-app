@@ -1,5 +1,3 @@
-
-
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
@@ -14,7 +12,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:uuid/uuid.dart';
 import 'package:SarSys/core/extensions.dart';
-
 
 class DeviceEditor extends StatefulWidget {
   final Device? device;
@@ -186,9 +183,13 @@ class _DeviceEditorState extends State<DeviceEditor> {
       validator: FormBuilderValidators.compose([
         FormBuilderValidators.required(context, errorText: 'Påkrevd'),
         (number) {
-          Device? device = context.read<DeviceBloc>().values.where(
+          Device? device = context
+              .read<DeviceBloc>()
+              .values
+              .where(
                 (Device device) => isSameNumber(device, number),
-              ).firstOrNull;
+              )
+              .firstOrNull;
           return device != null ? "Finnes allerede" : null;
         },
       ]),
@@ -210,8 +211,9 @@ class _DeviceEditorState extends State<DeviceEditor> {
         return 'SPOT ID';
       case DeviceType.inreach:
         return 'inReach IMEI';
+      default:
+        return 'Nummer';
     }
-    return 'Nummer';
   }
 
   bool isSameNumber(Device device, String? number) =>
@@ -296,9 +298,13 @@ class _DeviceEditorState extends State<DeviceEditor> {
       valueTransformer: (value) => emptyAsNull(value),
       validator: FormBuilderValidators.compose([
         (alias) {
-          final device = context.read<DeviceBloc>().values.where(
+          final device = context
+              .read<DeviceBloc>()
+              .values
+              .where(
                 (Device device) => _isSameAlias(device, alias),
-              ).firstOrNull;
+              )
+              .firstOrNull;
           return device != null ? "Finnes allerede" : null;
         },
       ]),

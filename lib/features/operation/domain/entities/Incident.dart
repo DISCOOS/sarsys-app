@@ -1,5 +1,3 @@
-
-
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -44,7 +42,9 @@ abstract class Incident extends Aggregate<Map<String, dynamic>> {
                     ? translateIncidentStatus(prop)
                     : (prop is IncidentResolution
                         ? translateIncidentResolution(prop)
-                        : prop is List<TalkGroup> ? prop.map((tg) => tg.searchable) : prop)))
+                        : prop is List<TalkGroup>
+                            ? prop.map((tg) => tg.searchable)
+                            : prop)))
             .toList(),
       ].join(' ');
 
@@ -89,8 +89,9 @@ String translateIncidentStatus(IncidentStatus status) {
       return "Håndteres";
     case IncidentStatus.closed:
       return "Lukket";
+    default:
+      throw ArgumentError('Status ${enumName(status)} not recognized');
   }
-  throw ArgumentError('Status ${enumName(status)} not recognized');
 }
 
 enum IncidentResolution { unresolved, cancelled, duplicate, resolved }
@@ -105,6 +106,7 @@ String translateIncidentResolution(IncidentResolution resolution) {
       return "Kansellert";
     case IncidentResolution.resolved:
       return "Løst";
+    default:
+      throw ArgumentError('Status ${enumName(resolution)} not recognized');
   }
-  throw ArgumentError('Status ${enumName(resolution)} not recognized');
 }

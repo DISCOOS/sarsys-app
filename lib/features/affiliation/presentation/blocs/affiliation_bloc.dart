@@ -1,5 +1,3 @@
-
-
 import 'dart:async';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -77,7 +75,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     required BlocEventBus bus,
   }) : super(AffiliationsEmpty(), bus: bus) {
     assert(this.users != null, "userBloc can not be null");
-    
+
     registerStreamSubscription(users!.stream.listen(
       // Load and unload repos as needed
       _processUserState,
@@ -749,7 +747,8 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         return AffiliationsFetched(
           isRemote: true,
           affiliations: results.firstOrNull?.map((a) => a.uuid) ?? <String>[],
-          persons: results.whereType<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList() as Iterable<String>?,
+          persons:
+              results.whereType<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList() as Iterable<String>?,
         );
       },
       toCommand: (state) => _NotifyBlocStateChanged<Iterable<String>>(state),
@@ -955,7 +954,6 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           ),
           result: state,
         );
-        break;
       case StorageStatus.updated:
         return toOK(
           command,
@@ -974,12 +972,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           ),
           result: state,
         );
+      default:
+        return toError(
+          command,
+          'Unknown state status ${command.status}',
+          stackTrace: StackTrace.current,
+        );
     }
-    return toError(
-      command,
-      'Unknown state status ${command.status}',
-      stackTrace: StackTrace.current,
-    );
   }
 
   AffiliationState _notifyOrganisationChanged(_NotifyRepositoryStateChanged command) {
@@ -1012,12 +1011,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           ),
           result: state,
         );
+      default:
+        return toError(
+          command,
+          'Unknown state status ${command.status}',
+          stackTrace: StackTrace.current,
+        );
     }
-    return toError(
-      command,
-      'Unknown state status ${command.status}',
-      stackTrace: StackTrace.current,
-    );
   }
 
   AffiliationState _notifyDivisionChanged(_NotifyRepositoryStateChanged command) {
@@ -1051,12 +1051,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           ),
           result: state,
         );
+      default:
+        return toError(
+          command,
+          'Unknown state status ${command.status}',
+          stackTrace: StackTrace.current,
+        );
     }
-    return toError(
-      command,
-      'Unknown state status ${command.status}',
-      stackTrace: StackTrace.current,
-    );
   }
 
   AffiliationState _notifyDepartmentChanged(_NotifyRepositoryStateChanged command) {
@@ -1089,12 +1090,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           ),
           result: state,
         );
+      default:
+        return toError(
+          command,
+          'Unknown state status ${command.status}',
+          stackTrace: StackTrace.current,
+        );
     }
-    return toError(
-      command,
-      'Unknown state status ${command.status}',
-      stackTrace: StackTrace.current,
-    );
   }
 
   Stream<AffiliationState> _unload(UnloadAffiliations command) async* {

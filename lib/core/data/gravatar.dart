@@ -1,5 +1,3 @@
-
-
 // The MIT License (MIT)
 //
 // Copyright (c) 2018 Alif Rachmawadi <arch@subosito.com>
@@ -107,9 +105,9 @@ class Gravatar {
         return 'robohash';
       case GravatarImage.blank:
         return 'blank';
+      default:
+        return '';
     }
-
-    return '';
   }
 
   String _ratingString(GravatarRating value) {
@@ -122,8 +120,8 @@ class Gravatar {
         return 'r';
       case GravatarRating.x:
         return 'x';
+      default:
+        return '';
     }
-
-    return '';
   }
 }

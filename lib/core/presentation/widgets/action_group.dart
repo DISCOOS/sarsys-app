@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -42,8 +40,9 @@ class ActionGroupBuilder extends StatelessWidget {
         return _buildButtonBar(context);
       case ActionGroupType.popupMenuButton:
         return _buildButtonMenu(context);
+      default:
+        return _buildButtonBar(context);
     }
-    return _buildButtonBar(context);
   }
 
   Widget _buildButtonBar(BuildContext context) {
