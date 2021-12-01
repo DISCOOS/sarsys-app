@@ -18,7 +18,6 @@ import 'dart:io';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 

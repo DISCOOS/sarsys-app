@@ -1,7 +1,6 @@
 
 
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
-import 'package:flutter/foundation.dart';
 
 class ActivityProfile {
   const ActivityProfile({

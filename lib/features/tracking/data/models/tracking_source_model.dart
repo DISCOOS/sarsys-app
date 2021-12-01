@@ -4,7 +4,6 @@ import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 part 'tracking_source_model.g.dart';
 

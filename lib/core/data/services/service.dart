@@ -6,7 +6,6 @@ import 'package:SarSys/core/data/api.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:chopper/chopper.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/widgets.dart';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/domain/models/core.dart';

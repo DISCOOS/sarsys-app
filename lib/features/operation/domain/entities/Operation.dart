@@ -1,7 +1,6 @@
 
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';

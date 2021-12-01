@@ -1,7 +1,6 @@
 
 
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
-import 'package:meta/meta.dart';
 
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';

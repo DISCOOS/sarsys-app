@@ -2,7 +2,6 @@
 
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/core/domain/models/core.dart';
-import 'package:meta/meta.dart';
 
 class Coordinates extends ValueObject<List<double?>> {
   Coordinates({

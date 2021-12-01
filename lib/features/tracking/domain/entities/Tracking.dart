@@ -6,7 +6,6 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 import 'TrackingSource.dart';
 import 'TrackingTrack.dart';

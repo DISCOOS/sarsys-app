@@ -9,7 +9,6 @@ import 'package:SarSys/features/operation/domain/entities/Author.dart';
 import 'package:SarSys/core/domain/models/Location.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/core/domain/models/core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'operation_model.g.dart';

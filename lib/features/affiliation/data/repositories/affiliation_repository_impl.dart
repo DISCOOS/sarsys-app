@@ -5,7 +5,6 @@ import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';

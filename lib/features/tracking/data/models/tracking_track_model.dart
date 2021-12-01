@@ -7,7 +7,6 @@ import 'package:SarSys/features/tracking/data/models/tracking_source_model.dart'
 import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 part 'tracking_track_model.g.dart';
 

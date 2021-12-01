@@ -10,7 +10,6 @@ import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';

@@ -5,7 +5,6 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/domain/models/Address.dart';
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 part 'Location.g.dart';
 

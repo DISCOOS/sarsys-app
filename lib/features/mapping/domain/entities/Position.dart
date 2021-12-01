@@ -3,7 +3,6 @@
 import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:SarSys/features/mapping/domain/entities/Coordinates.dart';

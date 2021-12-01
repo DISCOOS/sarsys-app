@@ -13,7 +13,6 @@ import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import 'package:SarSys/features/user/domain/entities/User.dart';

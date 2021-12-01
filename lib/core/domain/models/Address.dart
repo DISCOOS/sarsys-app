@@ -1,7 +1,6 @@
 
 
 import 'package:SarSys/core/domain/models/core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'Address.g.dart';

@@ -7,7 +7,6 @@ import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:meta/meta.dart';
 
 abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   AppConfig({

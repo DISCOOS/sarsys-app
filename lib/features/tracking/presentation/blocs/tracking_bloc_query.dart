@@ -5,7 +5,6 @@ import 'dart:collection';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 

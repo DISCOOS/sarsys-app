@@ -1,7 +1,6 @@
 
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';

@@ -3,7 +3,6 @@
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 import 'Coordinates.dart';
 

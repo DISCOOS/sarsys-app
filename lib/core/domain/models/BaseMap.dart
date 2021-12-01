@@ -2,7 +2,6 @@
 
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/domain/models/converters.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:json_annotation/json_annotation.dart';
 

@@ -3,7 +3,6 @@
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/activity/domain/activity_profile.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -13,7 +12,6 @@ import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBlocError> {

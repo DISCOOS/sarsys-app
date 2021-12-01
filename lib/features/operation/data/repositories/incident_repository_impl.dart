@@ -2,11 +2,9 @@
 
 import 'dart:async';
 
-import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';

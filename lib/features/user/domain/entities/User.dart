@@ -7,7 +7,6 @@ import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:equatable/equatable.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 import 'package:SarSys/core/extensions.dart';
 

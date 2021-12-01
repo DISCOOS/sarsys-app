@@ -13,7 +13,6 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 part 'personnel_model.g.dart';
 
